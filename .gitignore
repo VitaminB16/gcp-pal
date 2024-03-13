@@ -1,0 +1,15 @@
+**__pycache__/
+**ignore/
+*.DS_Store
+*.ipynb
+*.csv
+*.jpg
+*.gif
+*.parquet
+*.ttf
+*.env*
+*payload.json
+fonts/
+.vscode
+_includes/
+output/**.py
