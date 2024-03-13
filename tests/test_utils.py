@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from gcp_tools.utils import enforce_schema, is_series, force_list
+from gcp_tools.utils import enforce_schema, is_series, force_list, is_dataframe
 
 
 @pytest.mark.parametrize(
@@ -45,7 +45,17 @@ def test_is_series():
     assert is_series(False) == False
     df = pd.DataFrame({"a": [1, 2, 3]})
     assert is_series(df["a"]) == True
-
+    
+def test_is_dataframe():
+    df = pd.DataFrame({"a": [1, 2, 3]})
+    assert is_dataframe([1, 2, 3]) == False
+    assert is_dataframe(1) == False
+    assert is_dataframe("a") == False
+    assert is_dataframe(None) == False
+    assert is_dataframe(True) == False
+    assert is_dataframe(False) == False
+    assert is_dataframe(df["a"]) == False
+    assert is_dataframe(df) == True
 
 def test_force_list():
     assert force_list([1, 2, 3]) == [1, 2, 3]

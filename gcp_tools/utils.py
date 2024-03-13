@@ -20,6 +20,11 @@ def is_series(obj):
     return type(obj).__name__ == "Series"
 
 
+def is_dataframe(obj):
+    """Check if an object is a pandas DataFrame without importing pandas."""
+    return type(obj).__name__ == "DataFrame"
+
+
 def log(*args, **kwargs):
     """
     Function for logging to Google Cloud Logs. Logs a message as usual, and logs a dictionary of data as jsonPayload.
@@ -134,6 +139,10 @@ def enforce_schema(df, schema={}, dtypes={}, errors="raise"):
 
 if __name__ == "__main__":
     d = {"a": [1, 2, 3], "b": ["a", "b", "c"], "c": [1, 2, 3]}
-    schema = {"a": float, "b": lambda x: x.upper(), "c": {1: "one", 2: "two", 3: "three"}}
+    schema = {
+        "a": float,
+        "b": lambda x: x.upper(),
+        "c": {1: "one", 2: "two", 3: "three"},
+    }
     d = enforce_schema(d, schema)
     print(d)
