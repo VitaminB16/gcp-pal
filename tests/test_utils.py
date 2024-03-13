@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from gcp_tools.utils import enforce_schema
+from gcp_tools.utils import enforce_schema, is_series, force_list
 
 
 @pytest.mark.parametrize(
@@ -33,3 +33,28 @@ def test_enforce_schema(data):
     assert output["a"] == [1.0, 2.0, 3.0]
     assert output["b"] == ["A", "B", "C"]
     assert output["c"] == ["one", "two", "three"]
+
+
+def test_is_series():
+    assert is_series(pd.Series([1, 2, 3])) == True
+    assert is_series([1, 2, 3]) == False
+    assert is_series(1) == False
+    assert is_series("a") == False
+    assert is_series(None) == False
+    assert is_series(True) == False
+    assert is_series(False) == False
+    df = pd.DataFrame({"a": [1, 2, 3]})
+    assert is_series(df["a"]) == True
+
+
+def test_force_list():
+    assert force_list([1, 2, 3]) == [1, 2, 3]
+    assert force_list(1) == [1]
+    assert force_list("a") == ["a"]
+    assert force_list(None) == [None]
+    assert force_list(True) == [True]
+    assert force_list(False) == [False]
+    df = pd.DataFrame({"a": [1, 2, 3]})
+    assert force_list(df["a"]) == [df["a"]]
+    assert force_list(df) == [df]
+    assert force_list({"a": [1, 2, 3]}.keys()) == {"a": [1, 2, 3]}.keys()
