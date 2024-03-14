@@ -99,6 +99,8 @@ class Firestore:
             object_type = metadata.get("object_type", None)
             dtypes = metadata.get("dtypes", None)
             output = output.get("data", output)
+            if dtypes is not None:
+                apply_schema = True
         if apply_schema:
             if object_type == "<class 'pandas.core.frame.DataFrame'>":
                 from pandas import DataFrame
