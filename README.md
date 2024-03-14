@@ -1,6 +1,22 @@
+<!--
+TODO:
+[x] Firestore Module
+[ ] PubSub Module
+[ ] Request Module
+[ ] Storage Module
+[ ] Parquet Module
+[ ] BigQuery Module
+[ ] Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module
+[ ] Logging Module
+[ ] Secret Manager Module
+...
+-->
+
 # GCP Tools Library
 
 The `gcp-tools` library provides a set of utilities for interacting with Google Cloud Platform (GCP) services, streamlining the process of implementing GCP functionalities within your Python applications.
+
+The utilities are designed to work with the `google-cloud` Python libraries, providing a more user-friendly and intuitive interface for common tasks.
 
 ---
 

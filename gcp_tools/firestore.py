@@ -207,3 +207,4 @@ if __name__ == "__main__":
     Firestore(f"{collection_name}/test_document3").write(data)
     output = Firestore(collection_name).read(apply_schema=True)
     print(output)
+    Firestore(collection_name).delete()
