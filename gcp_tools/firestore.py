@@ -3,7 +3,7 @@ import json
 import concurrent.futures
 from google.cloud import firestore
 
-from gcp_tools.utils import log, is_dataframe
+from gcp_tools.utils import log, is_dataframe, enforce_schema
 
 
 class Firestore:
@@ -57,6 +57,15 @@ class Firestore:
         - apply_schema (bool): If True, apply the schema from FIRESTORE_SCHEMAS. Also converts the output to a DataFrame.
         """
         doc_ref = self.get_ref(method="get")
+        if self._ref_type(doc_ref) == "collection":
+            # If the reference is a collection, return a list of documents
+            paths_list = [f"{self.path}/{doc.id}" for doc in doc_ref.stream()]
+            return [
+                Firestore(path).read(
+                    allow_empty=allow_empty, apply_schema=apply_schema, schema=schema
+                )
+                for path in paths_list
+            ]
         output = doc_ref.get().to_dict()
         metadata = {}
         object_type = None
@@ -73,8 +82,7 @@ class Firestore:
                 from pandas import DataFrame
 
                 output = DataFrame(output)
-            from gcp_tools.utils import enforce_schema
-
+                output = output.reset_index(drop=True)
             output = enforce_schema(output, schema=schema, dtypes=dtypes)
         log(f"Read from Firestore: {self.path}")
         return output
@@ -155,3 +163,20 @@ class Firestore:
         is_doc_ref = isinstance(doc_ref, firestore.DocumentReference)
         is_coll_ref = isinstance(doc_ref, firestore.CollectionReference)
         return "document" if is_doc_ref else "collection" if is_coll_ref else None
+
+
+if __name__ == "__main__":
+    data = {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1, 2, 3],
+    }
+    import pandas as pd
+
+    data = pd.DataFrame(data)
+    collection_name = "test_collection"
+    # Firestore(f"{collection_name}/test_document1").write(data)
+    # Firestore(f"{collection_name}/test_document2").write(data)
+    # Firestore(f"{collection_name}/test_document3").write(data)
+    output = Firestore(collection_name).read(apply_schema=True)
+    print(output[0])

@@ -1,6 +1,5 @@
 import json
 import pandas as pd
-from uuid import uuid4
 from google.cloud import firestore
 
 from gcp_tools.firestore import Firestore
@@ -104,4 +103,31 @@ def test_delete():
     Firestore(f"{collection_name}/test_document").delete()
     read_data = doc_ref.get().to_dict()
     success = read_data is None
+    # Clean up
+    doc_ref.delete()
     assert success
+
+
+def test_read_collection():
+    data = {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1, 2, 3],
+    }
+    import pandas as pd
+
+    data = pd.DataFrame(data)
+    collection_name = "test_read_collection"
+    Firestore(f"{collection_name}/test_document1").write(data)
+    Firestore(f"{collection_name}/test_document2").write(data)
+    Firestore(f"{collection_name}/test_document3").write(data)
+    output = Firestore(collection_name).read(apply_schema=True)
+    success1 = len(output) == 3
+    success2 = all(isinstance(x, pd.DataFrame) for x in output)
+    # Clean up
+    Firestore(collection_name).delete()
+    assert success1
+    assert success2
+    assert output[0].equals(data)
+    assert output[1].equals(data)
+    assert output[2].equals(data)
