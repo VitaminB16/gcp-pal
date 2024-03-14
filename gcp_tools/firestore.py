@@ -49,6 +49,28 @@ class Firestore:
             ref_type = "document" if ref_type == "collection" else "collection"
         return doc_ref
 
+    def async_read(self, paths_list, allow_empty=False, apply_schema=False, schema={}):
+        """
+        Read from Firestore asynchronously
+        Args:
+        - paths_list (list): List of paths to read from Firestore
+        - allow_empty (bool): If True, return an empty DataFrame if the document is empty
+        - apply_schema (bool): If True, apply the schema from FIRESTORE_SCHEMAS. Also converts the output to a DataFrame.
+        """
+        with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+            futures = [
+                executor.submit(
+                    Firestore(path).read,
+                    allow_empty=allow_empty,
+                    apply_schema=apply_schema,
+                    schema=schema,
+                )
+                for path in paths_list
+            ]
+            concurrent.futures.wait(futures)
+            output = [future.result() for future in futures]
+        return output
+
     def read(self, allow_empty=False, apply_schema=False, schema={}):
         """
         Read from Firestore
@@ -60,12 +82,12 @@ class Firestore:
         if self._ref_type(doc_ref) == "collection":
             # If the reference is a collection, return a list of documents
             paths_list = [f"{self.path}/{doc.id}" for doc in doc_ref.stream()]
-            return [
-                Firestore(path).read(
-                    allow_empty=allow_empty, apply_schema=apply_schema, schema=schema
-                )
-                for path in paths_list
-            ]
+            return self.async_read(
+                paths_list,
+                allow_empty=allow_empty,
+                apply_schema=apply_schema,
+                schema=schema,
+            )
         output = doc_ref.get().to_dict()
         metadata = {}
         object_type = None

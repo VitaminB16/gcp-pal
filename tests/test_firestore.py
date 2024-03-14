@@ -88,7 +88,7 @@ def test_read_df():
     doc_ref = firestore_client.collection(collection_name).document("test_document")
     doc_ref.set({"data": data, "metadata": metadata})
     read_data = Firestore(f"{collection_name}/test_document").read(apply_schema=True)
-    expected_data = pd.DataFrame(data)
+    expected_data = pd.DataFrame(data).reset_index(drop=True)
     success = read_data.equals(expected_data)
     # Clean up
     doc_ref.delete()
