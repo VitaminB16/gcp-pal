@@ -123,11 +123,11 @@ def test_read_collection():
     Firestore(f"{collection_name}/test_document3").write(data)
     output = Firestore(collection_name).read()
     success1 = len(output) == 3
-    success2 = all(isinstance(x, pd.DataFrame) for x in output)
+    success2 = all(isinstance(output[x], pd.DataFrame) for x in output)
     # Clean up
     Firestore(collection_name).delete()
     assert success1
     assert success2
-    assert output[0].equals(data)
-    assert output[1].equals(data)
-    assert output[2].equals(data)
+    assert output["test_document1"].equals(data)
+    assert output["test_document2"].equals(data)
+    assert output["test_document3"].equals(data)

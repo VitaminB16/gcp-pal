@@ -68,7 +68,10 @@ class Firestore:
                 for path in paths_list
             ]
             concurrent.futures.wait(futures)
-            output = [future.result() for future in futures]
+            output = {
+                path.split("/")[-1]: future.result()
+                for path, future in zip(paths_list, futures)
+            }
         return output
 
     def read(self, allow_empty=False, apply_schema=False, schema={}):
@@ -199,8 +202,8 @@ if __name__ == "__main__":
 
     data = pd.DataFrame(data)
     collection_name = "test_collection"
-    # Firestore(f"{collection_name}/test_document1").write(data)
-    # Firestore(f"{collection_name}/test_document2").write(data)
-    # Firestore(f"{collection_name}/test_document3").write(data)
+    Firestore(f"{collection_name}/test_document1").write(data)
+    Firestore(f"{collection_name}/test_document2").write(data)
+    Firestore(f"{collection_name}/test_document3").write(data)
     output = Firestore(collection_name).read(apply_schema=True)
-    print(output[0])
+    print(output)
