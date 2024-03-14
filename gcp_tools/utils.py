@@ -5,6 +5,22 @@ import collections.abc
 LIST_LIKE_TYPES = (list, tuple, set, frozenset, collections.abc.KeysView)
 
 
+def dtype_str_to_type(dtype_str):
+    """
+    Map a string representation of a dtype to its corresponding Python type
+    or return the string if it's a Pandas-specific type.
+    """
+    python_types = {
+        "int": int,
+        "int64": int,
+        "float": float,
+        "float64": float,
+        "str": str,
+        "bool": bool,
+    }
+    return python_types.get(dtype_str, dtype_str)
+
+
 def force_list(x):
     """
     Force x to be a list
@@ -68,7 +84,7 @@ def enforce_schema_on_series(series, schema):
     elif isinstance(schema, dict):
         # For dictionary schemas, use map (assuming intention is to map values based on keys)
         return series.map(lambda x: schema.get(x, x))
-    elif isinstance(schema, type):
+    elif isinstance(schema, (type, str)):
         # For type schemas, cast the Series to the specified type
         return series.astype(schema)
     else:
@@ -80,10 +96,11 @@ def enforce_schema_on_list(lst, schema):
     if callable(schema):
         return [schema(x) for x in lst]
     elif isinstance(schema, dict):
-        return [
-            schema.get(x, x) for x in lst
-        ]  # Assuming intention was to replace value based on keys
+        return [schema.get(x, x) for x in lst]
     elif isinstance(schema, type):
+        return [schema(x) for x in lst]
+    elif isinstance(schema, str):
+        schema = dtype_str_to_type(schema)
         return [schema(x) for x in lst]
     else:
         raise TypeError("Unsupported schema type.")

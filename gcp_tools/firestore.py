@@ -49,7 +49,7 @@ class Firestore:
             ref_type = "document" if ref_type == "collection" else "collection"
         return doc_ref
 
-    def read(self, allow_empty=False, apply_schema=False, schema=None):
+    def read(self, allow_empty=False, apply_schema=False, schema={}):
         """
         Read from Firestore
         Args:
