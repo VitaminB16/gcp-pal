@@ -49,7 +49,7 @@ def log(*args, **kwargs):
         *args (list): list of elements to "print" to google cloud logs.
     """
     # Use these environment variables as payload to log to Google Cloud Logs
-    env_keys = ["SERVE_AS"]
+    env_keys = ["PLATFORM"]
     env_data = {key: os.getenv(key, None) for key in env_keys}
     log_data = {k: v for k, v in env_data.items() if v is not None}
 
@@ -59,7 +59,7 @@ def log(*args, **kwargs):
             log_data.update(arg)
         log_data["message"] = " ".join([str(a) for a in args])
 
-    if os.getenv("SERVE_AS", "cloud_function") in ["cloud_run"]:
+    if os.getenv("PLATFORM", "Local") in ["GCP"]:
         logging.info(log_data)
     else:
         # If running locally, use a normal print
