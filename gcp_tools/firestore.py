@@ -191,6 +191,21 @@ class Firestore:
         is_coll_ref = isinstance(doc_ref, firestore.CollectionReference)
         return "document" if is_doc_ref else "collection" if is_coll_ref else None
 
+    def ls(self, path=None):
+        """
+        List all documents in a collection or all collections in a document.
+        """
+        if path is not None:
+            self.path = self.path + "/" + path
+        ref = self.get_ref()
+        ref_type = self._ref_type(ref)
+        if ref_type == "document":
+            return [doc.id for doc in ref.collections()]
+        elif ref_type == "collection":
+            return [doc.id for doc in ref.stream()]
+        else:
+            raise ValueError("Unsupported Firestore reference type.")
+
 
 if __name__ == "__main__":
     data = {
@@ -205,6 +220,7 @@ if __name__ == "__main__":
     Firestore(f"{collection_name}/test_document1").write(data)
     Firestore(f"{collection_name}/test_document2").write(data)
     Firestore(f"{collection_name}/test_document3").write(data)
+    print(Firestore(collection_name).ls())
     output = Firestore(collection_name).read(apply_schema=True)
     print(output)
     Firestore(collection_name).delete()
