@@ -113,3 +113,59 @@ docs = Firestore("collection").ls()
 print(docs)
 # Output: ['document1', 'document2']
 ```
+
+---
+
+## PubSub Module
+
+The PubSub module in the `gcp-tools` library allows you to publish and subscribe to PubSub topics with ease.
+
+### Initializing PubSub
+
+First, import the PubSub class from the `gcp_tools` module:
+
+```python
+from gcp_tools.pubsub import PubSub
+```
+
+### Publishing Messages to a Topic
+
+To publish a message to a PubSub topic, specify the topic's name and the message you want to publish:
+
+```python
+topic = "topic-name"
+message = "Hello, PubSub!"
+PubSub(topic).publish(message)
+```
+
+---
+
+## Request Module
+
+The Request module in the `gcp-tools` library allows you to make authorized HTTP requests with ease.
+
+### Initializing Request
+
+Import the Request class from the `gcp_tools` module:
+
+```python
+from gcp_tools.request import Request
+```
+
+### Making Authorized Get/Post/Put Requests
+
+To make an authorized requests, specify the URL you want to access and use the relevant method:
+
+```python
+url = "https://example.com/api"
+
+get_response = Request(url).get()
+print(get_response)
+# Output: <Response [200]>
+post_response = Request(url).post(data={"key": "value"})
+print(post_response)
+# Output: <Response [201]>
+put_response = Request(url).put(data={"key": "value"})
+print(put_response)
+# Output: <Response [200]>
+```
