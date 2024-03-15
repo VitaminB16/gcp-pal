@@ -100,3 +100,16 @@ print(read_df)
 #    field1 field2
 # 0  value1 value2
 ```
+
+### List the Firestore documents and collections
+
+To list all documents and collections within a Firestore database, use the `ls` method similar to bash:
+
+```python
+colls = Firestore().ls()
+print(colls)
+# Output: ['collection']
+docs = Firestore("collection").ls()
+print(docs)
+# Output: ['document1', 'document2']
+```

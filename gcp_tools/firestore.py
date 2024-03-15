@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import json
 import concurrent.futures
@@ -32,6 +34,8 @@ class Firestore:
         Parse the path into project, bucket, and path.
         This allows Firestore to be used in the same way as GCS.
         """
+        if self.path is None:
+            return None
         if "gs://" in self.path:
             # gs://project/bucket/path -> project, bucket, path
             # path -> collection/document/../collection/document
@@ -42,6 +46,8 @@ class Firestore:
 
     def get_ref(self, method=None):
         path_elements = self._parse_path(method)
+        if path_elements is None:
+            return None
         doc_ref = self.client.collection(path_elements.pop(0))
         ref_type = "document"
         while len(path_elements) > 0:
@@ -191,13 +197,15 @@ class Firestore:
         is_coll_ref = isinstance(doc_ref, firestore.CollectionReference)
         return "document" if is_doc_ref else "collection" if is_coll_ref else None
 
-    def ls(self, path=None):
+    def ls(self, path=None) -> list[str]:
         """
         List all documents in a collection or all collections in a document.
         """
         if path is not None:
             self.path = self.path + "/" + path
         ref = self.get_ref()
+        if ref is None:
+            return [col.id for col in self.client.collections()]
         ref_type = self._ref_type(ref)
         if ref_type == "document":
             return [doc.id for doc in ref.collections()]
@@ -221,6 +229,7 @@ if __name__ == "__main__":
     Firestore(f"{collection_name}/test_document2").write(data)
     Firestore(f"{collection_name}/test_document3").write(data)
     print(Firestore(collection_name).ls())
+    print(Firestore().ls())
     output = Firestore(collection_name).read(apply_schema=True)
     print(output)
     Firestore(collection_name).delete()
