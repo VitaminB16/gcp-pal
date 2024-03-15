@@ -47,7 +47,7 @@ class Request:
             log(f"Error obtaining identity token: {e}")
             return None
 
-    def post(self, payload, **kwargs):
+    def post(self, payload=None, **kwargs):
         response = requests.post(self.url, json=payload, headers=self.headers, **kwargs)
         return response
 
@@ -55,7 +55,7 @@ class Request:
         response = requests.get(self.url, headers=self.headers, **kwargs)
         return response
 
-    def put(self, payload, **kwargs):
+    def put(self, payload=None, **kwargs):
         response = requests.put(self.url, json=payload, headers=self.headers, **kwargs)
         return response
 
