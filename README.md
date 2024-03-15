@@ -1,8 +1,8 @@
 <!--
 TODO:
 [x] Firestore Module
-[ ] PubSub Module
-[ ] Request Module
+[x] PubSub Module
+[x] Request Module
 [ ] Storage Module
 [ ] Parquet Module
 [ ] BigQuery Module
