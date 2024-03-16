@@ -31,8 +31,15 @@ class Firestore:
 
     def _parse_path(self, method="get"):
         """
-        Parse the path into project, bucket, and path.
-        This allows Firestore to be used in the same way as GCS.
+        Parse the path into project, bucket, and path. This allows Firestore to be used in the same way as GCS.
+
+        Returns:
+        - Path elements (list): List of alternating path elements [collection, document, collection, ...]
+
+        Examples:
+        - Firestore("collection/document")._parse_path() -> ["collection", "document"]
+        - Firestore("gs://project/bucket/collection/document")._parse_path() -> ["collection", "document"]
+        - Firestore("gs://project/bucket/output/data.csv")._parse_path() -> ["output", "data.csv"]
         """
         if self.path is None:
             return None
@@ -45,6 +52,16 @@ class Firestore:
         return path_elements
 
     def get_ref(self, method=None):
+        """
+        Get a reference to a Firestore document or collection.
+
+        Returns:
+        - Firestore reference (DocumentReference or CollectionReference)
+
+        Examples:
+        - Firestore("collection/document").get_ref() -> Reference to document "collection/document"
+        - Firestore("collection").get_ref() -> Reference to collection "collection"
+        """
         path_elements = self._parse_path(method)
         if path_elements is None:
             return None
@@ -57,11 +74,13 @@ class Firestore:
 
     def async_read(self, paths_list, allow_empty=False, apply_schema=False, schema={}):
         """
-        Read from Firestore asynchronously
+        Read a list of paths from Firestore asynchronously.
+
         Args:
         - paths_list (list): List of paths to read from Firestore
         - allow_empty (bool): If True, return an empty DataFrame if the document is empty
-        - apply_schema (bool): If True, apply the schema from FIRESTORE_SCHEMAS. Also converts the output to a DataFrame.
+        - apply_schema (bool): If True, apply the schema from FIRESTORE_SCHEMAS.
+                               Also converts the output to a DataFrame.
         """
         with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
             futures = [
@@ -80,18 +99,29 @@ class Firestore:
             }
         return output
 
-    def read(self, allow_empty=False, apply_schema=False, schema={}):
+    def read(self, allow_empty=False, apply_schema=False, schema={}, path_schemas={}):
         """
         Read from Firestore
+
         Args:
         - allow_empty (bool): If True, return an empty DataFrame if the document is empty
-        - apply_schema (bool): If True, apply the schema from FIRESTORE_SCHEMAS. Also converts the output to a DataFrame.
+        - apply_schema (bool): If True, apply the schema from FIRESTORE_SCHEMAS.
+                               Also converts the output to a DataFrame.
+        - schema (dict): Schema to enforce on the output
+        - path_schemas (dict): Schemas to enforce on specific paths.
+
         Returns:
         - Output from Firestore (DataFrame or dict)
+
         Examples:
         - Firestore("coll/doc").read() -> Read from Firestore "coll/doc"
         - Firestore("coll").read() -> Read all docs from Firestore collection "coll"
+        - Firestore("coll/doc").read(apply_schema=True, path_schemas={"coll/doc": {"a": int}})
+                                   -> Read from Firestore "coll/doc" and enforce schema on "a"
         """
+        if path_schemas:
+            path_schemas = path_schemas.get(self.path, {})
+            schema = {**schema, **path_schemas}
         doc_ref = self.get_ref(method="get")
         if self._ref_type(doc_ref) == "collection":
             # If the reference is a collection, return a list of documents
@@ -128,11 +158,14 @@ class Firestore:
     def write(self, data, columns=None):
         """
         Write to Firestore
+
         Args:
         - data (DataFrame or dict): Data to write to Firestore
         - columns (list): Columns to write from the DataFrame
+
         Returns:
         - True if successful
+
         Examples:
         - Firestore("coll/doc").write(data) -> Write data to Firestore "coll/doc"
         """
@@ -210,6 +243,7 @@ class Firestore:
 
         Args:
         - path (str): Path to the Firestore document or collection from base path
+
         Returns:
         - List of documents or collections
         """
