@@ -85,13 +85,10 @@ def ensure_types(df, types_dict):
 def enforce_schema_on_series(series, schema):
     """Enforce a schema on a pandas Series."""
     if callable(schema):
-        # For callable schemas, apply directly
-        return series.apply(schema)
+        return schema(series)
     elif isinstance(schema, dict):
-        # For dictionary schemas, use map (assuming intention is to map values based on keys)
         return series.map(lambda x: schema.get(x, x))
     elif isinstance(schema, (type, str)):
-        # For type schemas, cast the Series to the specified type
         return series.astype(schema)
     else:
         raise TypeError("Unsupported schema type.")
