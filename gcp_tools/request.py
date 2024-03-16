@@ -17,6 +17,11 @@ class Request:
     """
 
     def __init__(self, url, project=None):
+        """
+        Args:
+        - url (str): URL of the cloud run service
+        - project (str): Project ID
+        """
         self.url = url
 
         scopes = ["https://www.googleapis.com/auth/cloud-platform"]

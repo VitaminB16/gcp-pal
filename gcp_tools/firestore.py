@@ -86,6 +86,11 @@ class Firestore:
         Args:
         - allow_empty (bool): If True, return an empty DataFrame if the document is empty
         - apply_schema (bool): If True, apply the schema from FIRESTORE_SCHEMAS. Also converts the output to a DataFrame.
+        Returns:
+        - Output from Firestore (DataFrame or dict)
+        Examples:
+        - Firestore("coll/doc").read() -> Read from Firestore "coll/doc"
+        - Firestore("coll").read() -> Read all docs from Firestore collection "coll"
         """
         doc_ref = self.get_ref(method="get")
         if self._ref_type(doc_ref) == "collection":
@@ -128,6 +133,8 @@ class Firestore:
         - columns (list): Columns to write from the DataFrame
         Returns:
         - True if successful
+        Examples:
+        - Firestore("coll/doc").write(data) -> Write data to Firestore "coll/doc"
         """
         doc_ref = self.get_ref(method="set")
         dtypes, object_type = None, None
@@ -200,6 +207,11 @@ class Firestore:
     def ls(self, path=None) -> list[str]:
         """
         List all documents in a collection or all collections in a document.
+
+        Args:
+        - path (str): Path to the Firestore document or collection from base path
+        Returns:
+        - List of documents or collections
         """
         if path is not None:
             self.path = self.path + "/" + path

@@ -115,6 +115,8 @@ def enforce_one_schema(data, col_schema):
     Args:
     - data (Series|List): The data to enforce the schema on.
     - col_schema (type|dict|callable|list): The schema to enforce.
+    Returns:
+    - Series|List: The data with the schema enforced.
     """
 
     # Helper function to ensure data is a list
@@ -141,6 +143,13 @@ def enforce_one_schema(data, col_schema):
 def enforce_schema(df, schema={}, dtypes={}, errors="raise"):
     """
     Enforce a schema on a dataframe or dictionary
+    Args:
+    - df (DataFrame|dict): The data to enforce the schema on.
+    - schema (dict): The schema to enforce.
+    - dtypes (dict): The object types to enforce. The schema will override these.
+    - errors (str): How to handle errors.
+    Returns:
+    - DataFrame|dict: The data with the schema enforced.
     """
     schema = {**dtypes, **schema}  # schema takes precedence over dtypes
     if schema == {}:

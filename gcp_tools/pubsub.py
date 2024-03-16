@@ -18,6 +18,7 @@ class PubSub:
         """
         Args:
         - topic (str): Name of the topic
+        - project (str): Project ID
         """
         self.topic_id = topic
         self.publisher = pubsub_v1.PublisherClient()
