@@ -2,12 +2,16 @@ import os
 import logging
 import collections.abc
 from google.cloud import pubsub_v1, logging as gcp_logging
+from google.cloud.logging.handlers.transports import SyncTransport
+
 
 LIST_LIKE_TYPES = (list, tuple, set, frozenset, collections.abc.KeysView)
 
 if os.getenv("PLATFORM", "GCP") in ["GCP", "local"]:
     client = gcp_logging.Client()
-    client.get_default_handler()
+    handler = gcp_logging.handlers.CloudLoggingHandler(
+        client, name="gcp_tools", transport=SyncTransport
+    )
     client.setup_logging()
 
 
