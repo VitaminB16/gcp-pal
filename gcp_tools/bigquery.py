@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import os
-import pandas as pd
-from google.auth import default as google_auth_default
 from google.cloud import bigquery
-from gcp_tools.utils import log, enforce_schema
+from google.auth import default as google_auth_default
+
+from gcp_tools.utils import log, enforce_schema, is_dataframe
 
 
 class BigQuery:
@@ -28,17 +28,98 @@ class BigQuery:
         self.dataset = dataset
         self.project = project or os.environ.get("PROJECT") or google_auth_default()[1]
         try:
+            # E.g. BigQuery("project.dataset.table")
             self.project, self.dataset, self.table = table.split(".")
         except (ValueError, AttributeError):
             pass
         try:
+            # E.g. BigQuery("dataset.table", project="project")
             self.dataset, self.table = self.table.split(".")
         except (ValueError, AttributeError):
             pass
+        if "." in self.dataset:
+            # E.g. BigQuery(dataset="project.dataset")
+            self.project, self.dataset = self.dataset.split(".", 1)
         self.client = bigquery.Client(project=self.project)
-        print(f"Table: {self.table}")
-        print(f"Dataset: {self.dataset}")
-        print(f"Project: {self.project}")
+
+    def query(self, sql, job_config=None, to_dataframe=True):
+        """
+        Executes a query against BigQuery.
+
+        Args:
+        - sql (str): SQL query string.
+        - job_config (bigquery.QueryJobConfig): Optional configuration for the query job.
+        - to_dataframe (bool): If True, returns the results as a pandas DataFrame.
+
+        Returns:
+        - Query results as a pandas DataFrame or BigQuery job object.
+        """
+        output = self.client.query(sql, job_config=job_config)
+        log(f"Query executed: {sql}")
+        if to_dataframe:
+            output = output.to_dataframe()
+        return output
+
+    def insert(self, data, schema=None):
+        """
+        Inserts data into a BigQuery table.
+
+        Args:
+        - data (list of dicts | pandas.DataFrame): The data to insert.
+        - schema (list of bigquery.SchemaField): Optional schema definition. Required if the table does not exist.
+
+        Returns:
+        - True if successful.
+
+        Examples:
+        - BigQuery("dataset.table").insert([{"a": 1, "b": "test"}])
+        - BigQuery("dataset.table").insert(pd.DataFrame({"a": [1], "b": ["test"]}))
+        """
+        if is_dataframe(data):
+            return data.to_gbq(table, if_exists="append")
+
+        if not schema and isinstance(data, list):
+            table = self.client.get_table(self.table)  # Make sure the table exists
+            errors = self.client.insert_rows_json(table, data)
+        elif schema:
+            table = bigquery.Table(self.table, schema=schema)
+            table = self.client.create_table(table, exists_ok=True)
+            errors = self.client.insert_rows_json(table, data)
+        else:
+            raise ValueError(
+                "Data format not supported or schema required for new table."
+            )
+
+        if errors == []:
+            log(f"Data inserted into {self.table}")
+            return True
+        else:
+            log(f"Errors occurred while inserting data into {self.table}: {errors}")
+            return False
+
+    def create_table(self, data=None, schema=None, exists_ok=True):
+        """
+        Creates a new BigQuery table.
+
+        Args:
+        - schema (list of bigquery.SchemaField): Schema definition for the new table.
+
+        Returns:
+        - The created bigquery.Table object.
+
+        Examples:
+        - schema = [bigquery.SchemaField("name", "STRING"), bigquery.SchemaField("age", "INTEGER")]
+        - BigQuery().create_table("new_dataset.new_table", schema)
+        """
+        if is_dataframe(data):
+            if_exists = "replace" if exists_ok else "fail"
+            return data.to_gbq(
+                f"{self.dataset}.{self.table}",
+                project_id=self.project,
+                if_exists=if_exists,
+            )
+
+        return True
 
     def list_datasets(self):
         """
