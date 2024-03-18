@@ -110,6 +110,8 @@ class BigQuery:
     Class for operating Google BigQuery.
     """
 
+    _clients = {}
+
     def __init__(self, table=None, dataset=None, project=None):
         """
         Initializes the BigQuery client.
@@ -145,7 +147,12 @@ class BigQuery:
             self.table_id = f"{self.project}.{self.table_id}"
         if self.project and self.dataset:
             self.dataset_id = f"{self.project}.{self.dataset}"
-        self.client = bigquery.Client(project=self.project)
+
+        if self.project in BigQuery._clients:
+            self.client = BigQuery._clients[self.project]
+        else:
+            self.client = bigquery.Client(project=self.project, location="europe-west2")
+            BigQuery._clients[self.project] = self.client
 
     def query(self, sql, job_config=None, to_dataframe=True, params=None):
         """
@@ -416,22 +423,24 @@ class BigQuery:
 
 if __name__ == "__main__":
     # Example usage
-    BigQuery("clean2.new_table").create_table(
+    dataset = "test"
+    BigQuery(f"{dataset}.new_table1").create_table(
         schema=[
             bigquery.SchemaField("name", "STRING"),
             bigquery.SchemaField("age", "INTEGER"),
         ]
     )
-    BigQuery("clean2.new_table").insert(
+    BigQuery(f"{dataset}.new_table1").insert(
         [{"name": "John", "age": 30}, {"name": "Jane", "age": 25}]
     )
-    df = BigQuery("clean2.new_table").read(
+    df = BigQuery(f"{dataset}.new_table1").read(
         columns=["name", "age"],
         filters=[("age", ">", 25), ("name", "like", "J%")],
         to_dataframe=True,
     )
+
     print(df)
 
     print(BigQuery().ls())  # List all datasets
-    print(BigQuery(dataset="clean").ls())  # List all tables in the "clean" dataset
-    BigQuery(dataset="clean2").delete()
+    print(BigQuery(dataset=f"{dataset}").ls())  # List all tables in the "clean" dataset
+    BigQuery(dataset=f"{dataset}").delete()
