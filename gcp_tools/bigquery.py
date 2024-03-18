@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from google.cloud import bigquery
 from google.auth import default as google_auth_default
+from google.api_core.exceptions import NotFound as NotFoundError
 
 from gcp_tools.utils import log, enforce_schema, is_dataframe
 
@@ -97,6 +98,34 @@ class BigQuery:
             log(f"Errors occurred while inserting data into {self.table}: {errors}")
             return False
 
+    def _create_table(self, schema=None, data=None, exists_ok=True):
+        """
+        Routine for creating a new BigQuery table.
+
+        Args:
+        - data (pandas.DataFrame): The data to insert into the new table.
+        - schema (list of bigquery.SchemaField): Schema definition for the new table.
+        - exists_ok (bool): If True, the table will be replaced if it already exists.
+
+        """
+        if is_dataframe(data):
+            from pandas_gbq import to_gbq
+
+            if_exists = "replace" if exists_ok else "fail"
+            return to_gbq(
+                data,
+                f"{self.dataset}.{self.table}",
+                project_id=self.project,
+                if_exists=if_exists,
+            )
+
+        table_id = f"{self.project}.{self.dataset}.{self.table}"
+        table = bigquery.Table(table_id, schema=schema)
+        table = self.client.create_table(table, exists_ok=exists_ok)
+        log(f"Table created: {table_id}")
+
+        return True
+
     def create_table(self, data=None, schema=None, exists_ok=True):
         """
         Creates a new BigQuery table.
@@ -111,15 +140,86 @@ class BigQuery:
         - schema = [bigquery.SchemaField("name", "STRING"), bigquery.SchemaField("age", "INTEGER")]
         - BigQuery().create_table("new_dataset.new_table", schema)
         """
-        if is_dataframe(data):
-            if_exists = "replace" if exists_ok else "fail"
-            return data.to_gbq(
-                f"{self.dataset}.{self.table}",
-                project_id=self.project,
-                if_exists=if_exists,
-            )
+        try:
+            return self._create_table(data=data, schema=schema, exists_ok=exists_ok)
+        except NotFoundError:
+            # Dataset does not exist, so create it and try again
+            self.create_dataset(exists_ok=exists_ok)
+            return self._create_table(data=data, schema=schema, exists_ok=exists_ok)
+        return False
 
+    def create_dataset(self, exists_ok=True):
+        """
+        Creates a new BigQuery dataset.
+
+        Returns:
+        - True if successful.
+        """
+        dataset_id = f"{self.project}.{self.dataset}"
+        dataset = bigquery.Dataset(dataset_id)
+        dataset = self.client.create_dataset(dataset, exists_ok=exists_ok)
+        log(f"Dataset created: {dataset_id}")
         return True
+
+    def create(self, data=None, schema=None, exists_ok=True):
+        """
+        Creates a new BigQuery dataset or table.
+
+        Returns:
+        - True if successful.
+        """
+        if self.table:
+            return self.create_table(data, schema, exists_ok=exists_ok)
+        else:
+            return self.create_dataset(exists_ok=exists_ok)
+
+    def delete_table(self, errors="raise"):
+        """
+        Deletes a BigQuery table.
+
+        Returns:
+        - True if successful.
+        """
+        table_id = f"{self.project}.{self.dataset}.{self.table}"
+        try:
+            self.client.delete_table(table_id)
+        except Exception as e:
+            log(f"Error deleting table: {e}")
+            if errors == "raise":
+                raise e
+            return False
+        log(f"Table deleted: {table_id}")
+        return True
+
+    def delete_dataset(self, errors="raise"):
+        """
+        Deletes a BigQuery dataset.
+
+        Returns:
+        - True if successful.
+        """
+        dataset_id = f"{self.project}.{self.dataset}"
+        try:
+            self.client.delete_dataset(dataset_id, delete_contents=True)
+        except Exception as e:
+            log(f"Error deleting dataset: {e}")
+            if errors == "raise":
+                raise e
+            return False
+        log(f"Dataset deleted: {dataset_id}")
+        return True
+
+    def delete(self, errors="raise"):
+        """
+        Deletes a BigQuery dataset or table.
+
+        Returns:
+        - True if successful.
+        """
+        if self.table:
+            return self.delete_table(errors=errors)
+        else:
+            return self.delete_dataset(errors=errors)
 
     def list_datasets(self):
         """
@@ -163,4 +263,14 @@ class BigQuery:
 
 if __name__ == "__main__":
     # Example usage
+    print(BigQuery(dataset="clean").ls())
+    BigQuery("clean2.new_table").create_table(
+        schema=[
+            bigquery.SchemaField("name", "STRING"),
+            bigquery.SchemaField("age", "INTEGER"),
+        ]
+    )
+    exit()
+    print(BigQuery(dataset="clean").ls())
+    BigQuery("clean2.new_table").delete()
     print(BigQuery(dataset="clean").ls())
