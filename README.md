@@ -39,7 +39,7 @@ The Firestore module in the `gcp-tools` library allows you to perform read and w
 First, import the Firestore class from the `gcp_tools` module:
 
 ```python
-from gcp_tools.firestore import Firestore
+from gcp_tools import Firestore
 ```
 
 ### Writing Data to Firestore
@@ -125,7 +125,7 @@ The PubSub module in the `gcp-tools` library allows you to publish and subscribe
 First, import the PubSub class from the `gcp_tools` module:
 
 ```python
-from gcp_tools.pubsub import PubSub
+from gcp_tools import PubSub
 ```
 
 ### Publishing Messages to a Topic
@@ -149,7 +149,7 @@ The Request module in the `gcp-tools` library allows you to make authorized HTTP
 Import the Request class from the `gcp_tools` module:
 
 ```python
-from gcp_tools.request import Request
+from gcp_tools import Request
 ```
 
 ### Making Authorized Get/Post/Put Requests
@@ -168,4 +168,64 @@ print(post_response)
 put_response = Request(url).put(data={"key": "value"})
 print(put_response)
 # Output: <Response [200]>
+```
+
+---
+
+## BigQuery Module
+
+The BigQuery module in the `gcp-tools` library allows you to perform read and write operations on BigQuery datasets and tables with ease.
+
+### Initializing BigQuery
+
+Import the BigQuery class from the `gcp_tools` module:
+
+```python
+from gcp_tools import BigQuery
+```
+
+### Listing objects
+
+To list all objects (datasets and tables) within a BigQuery project, use the `ls` method similar to bash:
+
+```python
+datasets = BigQuery().ls()
+print(datasets)
+# Output: ['dataset1', 'dataset2']
+tables = BigQuery(dataset="dataset1").ls()
+print(tables)
+# Output: ['table1', 'table2']
+```
+
+### Creating objects
+
+To create an object (dataset or table) within a BigQuery project, initialize the BigQuery class with the object's path and use the `create` method:
+
+```python
+BigQuery(dataset="new-dataset").create()
+# Output: Dataset "new-dataset" created
+BigQuery(table="new-dataset2.new-table").create(schema=schema) 
+# Output: Dataset "new-dataset2" created, table "new-dataset2.new-table" created
+```
+
+To create a table from a Pandas DataFrame, pass the DataFrame to the `create` method:
+
+```python
+df = pd.DataFrame({
+    "field1": ["value1"],
+    "field2": ["value2"]
+})
+BigQuery(table="new-dataset3.new-table").create(data=df)
+# Output: Dataset "new-dataset3" created, table "new-dataset3.new-table" created, data inserted
+```
+
+### Deleting objects
+
+Deleting objects is similar to creating them, but you use the `delete` method instead:
+
+```python
+BigQuery(dataset="dataset").delete()
+# Output: Dataset "dataset" and all its tables deleted
+BigQuery(table="dataset.table").delete()
+# Output: Table "dataset.table" deleted
 ```
