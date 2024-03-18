@@ -38,9 +38,16 @@ class BigQuery:
             self.dataset, self.table = self.table.split(".")
         except (ValueError, AttributeError):
             pass
-        if "." in self.dataset:
+        if self.dataset and "." in self.dataset:
             # E.g. BigQuery(dataset="project.dataset")
             self.project, self.dataset = self.dataset.split(".", 1)
+
+        # table_id is the full table ID, e.g. "project.dataset.table"
+        self.table_id = f"{self.dataset}.{self.table}"
+        if self.project:
+            self.table_id = f"{self.project}.{self.table_id}"
+        if self.project and self.dataset:
+            self.dataset_id = f"{self.project}.{self.dataset}"
         self.client = bigquery.Client(project=self.project)
 
     def query(self, sql, job_config=None, to_dataframe=True):
@@ -77,7 +84,7 @@ class BigQuery:
         - BigQuery("dataset.table").insert(pd.DataFrame({"a": [1], "b": ["test"]}))
         """
         if is_dataframe(data):
-            return data.to_gbq(table, if_exists="append")
+            return data.to_gbq(self.table_id, if_exists="append")
 
         if not schema and isinstance(data, list):
             table = self.client.get_table(self.table)  # Make sure the table exists
@@ -112,17 +119,11 @@ class BigQuery:
             from pandas_gbq import to_gbq
 
             if_exists = "replace" if exists_ok else "fail"
-            return to_gbq(
-                data,
-                f"{self.dataset}.{self.table}",
-                project_id=self.project,
-                if_exists=if_exists,
-            )
+            return to_gbq(data, destination_table=self.table_id, if_exists=if_exists)
 
-        table_id = f"{self.project}.{self.dataset}.{self.table}"
-        table = bigquery.Table(table_id, schema=schema)
+        table = bigquery.Table(self.table_id, schema=schema)
         table = self.client.create_table(table, exists_ok=exists_ok)
-        log(f"Table created: {table_id}")
+        log(f"Table created: {self.table_id}")
 
         return True
 
@@ -155,10 +156,9 @@ class BigQuery:
         Returns:
         - True if successful.
         """
-        dataset_id = f"{self.project}.{self.dataset}"
-        dataset = bigquery.Dataset(dataset_id)
+        dataset = bigquery.Dataset(self.dataset_id)
         dataset = self.client.create_dataset(dataset, exists_ok=exists_ok)
-        log(f"Dataset created: {dataset_id}")
+        log(f"Dataset created: {self.dataset_id}")
         return True
 
     def create(self, data=None, schema=None, exists_ok=True):
@@ -180,15 +180,14 @@ class BigQuery:
         Returns:
         - True if successful.
         """
-        table_id = f"{self.project}.{self.dataset}.{self.table}"
         try:
-            self.client.delete_table(table_id)
+            self.client.delete_table(self.table_id)
         except Exception as e:
             log(f"Error deleting table: {e}")
             if errors == "raise":
                 raise e
             return False
-        log(f"Table deleted: {table_id}")
+        log(f"Table deleted: {self.table_id}")
         return True
 
     def delete_dataset(self, errors="raise"):
@@ -263,14 +262,14 @@ class BigQuery:
 
 if __name__ == "__main__":
     # Example usage
-    print(BigQuery(dataset="clean").ls())
+    print(BigQuery().ls())  # List all datasets
+    print(BigQuery(dataset="clean").ls())  # List all tables in the "clean" dataset
     BigQuery("clean2.new_table").create_table(
         schema=[
             bigquery.SchemaField("name", "STRING"),
             bigquery.SchemaField("age", "INTEGER"),
         ]
     )
-    exit()
     print(BigQuery(dataset="clean").ls())
     BigQuery("clean2.new_table").delete()
     print(BigQuery(dataset="clean").ls())
