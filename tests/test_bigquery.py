@@ -49,7 +49,7 @@ def delete_dataset(dataset_id):
         pass
 
 
-# Tests
+# # Tests
 def test_BigQuery_init():
     bq = BigQuery("project.dataset.table")  # Testing
     assert bq.project == "project"
@@ -167,3 +167,57 @@ def test_all_BQ():
     assert success5
     assert success6
     assert success7
+
+
+def test_sql_builder():
+    from gcp_tools.bigquery import SQLBuilder
+
+    sql_builder = SQLBuilder("clean2.new_table")
+
+    query1, params1 = sql_builder.select("name").where([("age", ">", 25)]).build()
+    expected_query1 = "SELECT `name` FROM `clean2.new_table` WHERE `age` > @param_0"
+
+    query2, params2 = (
+        sql_builder.select("name")
+        .where([("age", ">", 25), ("age", "<", 35)])
+        .limit(10)
+        .build()
+    )
+    expected_query2 = "SELECT `name` FROM `clean2.new_table` WHERE `age` > @param_0 AND `age` < @param_1 LIMIT 10"
+
+    assert query1 == expected_query1
+    assert params1 == {"param_0": 25}
+    assert query2 == expected_query2
+    assert params2 == {"param_0": 25, "param_1": 35}
+
+
+def test_bq_read():
+    table_name = f"test_table_{uuid4().hex}"
+    dataset = f"test_dataset_{uuid4().hex}"
+    table_id = f"{dataset}.{table_name}"
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
+    BigQuery(table_id).create_table(data=df)  # Testing: table created & data correct
+    queried_df1 = BigQuery(table_id).read()
+    queried_df2 = BigQuery(table_id).read(limit=1)
+    queried_df3 = BigQuery(table_id).read(columns=["a"])
+    queried_df4 = BigQuery(table_id).read(columns=["a"], limit=1)
+    queried_df5 = BigQuery(table_id).read(columns=["a"], filters=[("a", ">", 1)])
+    queried_df6 = BigQuery(table_id).read(
+        columns=["a"], filters=[("a", ">", 1), ("b", ">", 5)]
+    )
+    success1 = df.equals(queried_df1)
+    success2 = df.head(1).equals(queried_df2)
+    success3 = df[["a"]].equals(queried_df3)
+    success4 = df[["a"]].head(1).equals(queried_df4)
+    success5 = df[df["a"] > 1][["a"]].reset_index(drop=True).equals(queried_df5)
+    success6 = (
+        df[(df["a"] > 1) & (df["b"] > 5)][["a"]]
+        .reset_index(drop=True)
+        .equals(queried_df6)
+    )
+    assert success1
+    assert success2
+    assert success3
+    assert success4
+    assert success5
+    assert success6
