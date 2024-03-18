@@ -61,7 +61,8 @@ class SQLBuilder:
         """
         Build a LIMIT clause.
         """
-        self.query_parts.append(f"LIMIT {limit}")
+        if limit is not None and isinstance(limit, int) and limit > 0:
+            self.query_parts.append(f"LIMIT {limit}")
         return self
 
     def _where(self, filters: list[tuple]) -> tuple:
@@ -174,11 +175,18 @@ class BigQuery:
         columns=None,
         filters=None,
         schema=None,
+        limit=None,
     ):
         """
         Reads entire table from BigQuery.
         """
-        sql, params = SQLBuilder(self.table_id).select(columns).where(filters).build()
+        sql, params = (
+            SQLBuilder(self.table_id)
+            .select(columns)
+            .where(filters)
+            .limit(limit)
+            .build()
+        )
         return self.query(
             sql=sql,
             job_config=job_config,
