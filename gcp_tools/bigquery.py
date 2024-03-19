@@ -362,7 +362,7 @@ class BigQuery:
             if errors == "raise":
                 raise e
             return False
-        log(f"Table deleted: {self.table_id}")
+        log(f"Table deleted: BigQuery/{self.table_id}")
         return True
 
     def delete_dataset(self, errors="raise"):
@@ -380,7 +380,7 @@ class BigQuery:
             if errors == "raise":
                 raise e
             return False
-        log(f"Dataset deleted: {dataset_id}")
+        log(f"Dataset deleted: BigQuery/{dataset_id}")
         return True
 
     def delete(self, errors="raise"):

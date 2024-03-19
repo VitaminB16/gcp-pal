@@ -217,7 +217,7 @@ class Firestore:
             self._delete_collection(ref)
         else:
             raise ValueError("Unsupported Firestore reference type.")
-        print(f"Deleted {ref_type} from Firestore: {self.path}")
+        log(f"{ref_type} deleted: Firestore/{self.path}")
         return True
 
     def _delete_document(self, doc_ref):
