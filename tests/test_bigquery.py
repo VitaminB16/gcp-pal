@@ -8,7 +8,7 @@ from gcp_tools import BigQuery
 
 # Basic utils
 def list_tables(dataset):
-    bq = bigquery.Client()
+    bq = bigquery.Client(location="europe-west2")
     try:
         tables = list(bq.list_tables(dataset))
     except Exception as e:
@@ -18,7 +18,7 @@ def list_tables(dataset):
 
 
 def list_datasets():
-    bq = bigquery.Client()
+    bq = bigquery.Client(location="europe-west2")
     datasets = list(bq.list_datasets())
     dataset_ids = [dataset.dataset_id for dataset in datasets]
     return dataset_ids
@@ -34,7 +34,7 @@ def dataset_exists(dataset_id):
 
 
 def delete_table(table_id):
-    bq = bigquery.Client()
+    bq = bigquery.Client(location="europe-west2")
     try:
         bq.delete_table(table_id)
     except:
@@ -42,14 +42,14 @@ def delete_table(table_id):
 
 
 def delete_dataset(dataset_id):
-    bq = bigquery.Client()
+    bq = bigquery.Client(location="europe-west2")
     try:
         bq.delete_dataset(dataset_id, delete_contents=True)
     except:
         pass
 
 
-# # Tests
+# Tests
 def test_BigQuery_init():
     bq = BigQuery("project.dataset.table")  # Testing
     assert bq.project == "project"
@@ -97,8 +97,7 @@ def test_delete_table():
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
-    bq = bigquery.Client()
-    bq.create_table(table_id, exists_ok=True)
+    BigQuery(table_id).create_table()  # Testing: table created
     success1 = table_exists(table_id)
     BigQuery(table_id).delete_table()  # Testing: table deleted
     success2 = not table_exists(table_id)
@@ -108,7 +107,7 @@ def test_delete_table():
 
 def test_delete_dataset():
     dataset = f"test_dataset_{uuid4().hex}"
-    bq = bigquery.Client()
+    bq = bigquery.Client(location="europe-west2")
     bq.create_dataset(dataset)
     success1 = dataset in list_datasets()
     BigQuery(dataset=dataset).delete_dataset()  # Testing: dataset deleted
