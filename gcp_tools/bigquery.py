@@ -112,12 +112,15 @@ class BigQuery:
 
     _clients = {}
 
-    def __init__(self, table=None, dataset=None, project=None):
+    def __init__(self, table=None, dataset=None, project=None, location="europe-west2"):
         """
         Initializes the BigQuery client.
 
         Args:
+        - table (str): Table or table ID for the BigQuery service.
+        - dataset (str): Dataset or dataset ID for the BigQuery service.
         - project (str): Project ID for the BigQuery service.
+        - location (str): Location for the BigQuery service (default: "europe-west2").
 
         Examples:
         - BigQuery().query("SELECT * FROM `project.dataset.table`") -> Executes a query and returns the results.
@@ -126,6 +129,7 @@ class BigQuery:
         """
         self.table = table
         self.dataset = dataset
+        self.location = location
         self.project = project or os.environ.get("PROJECT") or google_auth_default()[1]
         try:
             # E.g. BigQuery("project.dataset.table")
@@ -151,7 +155,7 @@ class BigQuery:
         if self.project in BigQuery._clients:
             self.client = BigQuery._clients[self.project]
         else:
-            self.client = bigquery.Client(project=self.project, location="europe-west2")
+            self.client = bigquery.Client(project=self.project, location=self.location)
             BigQuery._clients[self.project] = self.client
 
     def query(self, sql, job_config=None, to_dataframe=True, params=None):
@@ -246,7 +250,12 @@ class BigQuery:
         if is_dataframe(data):
             from pandas_gbq import to_gbq
 
-            return to_gbq(data, destination_table=self.table_id, if_exists="append")
+            return to_gbq(
+                data,
+                destination_table=self.table_id,
+                if_exists="append",
+                location=self.location,
+            )
 
         if not schema and isinstance(data, list):
             table = self.client.get_table(self.table_id)  # Make sure the table exists
@@ -280,7 +289,12 @@ class BigQuery:
             from pandas_gbq import to_gbq
 
             if_exists = "replace" if exists_ok else "fail"
-            return to_gbq(data, destination_table=self.table_id, if_exists=if_exists)
+            return to_gbq(
+                data,
+                destination_table=self.table_id,
+                if_exists=if_exists,
+                location=self.location,
+            )
 
         table = bigquery.Table(self.table_id, schema=schema)
         table = self.client.create_table(table, exists_ok=exists_ok)
