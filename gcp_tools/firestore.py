@@ -13,6 +13,8 @@ class Firestore:
     Class for operating Firestore
     """
 
+    _clients = {}
+
     def __init__(self, path=None, project=None):
         """
         Args:
@@ -26,8 +28,14 @@ class Firestore:
         - Firestore("gs://project/bucket/path").delete() -> Delete from Firestore "bucket/path"
         """
         self.project = project or os.getenv("PROJECT")
-        self.client = firestore.Client(self.project)
         self.path = path
+
+        # Only initialize the client once per project
+        if self.project in Firestore._clients:
+            self.client = Firestore._clients[self.project]
+        else:
+            self.client = firestore.Client(self.project)
+            Firestore._clients[self.project] = self.client
 
     def _parse_path(self, method="get"):
         """

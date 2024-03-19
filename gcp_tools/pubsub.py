@@ -14,6 +14,8 @@ class PubSub:
     - PubSub("topic").publish({"key": "value"}) -> Publish {"key": "value"} to "topic"
     """
 
+    _clients = {}
+
     def __init__(self, topic: str, project=None):
         """
         Args:
@@ -21,8 +23,15 @@ class PubSub:
         - project (str): Project ID
         """
         self.topic_id = topic
-        self.publisher = pubsub_v1.PublisherClient()
         self.project = project or google.auth.default()[1]
+
+        # Initialize the publisher client only once per project
+        if self.project in PubSub._clients:
+            self.publisher = PubSub._clients[self.project]
+        else:
+            self.publisher = pubsub_v1.PublisherClient()
+            PubSub._clients[self.project] = self.publisher
+
         self.topic_path = self.publisher.topic_path(self.project, topic)
 
     def publish(self, data) -> None:
