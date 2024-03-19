@@ -204,7 +204,7 @@ To create an object (dataset or table) within a BigQuery project, initialize the
 ```python
 BigQuery(dataset="new-dataset").create()
 # Output: Dataset "new-dataset" created
-BigQuery(table="new-dataset2.new-table").create(schema=schema) 
+BigQuery("new-dataset2.new-table").create(schema=schema) 
 # Output: Dataset "new-dataset2" created, table "new-dataset2.new-table" created
 ```
 
@@ -215,7 +215,7 @@ df = pd.DataFrame({
     "field1": ["value1"],
     "field2": ["value2"]
 })
-BigQuery(table="new-dataset3.new-table").create(data=df)
+BigQuery("new-dataset3.new-table").create(data=df)
 # Output: Dataset "new-dataset3" created, table "new-dataset3.new-table" created, data inserted
 ```
 
@@ -226,6 +226,45 @@ Deleting objects is similar to creating them, but you use the `delete` method in
 ```python
 BigQuery(dataset="dataset").delete()
 # Output: Dataset "dataset" and all its tables deleted
-BigQuery(table="dataset.table").delete()
+BigQuery("dataset.table").delete()
 # Output: Table "dataset.table" deleted
 ```
+
+### Querying data
+
+To read data from a BigQuery table, use the `query` method:
+
+```python
+query = "SELECT * FROM dataset.table"
+data = BigQuery().query(query)
+print(data)
+# Output: [{'field1': 'value1', 'field2': 'value2'}]
+```
+
+Alternatively, there is a simple read method to read the data from a table with the given `columns`, `filters` and `limit`:
+
+```python
+data = BigQuery("dataset.table").read(
+    columns=["field1"],
+    filters=[("field1", "=", "value1")],
+    limit=1,
+)
+print(data)
+# Output: pd.DataFrame({'field1': ['value1']})
+```
+
+By default, the `read` method returns a Pandas DataFrame, but you can also get the data as a list of dictionaries by setting the `to_dataframe` parameter to `False`.
+
+### Inserting data
+
+To insert data into a BigQuery table, use the `insert` method:
+
+```python
+data = {
+    "field1": "value1",
+    "field2": "value2"
+}
+BigQuery("dataset.table").insert(data)
+# Output: Data inserted
+```
+
