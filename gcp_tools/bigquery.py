@@ -6,7 +6,7 @@ from google.auth import default as google_auth_default
 from google.api_core.exceptions import NotFound as NotFoundError
 
 from gcp_tools.utils import log, is_dataframe
-from gcp_tools.schema import dict_to_bigquery_schema, infer_schema
+from gcp_tools.schema import dict_to_bigquery_fields, infer_schema
 
 
 class SQLBuilder:
@@ -319,7 +319,7 @@ class BigQuery:
                 location=self.location,
             )
         if isinstance(schema, dict):
-            schema = dict_to_bigquery_schema(schema)
+            schema = dict_to_bigquery_fields(schema)
         table = bigquery.Table(self.table_id, schema=schema)
         table = self.client.create_table(table, exists_ok=exists_ok)
         log(f"Table created: {self.table_id}")

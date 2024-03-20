@@ -23,7 +23,7 @@ def dtype_str_to_type(dtype_str):
     return python_types.get(dtype_str, dtype_str)
 
 
-def dict_to_bigquery_schema(schema_dict):
+def dict_to_bigquery_fields(schema_dict):
     """
     Convert a dictionary to a BigQuery schema.
 
@@ -216,7 +216,7 @@ class Schema:
         Returns:
         - `Schema`: The Schema object with BigQuery `schema` atribute.
         """
-        self.schema = dict_to_bigquery_schema(self.schema)
+        self.schema = dict_to_bigquery_fields(self.schema)
         self.schema_type = "bigquery"
         return self
 
@@ -234,7 +234,8 @@ class Schema:
 
 if __name__ == "__main__":
     d = {"a": [1, 2, 3], "b": ["a", "b", "c"], "c": [1, 2, 3]}
-    print(infer_schema(d))
+    inferred_schema = infer_schema(d)
+    print(Schema(inferred_schema))
     exit()
     schema = {
         "a": float,
