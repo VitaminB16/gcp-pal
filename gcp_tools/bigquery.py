@@ -5,7 +5,7 @@ from google.cloud import bigquery
 from google.auth import default as google_auth_default
 from google.api_core.exceptions import NotFound as NotFoundError
 
-from gcp_tools.utils import log, enforce_schema, is_dataframe
+from gcp_tools.utils import log, enforce_schema, is_dataframe, dict_to_bigquery_schema
 
 
 class SQLBuilder:
@@ -295,7 +295,8 @@ class BigQuery:
                 if_exists=if_exists,
                 location=self.location,
             )
-
+        if isinstance(schema, dict):
+            schema = dict_to_bigquery_schema(schema)
         table = bigquery.Table(self.table_id, schema=schema)
         table = self.client.create_table(table, exists_ok=exists_ok)
         log(f"Table created: {self.table_id}")
@@ -307,13 +308,14 @@ class BigQuery:
         Creates a new BigQuery table.
 
         Args:
-        - schema (list of bigquery.SchemaField): Schema definition for the new table.
+        - schema (list of bigquery.SchemaField or dict): The schema definition for the new table.
 
         Returns:
         - The created bigquery.Table object.
 
         Examples:
         - schema = [bigquery.SchemaField("name", "STRING"), bigquery.SchemaField("age", "INTEGER")]
+        - or schema = {"name": "STRING", "age": "INTEGER"}
         - BigQuery().create_table("new_dataset.new_table", schema)
         """
         try:
@@ -434,10 +436,81 @@ class BigQuery:
         else:
             return self.list_datasets()
 
+    def create_snapshot(self, snapshot_name: str):
+        """
+        Creates a snapshot of a BigQuery table.
+
+        Args:
+        - snapshot_name (str): The name of the snapshot.
+
+        Returns:
+        - True if successful.
+        """
+        success = self.client.create_snapshot(snapshot_name, self.table_id)
+        log(f"Snapshot created: {snapshot_name}")
+        return success
+
+    def get_table(self):
+        """
+        Get the BigQuery table object.
+
+        Returns:
+        - The bigquery.Table object.
+        """
+        return self.client.get_table(self.table_id)
+
+    def get_dataset(self):
+        """
+        Get the BigQuery dataset object.
+
+        Returns:
+        - The bigquery.Dataset object.
+        """
+        return self.client.get_dataset(self.dataset_id)
+
+    def get(self):
+        """
+        Get the BigQuery dataset or table object.
+
+        Returns:
+        - The bigquery.Dataset or bigquery.Table object.
+        """
+        if self.table:
+            return self.get_table()
+        else:
+            return self.get_dataset()
+
+    def schema(self):
+        """
+        Get the schema of the BigQuery table.
+
+        Returns:
+        - tuple(bigquery.SchemaField): The schema of the table (column definitions).
+        """
+        return self.get_table().schema
+
+    def set_schema(self, schema):
+        """
+        Set the schema of the BigQuery table.
+
+        Args:
+        - schema (list of bigquery.SchemaField or dict): The schema to set.
+
+        Returns:
+        - The updated bigquery.Table object.
+        """
+        if isinstance(schema, dict):
+            schema = dict_to_bigquery_schema(schema)
+        table = self.get_table()
+        table.schema = schema
+        return self.client.update_table(table, ["schema"])
+
 
 if __name__ == "__main__":
     # Example usage
-    dataset = "test"
+    dataset = "clean"
+    print(BigQuery().ls())
+    print(BigQuery(dataset=dataset).get_dataset().dataset_id)
     BigQuery(f"{dataset}.new_table1").create_table(
         schema=[
             bigquery.SchemaField("name", "STRING"),
