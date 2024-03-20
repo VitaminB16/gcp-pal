@@ -19,6 +19,12 @@ def dtype_str_to_type(dtype_str):
     """
     Map a string representation of a dtype to its corresponding Python type
     or return the string if it's a Pandas-specific type.
+
+    Args:
+    - dtype_str (str): The string representation of the dtype.
+
+    Returns:
+    - type: The Python type corresponding to the dtype string.
     """
     python_types = {
         "int": int,
@@ -29,6 +35,25 @@ def dtype_str_to_type(dtype_str):
         "bool": bool,
     }
     return python_types.get(dtype_str, dtype_str)
+
+
+def dict_to_bigquery_schema(schema_dict):
+    """
+    Convert a dictionary to a BigQuery schema.
+
+    Args:
+    - schema_dict (dict): The dictionary to convert.
+
+    Returns:
+    - list[bigquery.SchemaField]: The BigQuery schema.
+    """
+    from google.cloud import bigquery
+
+    schema = []
+    for col, col_type in schema_dict.items():
+        schema.append(bigquery.SchemaField(col, col_type))
+
+    return schema
 
 
 def force_list(x):
@@ -118,9 +143,11 @@ def enforce_schema_on_list(lst, schema):
 def enforce_one_schema(data, col_schema):
     """
     Enforce a schema on a dataframe column or a list of data.
+
     Args:
     - data (Series|List): The data to enforce the schema on.
     - col_schema (type|dict|callable|list): The schema to enforce.
+
     Returns:
     - Series|List: The data with the schema enforced.
     """
@@ -148,12 +175,14 @@ def enforce_one_schema(data, col_schema):
 
 def enforce_schema(df, schema={}, dtypes={}, errors="raise"):
     """
-    Enforce a schema on a dataframe or dictionary
+    Enforce a schema on a dataframe or dictionary.
+
     Args:
     - df (DataFrame|dict): The data to enforce the schema on.
     - schema (dict): The schema to enforce.
     - dtypes (dict): The object types to enforce. The schema will override these.
     - errors (str): How to handle errors.
+
     Returns:
     - DataFrame|dict: The data with the schema enforced.
     """
