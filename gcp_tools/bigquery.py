@@ -5,7 +5,8 @@ from google.cloud import bigquery
 from google.auth import default as google_auth_default
 from google.api_core.exceptions import NotFound as NotFoundError
 
-from gcp_tools.utils import log, enforce_schema, is_dataframe, dict_to_bigquery_schema
+from gcp_tools.utils import log, is_dataframe
+from gcp_tools.schema import dict_to_bigquery_schema, infer_schema
 
 
 class SQLBuilder:
@@ -275,7 +276,28 @@ class BigQuery:
             log(f"Errors occurred while inserting data into {self.table}: {errors}")
             return False
 
-    def _create_table(self, schema=None, data=None, exists_ok=True):
+    def write(self, data, schema=None):
+        """
+        Writes data to a BigQuery table. If the table does not exist, it will be created. If the table exists, the data will be appended.
+
+        Args:
+        - data (list of dicts | pandas.DataFrame): The data to insert.
+        - schema (list of bigquery.SchemaField): Optional schema definition. Required if the table does not exist.
+
+        Returns:
+        - True if successful.
+        """
+        if is_dataframe(data):
+            self._create_table(data, schema=schema, exists_ok=True, if_exists="append")
+            return True
+
+        if isinstance(data, dict):
+            data = [data]
+
+        if not schema:
+            schema = infer_schema(data)
+
+    def _create_table(self, data=None, schema=None, exists_ok=True, if_exists=None):
         """
         Routine for creating a new BigQuery table.
 
@@ -288,7 +310,8 @@ class BigQuery:
         if is_dataframe(data):
             from pandas_gbq import to_gbq
 
-            if_exists = "replace" if exists_ok else "fail"
+            if if_exists is None:
+                if_exists = "replace" if exists_ok else "fail"
             return to_gbq(
                 data,
                 destination_table=self.table_id,
@@ -485,7 +508,7 @@ class BigQuery:
         Get the schema of the BigQuery table.
 
         Returns:
-        - tuple(bigquery.SchemaField): The schema of the table (column definitions).
+        - tuple[bigquery.SchemaField]: The schema of the table (column definitions).
         """
         return self.get_table().schema
 

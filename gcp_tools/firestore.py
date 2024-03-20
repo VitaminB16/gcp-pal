@@ -5,7 +5,8 @@ import json
 import concurrent.futures
 from google.cloud import firestore
 
-from gcp_tools.utils import log, is_dataframe, enforce_schema
+from gcp_tools.schema import enforce_schema
+from gcp_tools.utils import log, is_dataframe
 
 
 class Firestore:
