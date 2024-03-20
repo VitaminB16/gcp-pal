@@ -220,3 +220,122 @@ def test_bq_read():
     assert success4
     assert success5
     assert success6
+
+
+def test_get_table():
+    table_name = f"test_table_{uuid4().hex}"
+    dataset = f"test_dataset_{uuid4().hex}"
+    table_id = f"{dataset}.{table_name}"
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
+    BigQuery(table_id).create_table(data=df)
+    table_ref = BigQuery(table_id).get_table()
+    success1 = table_ref.table_id == table_name
+    success2 = table_ref.dataset_id == dataset
+    success3 = table_ref.num_rows == 3
+    success4 = table_ref.num_bytes > 0
+    delete_dataset(dataset)
+    assert success1
+    assert success2
+    assert success3
+    assert success4
+
+
+def test_get_dataset():
+    dataset = f"test_dataset_{uuid4().hex}"
+    bq = bigquery.Client(location="europe-west2")
+    bq.create_dataset(dataset)
+    dataset_ref = BigQuery(dataset=dataset).get_dataset()
+    print(dataset_ref.__dict__)
+    success = dataset_ref.dataset_id == dataset
+    delete_dataset(dataset_ref)
+    assert success
+
+
+def test_get():
+    table_name = f"test_table_{uuid4().hex}"
+    dataset = f"test_dataset_{uuid4().hex}"
+    table_id = f"{dataset}.{table_name}"
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
+    BigQuery(table_id).create_table(data=df)
+
+    table_ref = BigQuery(table_id).get()  # Testing: get_table
+    success1 = table_ref.table_id == table_name
+    success2 = table_ref.dataset_id == dataset
+    success3 = table_ref.num_rows == 3
+    success4 = table_ref.num_bytes > 0
+
+    dataset_ref = BigQuery(dataset=dataset).get()  # Testing: get_dataset
+    success5 = dataset_ref.dataset_id == dataset
+
+    delete_dataset(dataset)
+    assert success1
+    assert success2
+    assert success3
+    assert success4
+    assert success5
+
+
+def test_schema():
+    table_name = f"test_table_{uuid4().hex}"
+    dataset = f"test_dataset_{uuid4().hex}"
+    table_id = f"{dataset}.{table_name}"
+    df = pd.DataFrame(
+        {"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]}
+    ).convert_dtypes()
+    BigQuery(table_id).create_table(data=df)
+    schema_field = BigQuery(table_id).schema()
+    success1 = schema_field[0].name == "a"
+    success2 = schema_field[1].name == "b"
+    success3 = schema_field[2].name == "c"
+    success4 = schema_field[0].field_type == "INTEGER"
+    success5 = schema_field[1].field_type == "FLOAT"
+    success6 = schema_field[2].field_type == "STRING"
+    success7 = len(schema_field) == 3
+
+    delete_dataset(dataset)
+    assert success1
+    assert success2
+    assert success3
+    assert success4
+    assert success5
+    assert success6
+    assert success7
+
+
+def test_set_schema():
+    success = {}
+    table_name = f"test_table_{uuid4().hex}"
+    dataset = f"test_dataset_{uuid4().hex}"
+    table_id = f"{dataset}.{table_name}"
+    BigQuery(table_id).create_table()
+    schema_before = [
+        bigquery.SchemaField("a", "INTEGER"),
+        bigquery.SchemaField("b", "INTEGER"),
+    ]
+    BigQuery(table_id).set_schema(schema_before)
+    schema_field = BigQuery(table_id).schema()
+    success[0] = schema_field[0].name == "a"
+    success[1] = schema_field[1].name == "b"
+    success[2] = schema_field[0].field_type == "INTEGER"
+    success[3] = schema_field[1].field_type == "INTEGER"
+    success[4] = len(schema_field) == 2
+
+    schema_after = [
+        bigquery.SchemaField("a", "INTEGER"),
+        bigquery.SchemaField("b", "INTEGER"),
+        bigquery.SchemaField("c", "STRING"),
+    ]
+    BigQuery(table_id).set_schema(schema_after)
+    schema_field = BigQuery(table_id).schema()
+    success[5] = schema_field[0].name == "a"
+    success[6] = schema_field[1].name == "b"
+    success[7] = schema_field[2].name == "c"
+    success[8] = schema_field[0].field_type == "INTEGER"
+    success[9] = schema_field[1].field_type == "INTEGER"
+    success[10] = schema_field[2].field_type == "STRING"
+    success[11] = len(schema_field) == 3
+
+    delete_dataset(dataset)
+
+    failed = [k for k, v in success.items() if not v]
+    assert not failed
