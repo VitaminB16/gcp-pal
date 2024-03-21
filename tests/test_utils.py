@@ -1,5 +1,5 @@
 import pandas as pd
-from gcp_tools.utils import is_series, force_list, is_dataframe
+from gcp_tools.utils import is_series, force_list, is_dataframe, reverse_dict
 
 
 def test_is_series():
@@ -37,3 +37,10 @@ def test_force_list():
     assert force_list(df["a"]) == [df["a"]]
     assert force_list(df) == [df]
     assert force_list({"a": [1, 2, 3]}.keys()) == {"a": [1, 2, 3]}.keys()
+
+
+def test_reverse_dict():
+    d = {"a": 1, "b": 2, "c": 3}
+    assert reverse_dict(d) == {1: "a", 2: "b", 3: "c"}
+    d = {}
+    assert reverse_dict(d) == {}
