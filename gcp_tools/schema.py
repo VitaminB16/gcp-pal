@@ -1,4 +1,111 @@
-from gcp_tools.utils import force_list, is_series, is_dataframe, log
+from gcp_tools.utils import force_list, is_series, is_dataframe, log, reverse_dict
+
+
+def get_equivalent_schema_dict(target, direction="forward"):
+    """
+    Get the equivalent schema dictionary in the target system.
+
+    Args:
+    - target (str): The target system.
+
+    Returns:
+    - dict: The equivalent schema dictionary in the target system.
+    """
+    if target == "bigquery":
+        return {
+            "int": "INTEGER",
+            "float": "FLOAT",
+            "str": "STRING",
+            "bool": "BOOLEAN",
+            "timestamp": "TIMESTAMP",
+            "date": "DATE",
+            "time": "TIME",
+            "datetime": "DATETIME",
+            "bytes": "BYTES",
+            "array": "ARRAY",
+            "struct": "STRUCT",
+        }
+    elif target == "str":
+        return {
+            "int": "int",
+            "float": "float",
+            "str": "str",
+            "bool": "bool",
+            "timestamp": "timestamp",
+            "date": "date",
+            "time": "time",
+            "datetime": "datetime",
+            "bytes": "bytes",
+            "array": "array",
+            "struct": "struct",
+        }
+    elif target == "python":
+        from pandas import Timestamp
+
+        return {
+            "int": int,
+            "float": float,
+            "str": str,
+            "bool": bool,
+            "timestamp": Timestamp,
+            "date": Timestamp,
+            "time": Timestamp,
+            "datetime": Timestamp,
+            "bytes": bytes,
+            "array": list,
+            "struct": dict,
+        }
+    elif target == "pandas":
+        return {
+            "int": "int64",
+            "float": "float64",
+            "str": "object",
+            "bool": "bool",
+            "timestamp": "datetime64[ns]",
+            "date": "datetime64[ns]",
+            "time": "datetime64[ns]",
+            "datetime": "datetime64[ns]",
+            "bytes": "object",
+            "array": "object",
+            "struct": "object",
+        }
+    elif target == "pyarrow":
+        return {
+            "int": "int64",
+            "float": "float64",
+            "str": "string",
+            "bool": "bool",
+            "timestamp": "timestamp[ns]",
+            "date": "date32",
+            "time": "time64[ns]",
+            "datetime": "timestamp[ns]",
+            "bytes": "binary",
+            "array": "list",
+            "struct": "struct",
+        }
+    else:
+        raise ValueError(f"Unsupported target system: {target}")
+
+
+def get_equivalent_schema_type(schema_type, target="bigquery", direction="forward"):
+    """
+    Get the equivalent schema type in the target system.
+
+    Args:
+    - schema_type (str): The schema type.
+    - target (str): The target system.
+    - direction (str): The direction of the conversion. This is used for converting between systems.
+
+    Returns:
+    - str: The equivalent schema type in the target system.
+    """
+    schema_dict = get_equivalent_schema_dict(target, direction)
+    if direction == "reverse":
+        schema_dict = reverse_dict(schema_dict)
+    if schema_type in schema_dict:
+        return schema_dict[schema_type]
+    else:
+        raise ValueError(f"Unsupported schema type: {schema_type}")
 
 
 def dtype_str_to_type(dtype_str):

@@ -58,3 +58,16 @@ def log(*args, **kwargs):
     else:
         # If running locally, use a normal print
         print(log_data["message"], **kwargs)
+
+
+def reverse_dict(d):
+    """
+    Reverse a dictionary. If the dictionary is not one-to-one, the last value in the dictionary will be the one that is kept.
+
+    Args:
+    - d (dict): The dictionary to reverse.
+
+    Returns:
+    - dict: The reversed dictionary.
+    """
+    return {v: k for k, v in d.items()}
