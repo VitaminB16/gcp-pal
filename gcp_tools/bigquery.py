@@ -132,17 +132,20 @@ class BigQuery:
         self.dataset = dataset
         self.location = location
         self.project = project or os.environ.get("PROJECT") or google_auth_default()[1]
+        if not project:
+            try:
+                # E.g. BigQuery(table="project.dataset.table")
+                self.project, self.dataset, self.table = table.split(".")
+            except (ValueError, AttributeError):
+                pass
         try:
-            # E.g. BigQuery("project.dataset.table")
-            self.project, self.dataset, self.table = table.split(".")
-        except (ValueError, AttributeError):
-            pass
-        try:
-            # E.g. BigQuery("dataset.table", project="project")
+            # E.g. BigQuery(table="dataset.table", project="project")
             self.dataset, self.table = self.table.split(".")
         except (ValueError, AttributeError):
             pass
-        if self.dataset and "." in self.dataset:
+        if self.table and "." in self.table:
+            raise ValueError("Table name cannot contain '.'")
+        if self.dataset and "." in self.dataset and not project:
             # E.g. BigQuery(dataset="project.dataset")
             self.project, self.dataset = self.dataset.split(".", 1)
 
@@ -153,6 +156,10 @@ class BigQuery:
         if self.project and self.dataset:
             self.dataset_id = f"{self.project}.{self.dataset}"
 
+        if not self.project:
+            raise ValueError("Project ID not specified.")
+        if not self.dataset and self.table:
+            raise ValueError("Table name specified without dataset.")
         if self.project in BigQuery._clients:
             self.client = BigQuery._clients[self.project]
         else:

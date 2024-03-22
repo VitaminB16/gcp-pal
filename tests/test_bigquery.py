@@ -63,6 +63,19 @@ def test_BigQuery_init():
     assert bq.project == "project"
     assert bq.dataset == "dataset"
     assert bq.table == "table"
+    failed_successfully = {}
+    try:
+        bq = BigQuery("dataset.tablename1.tablename2", project="project")  # Testing
+        failed_successfully[0] = False
+    except ValueError:
+        failed_successfully[0] = True
+    try:
+        bq = BigQuery("table", project="project")  # Testing
+        failed_successfully[1] = False
+    except ValueError:
+        failed_successfully[1] = True
+    failed = [k for k, v in failed_successfully.items() if not v]
+    assert not failed
 
 
 def test_create_table():
