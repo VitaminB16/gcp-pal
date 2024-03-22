@@ -3,12 +3,13 @@ TODO:
 [x] Firestore Module
 [x] PubSub Module
 [x] Request Module
+[ ] BigQuery Module
 [ ] Storage Module
 [ ] Parquet Module
-[ ] BigQuery Module
 [ ] Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module
 [ ] Logging Module
 [ ] Secret Manager Module
+[ ] Deploy to PyPi
 ...
 -->
 
@@ -26,6 +27,12 @@ Before you can start using the `gcp-tools` library with Firestore or any other G
 
 ```bash
 gcloud auth application-default login
+```
+
+And specify the project ID to be used as the default for all API requests:
+
+```bash
+gcloud config set project PROJECT_ID
 ```
 
 ---

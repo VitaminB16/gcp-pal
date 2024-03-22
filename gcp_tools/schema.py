@@ -1,7 +1,7 @@
 from gcp_tools.utils import force_list, is_series, is_dataframe, log, reverse_dict
 
 
-def get_equivalent_schema_dict(target, direction="forward"):
+def get_equivalent_schema_dict(target):
     """
     Get the equivalent schema dictionary in the target system.
 
