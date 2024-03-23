@@ -1,3 +1,4 @@
+from datetime import datetime, date, time
 from gcp_tools.utils import force_list, is_series, is_dataframe, log, reverse_dict
 
 
@@ -40,17 +41,15 @@ def get_equivalent_schema_dict(target):
             "struct": "struct",
         }
     elif target == "python":
-        from pandas import Timestamp
-
         return {
             "int": int,
             "float": float,
             "str": str,
             "bool": bool,
-            "timestamp": Timestamp,
-            "date": Timestamp,
-            "time": Timestamp,
-            "datetime": Timestamp,
+            "timestamp": datetime,
+            "date": date,
+            "time": time,
+            "datetime": datetime,
             "bytes": bytes,
             "array": list,
             "struct": dict,
@@ -108,6 +107,41 @@ def get_equivalent_schema_type(schema_type, target="bigquery", direction="forwar
         raise ValueError(f"Unsupported schema type: {schema_type}")
 
 
+def get_equivalent_schema(
+    schema, origin=None, target=None, schema_from=None, schema_to=None
+):
+    """
+    Get the equivalent schema in the target system.
+
+    Args:
+    - schema (dict): The schema to convert.
+    - origin (str): The origin system.
+    - target (str): The target system.
+
+    Returns:
+    - dict: The equivalent schema in the target system.
+    """
+    if origin is None:
+        origin = "str"
+    # In a parallel universe where Python is a functional language...
+    # origin -> target = (str -> origin) -> target = (origin <- str) -> target
+    equivalent_schema = {}
+    if schema_from is None:
+        schema_from = reverse_dict(get_equivalent_schema_dict(origin))
+    if schema_to is None:
+        schema_to = get_equivalent_schema_dict(target)
+    for col, col_type in schema.items():
+        if isinstance(col_type, dict):
+            type_to = get_equivalent_schema(
+                col_type, origin, target, schema_from, schema_to
+            )
+        else:
+            type_from = schema_from[col_type]
+            type_to = schema_to[type_from]
+        equivalent_schema[col] = type_to
+    return equivalent_schema
+
+
 def dtype_str_to_type(dtype_str):
     """
     Map a string representation of a dtype to its corresponding Python type
@@ -144,9 +178,72 @@ def dict_to_bigquery_fields(schema_dict):
 
     schema = []
     for col, col_type in schema_dict.items():
-        schema.append(bigquery.SchemaField(col, col_type))
+        if isinstance(col_type, dict):
+            schema.append(
+                bigquery.SchemaField(
+                    col, "RECORD", fields=dict_to_bigquery_fields(col_type)
+                )
+            )
+        else:
+            schema.append(bigquery.SchemaField(col, col_type))
 
     return schema
+
+
+def bigquery_fields_to_dict(schema_fields):
+    """
+    Convert BigQuery schema fields to a dictionary.
+
+    Args:
+    - schema_fields (list[bigquery.SchemaField]): The BigQuery schema fields.
+
+    Returns:
+    - dict: The dictionary representation of the schema.
+    """
+    schema_dict = {}
+    for field in schema_fields:
+        schema_dict[field.name] = field.field_type
+    return schema_dict
+
+
+def dict_to_pyarrow_fields(schema_dict):
+    """
+    Convert a dictionary to a PyArrow schema.
+
+    Args:
+    - schema_dict (dict): The dictionary to convert.
+
+    Returns:
+    - pyarrow.Schema: The PyArrow schema.
+    """
+    import pyarrow as pa
+
+    fields = []
+    for col, col_type in schema_dict.items():
+        if isinstance(col_type, dict):
+            fields.append(pa.field(col, pa.struct(dict_to_pyarrow_fields(col_type))))
+        elif isinstance(col_type, list):
+            fields.append(pa.field(col, pa.list_(dict_to_pyarrow_fields(col_type[0]))))
+        else:
+            fields.append(pa.field(col, col_type))
+    schema = pa.schema(fields)
+    return schema
+
+
+def pyarrow_fields_to_dict(schema_fields):
+    """
+    Convert PyArrow schema fields to a dictionary.
+
+    Args:
+    - schema_fields (pyarrow.Schema): The PyArrow schema.
+
+    Returns:
+    - dict: The dictionary representation of the schema.
+    """
+    schema_dict = {}
+    for field in schema_fields:
+        schema_dict[field.name] = field.type
+    return schema_dict
 
 
 def type_to_str(schema_dict):
@@ -176,7 +273,7 @@ def type_to_str(schema_dict):
 
 def ensure_types(df, types_dict):
     """
-    Ensure the types of the columns of the df
+    Ensure the types of the columns of the df.
     """
     for c, c_type in types_dict.items():
         if c in df.columns:
@@ -185,7 +282,9 @@ def ensure_types(df, types_dict):
 
 
 def enforce_schema_on_series(series, schema):
-    """Enforce a schema on a pandas Series."""
+    """
+    Enforce a schema on a pandas Series.
+    """
     if isinstance(schema, (type, str)):
         return series.astype(schema)
     elif isinstance(schema, type(lambda x: x)):
@@ -199,7 +298,9 @@ def enforce_schema_on_series(series, schema):
 
 
 def enforce_schema_on_list(lst, schema):
-    """Enforce a schema on a list."""
+    """
+    Enforce a schema on a list.
+    """
     if callable(schema):
         return [schema(x) for x in lst]
     elif isinstance(schema, dict):
@@ -290,9 +391,13 @@ def infer_schema(data):
             schema[col] = dtype_str_to_type(str(dtype))
     elif isinstance(data, dict):
         for col, values in data.items():
-            if values:
-                value = values[0]
-                if isinstance(value, (int, float)):
+            if isinstance(values, dict):
+                schema[col] = infer_schema(values)
+            elif values:
+                value = values[0] if isinstance(values, list) else values
+                if isinstance(value, int):
+                    schema[col] = int
+                elif isinstance(value, float):
                     schema[col] = float
                 elif isinstance(value, str):
                     schema[col] = str
@@ -308,40 +413,77 @@ class Schema:
     A class for for bridging the gap between different schema representations of similar data.
     """
 
-    def __init__(self, schema: dict = {}):
+    def __init__(self, schema: dict = {}, schema_type: str = "str"):
         self.input_schema = schema
         self.schema = schema
-        self.schema_type = "dict"
+        self.schema_type = schema_type
 
-    def bigquery(self) -> "Schema":
-        """
-        Convert a dictionary to a BigQuery schema.
-
-        Args:
-        - `schema_dict` (dict): The dictionary to convert.
-
-        Returns:
-        - `Schema`: The Schema object with BigQuery `schema` atribute.
-        """
-        self.schema = dict_to_bigquery_fields(self.schema)
-        self.schema_type = "bigquery"
+    def infer_schema(self) -> "Schema":
+        self.schema = infer_schema(self.input_schema)
+        self.schema_type = "python"
         return self
 
-    def str(self) -> "Schema":
-        """
-        Convert a dictionary to a string representation of the schema.
+    def bigquery(self) -> dict:
+        output_schema = get_equivalent_schema(self.schema, self.schema_type, "bigquery")
+        output_schema = dict_to_bigquery_fields(output_schema)
+        return output_schema
 
-        Returns:
-        - `Schema`: The Schema object with string `schema` atribute.
-        """
-        self.schema = type_to_str(self.schema)
-        self.schema_type = "str"
-        return self
+    def python(self) -> dict:
+        output_schema = get_equivalent_schema(self.schema, self.schema_type, "python")
+        return output_schema
+
+    def pandas(self) -> dict:
+        output_schema = get_equivalent_schema(self.schema, self.schema_type, "pandas")
+        return output_schema
+
+    def pyarrow(self) -> dict:
+        output_schema = get_equivalent_schema(self.schema, self.schema_type, "pyarrow")
+        output_schema = dict_to_pyarrow_fields(output_schema)
+        return output_schema
+
+    def str(self) -> str:
+        output_schema = type_to_str(self.schema)
+        return output_schema
 
 
 if __name__ == "__main__":
-    d = {"a": [1, 2, 3], "b": ["a", "b", "c"], "c": [1, 2, 3]}
+    data = {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1.0, 2.0, 3.0],
+        "date": [datetime.now() for _ in range(3)],
+        "nested": {"a": [1, 2, 3], "b": ["a", "b", "c"]},
+    }
+    inferred_schema = Schema(data).infer_schema()
+    python_schema = inferred_schema.python()
+    bigquery_schema = inferred_schema.bigquery()
+    str_schema = inferred_schema.str()
+    pyarrow_schema = inferred_schema.pyarrow()
+    print("Inferred schema:", inferred_schema.schema)
+    print("Python schema:", python_schema)
+    print("BigQuery schema:", bigquery_schema)
+    print("String schema:", str_schema)
+    print("PyArrow schema:", pyarrow_schema)
+    exit()
+
+
+if __name__ == "__main__":
+    from datetime import datetime
+
+    d = {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1, 2, 3],
+        "date": [datetime.now() for _ in range(3)],
+    }
+    print(d)
     inferred_schema = infer_schema(d)
+    print(inferred_schema)
+    bigquery_schema = get_equivalent_schema(inferred_schema, "python", "bigquery")
+    print(bigquery_schema)
+    bigquery_schema = Schema(inferred_schema, "python").bigquery()
+    print(bigquery_schema)
+    exit()
     print(Schema(inferred_schema))
     exit()
     schema = {
