@@ -447,14 +447,11 @@ class Schema:
 
 
 if __name__ == "__main__":
-    data = {
-        "a": [1, 2, 3],
-        "b": ["a", "b", "c"],
-        "c": [1.0, 2.0, 3.0],
-        "date": [datetime.now() for _ in range(3)],
-        "nested": {"a": [1, 2, 3], "b": ["a", "b", "c"]},
-    }
-    inferred_schema = Schema(data).infer_schema()
+    import pandas as pd
+
+    table_id = "test.test_table"
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]})
+    inferred_schema = Schema(df).infer_schema()
     python_schema = inferred_schema.python()
     bigquery_schema = inferred_schema.bigquery()
     str_schema = inferred_schema.str()

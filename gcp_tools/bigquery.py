@@ -6,7 +6,7 @@ from google.auth import default as google_auth_default
 from google.api_core.exceptions import NotFound as NotFoundError
 
 from gcp_tools.utils import log, is_dataframe
-from gcp_tools.schema import dict_to_bigquery_fields, infer_schema
+from gcp_tools.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
 
 
 class SQLBuilder:
@@ -296,13 +296,18 @@ class BigQuery:
         """
         if is_dataframe(data):
             self._create_table(data, schema=schema, exists_ok=True, if_exists="append")
+            log(f"DataFrame written to {self.table}, schema: {schema}")
             return True
 
         if isinstance(data, dict):
             data = [data]
 
         if not schema:
-            schema = infer_schema(data)
+            schema = Schema(data).infer_schema().bigquery()
+
+        success = self.insert(data, schema=schema)
+        log(f"Data written to {self.table}, schema: {schema}")
+        return success
 
     def _create_table(self, data=None, schema=None, exists_ok=True, if_exists=None):
         """
@@ -530,11 +535,26 @@ class BigQuery:
         - The updated bigquery.Table object.
         """
         if isinstance(schema, dict):
-            schema = dict_to_bigquery_schema(schema)
+            schema = dict_to_bigquery_fields(schema)
         table = self.get_table()
         table.schema = schema
         return self.client.update_table(table, ["schema"])
 
+
+if __name__ == "__main__":
+    import pandas as pd
+
+    table_id = "test.test_table"
+    df = pd.DataFrame(
+        {"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]}
+    ).convert_dtypes()
+    BigQuery(table_id).write(df)
+    queried_df = BigQuery(table_id).read()
+    print(df)
+    print(df.dtypes)
+    print(queried_df)
+    print(queried_df.dtypes)
+    exit()
 
 if __name__ == "__main__":
     # Example usage
