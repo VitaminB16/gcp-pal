@@ -352,3 +352,21 @@ def test_set_schema():
 
     failed = [k for k, v in success.items() if not v]
     assert not failed
+
+
+def test_write():
+    table_name = f"test_table_{uuid4().hex}"
+    dataset = f"test_dataset_{uuid4().hex}"
+    table_id = f"{dataset}.{table_name}"
+    df = pd.DataFrame(
+        {"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]}
+    ).convert_dtypes()
+    BigQuery(table_id).write(df)
+    queried_df = BigQuery(table_id).read()
+    print(df)
+    print(queried_df)
+    print(df.dtypes)
+    print(queried_df.dtypes)
+    success = df.equals(queried_df)
+    delete_dataset(dataset)
+    assert success
