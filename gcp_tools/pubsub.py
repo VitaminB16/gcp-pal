@@ -10,8 +10,8 @@ class PubSub:
     Class for pushing a payload to a topic
 
     Examples:
-    - PubSub("topic").publish("data") -> Publish "data" to "topic"
-    - PubSub("topic").publish({"key": "value"}) -> Publish {"key": "value"} to "topic"
+    - `PubSub("topic").publish("data")` -> Publish `"data"` to "topic"
+    - `PubSub("topic").publish({"key": "value"})` -> Publish `{"key": "value"}` to "topic"
     """
 
     _clients = {}

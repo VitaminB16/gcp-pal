@@ -12,8 +12,8 @@ class Request:
     Class for making authorized requests to a cloud run service.
 
     Examples:
-    - Request("https://[CLOUD_RUN_URL]").get() -> Get request to cloud run service
-    - Request("https://[CLOUD_RUN_URL]").post({"key": "value"}) -> Post request to cloud run service
+    - `Request("https://[CLOUD_RUN_URL]").get()` -> Get request to cloud run service
+    - `Request("https://[CLOUD_RUN_URL]").post({"key": "value"})` -> Post request to cloud run service
     """
 
     def __init__(self, url, project=None):

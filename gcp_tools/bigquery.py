@@ -124,9 +124,17 @@ class BigQuery:
         - location (str): Location for the BigQuery service (default: "europe-west2").
 
         Examples:
-        - BigQuery().query("SELECT * FROM `project.dataset.table`") -> Executes a query and returns the results.
-        - BigQuery("dataset.table").insert(data) -> Inserts data into the specified BigQuery table.
-        - BigQuery("dataset.new_table").create_table(schema=schema) -> Creates a new table with the specified schema.
+        - `BigQuery().query("SELECT * FROM project.dataset.table")` -> Executes a query and returns the results.
+        - `BigQuery("dataset.table").insert(data)` -> Inserts data into the specified BigQuery table.
+        - `BigQuery("dataset.new_table").create_table(schema=schema)` -> Creates a new table with the specified schema.
+
+        Storage-equivalent examples:
+        - `BigQuery("").ls()` -> Lists all datasets in the project.
+        - `BigQuery("dataset").ls()` -> Lists all tables in the specified dataset.
+        - `BigQuery("dataset.table").delete()` -> Deletes the specified table.
+        - `BigQuery("dataset").delete()` -> Deletes the specified dataset.
+        - `BigQuery("dataset.table").read()` -> Reads the entire table.
+        - `BigQuery("dataset.table").write(data)` -> Writes data to the specified table.
         """
         self.table = table
         self.dataset = dataset

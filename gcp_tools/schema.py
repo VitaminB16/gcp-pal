@@ -412,6 +412,20 @@ def infer_schema(data):
 class Schema:
     """
     A class for for bridging the gap between different schema representations of similar data.
+
+    Args:
+    - schema (dict): The schema to convert.
+    - schema_type (str): The schema type. Options: "str", "python", "pandas", "pyarrow".
+
+    Returns:
+    - Schema: The schema object.
+
+    Examples:
+    - `Schema({"a": "int", "b": "str"}, schema_type="str").bigquery()` -> BigQuery schema
+    - `Schema({"a": "int", "b": "str"}, schema_type="str").python()` -> Python schema
+    - `Schema({"a": "int", "b": "str"}, schema_type="str").pandas()` -> Pandas schema
+    - `Schema({"a": "int", "b": "str"}, schema_type="str").pyarrow()` -> PyArrow schema
+    - `Schema({"a": "int", "b": "str"}, schema_type="str").str()` -> String schema
     """
 
     def __init__(self, schema: dict = {}, schema_type: str = "str"):

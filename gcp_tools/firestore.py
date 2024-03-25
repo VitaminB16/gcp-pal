@@ -22,11 +22,13 @@ class Firestore:
         - path (str): Path to the Firestore document or collection
         - project (str): Project ID
 
-        Examples:
-        - Firestore("bucket/path").read() -> Read from Firestore "bucket/path"
-        - Firestore("gs://project/bucket/path").read() -> Read from Firestore "bucket/path"
-        - Firestore("gs://project/bucket/path").write(data) -> Write to Firestore "bucket/path"
-        - Firestore("gs://project/bucket/path").delete() -> Delete from Firestore "bucket/path"
+        Storage-equivalent examples:
+        - `Firestore().ls()` -> List all collections
+        - `Firestore("collection").ls()` -> List all documents in collection "collection"
+        - `Firestore("bucket/path").read()` -> Read from Firestore "bucket/path"
+        - `Firestore("gs://project/bucket/path").read()` -> Read from Firestore "bucket/path"
+        - `Firestore("gs://project/bucket/path").write(data)` -> Write to Firestore "bucket/path"
+        - `Firestore("gs://project/bucket/path").delete()` -> Delete from Firestore "bucket/path"
         """
         self.project = project or os.getenv("PROJECT") or get_default_project()
         self.path = path
