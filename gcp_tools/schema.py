@@ -160,6 +160,7 @@ def dtype_str_to_type(dtype_str):
         "float64": float,
         "str": str,
         "bool": bool,
+        "object": str,
     }
     return python_types.get(dtype_str, dtype_str)
 
@@ -417,6 +418,8 @@ class Schema:
         self.input_schema = schema
         self.schema = schema
         self.schema_type = schema_type
+        if is_dataframe(schema):
+            schema_type = "pandas"
 
     def infer_schema(self) -> "Schema":
         self.schema = infer_schema(self.input_schema)
@@ -451,7 +454,7 @@ if __name__ == "__main__":
 
     table_id = "test.test_table"
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]})
-    inferred_schema = Schema(df).infer_schema()
+    inferred_schema = Schema(df, schema_type="pandas").infer_schema()
     python_schema = inferred_schema.python()
     bigquery_schema = inferred_schema.bigquery()
     str_schema = inferred_schema.str()
@@ -462,31 +465,3 @@ if __name__ == "__main__":
     print("String schema:", str_schema)
     print("PyArrow schema:", pyarrow_schema)
     exit()
-
-
-if __name__ == "__main__":
-    from datetime import datetime
-
-    d = {
-        "a": [1, 2, 3],
-        "b": ["a", "b", "c"],
-        "c": [1, 2, 3],
-        "date": [datetime.now() for _ in range(3)],
-    }
-    print(d)
-    inferred_schema = infer_schema(d)
-    print(inferred_schema)
-    bigquery_schema = get_equivalent_schema(inferred_schema, "python", "bigquery")
-    print(bigquery_schema)
-    bigquery_schema = Schema(inferred_schema, "python").bigquery()
-    print(bigquery_schema)
-    exit()
-    print(Schema(inferred_schema))
-    exit()
-    schema = {
-        "a": float,
-        "b": lambda x: x.upper(),
-        "c": {1: "one", 2: "two", 3: "three"},
-    }
-    d = enforce_schema(d, schema)
-    print(d)

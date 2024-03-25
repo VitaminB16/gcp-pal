@@ -72,7 +72,7 @@ def test_infer_schema():
     pandas_schema = infer_schema(data)
     success[2] = pandas_schema == {
         "a": int,
-        "b": "object",
+        "b": str,
         "c": float,
         "date": "datetime64[ns]",
     }

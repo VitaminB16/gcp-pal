@@ -184,7 +184,7 @@ class BigQuery:
         output = self.client.query(sql, job_config=job_config)
         log(f"Query executed: {sql}")
         if to_dataframe:
-            output = output.to_dataframe()
+            output = output.to_dataframe().convert_dtypes()
         return output
 
     def read(
@@ -544,7 +544,7 @@ class BigQuery:
 if __name__ == "__main__":
     import pandas as pd
 
-    table_id = "test.test_table"
+    table_id = "test.test_table1"
     df = pd.DataFrame(
         {"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]}
     ).convert_dtypes()
