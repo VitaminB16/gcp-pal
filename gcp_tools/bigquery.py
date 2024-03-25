@@ -542,21 +542,6 @@ class BigQuery:
 
 
 if __name__ == "__main__":
-    import pandas as pd
-
-    table_id = "test.test_table1"
-    df = pd.DataFrame(
-        {"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]}
-    ).convert_dtypes()
-    BigQuery(table_id).write(df)
-    queried_df = BigQuery(table_id).read()
-    print(df)
-    print(df.dtypes)
-    print(queried_df)
-    print(queried_df.dtypes)
-    exit()
-
-if __name__ == "__main__":
     # Example usage
     dataset = "clean"
     print(BigQuery().ls())
