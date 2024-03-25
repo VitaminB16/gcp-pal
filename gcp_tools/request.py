@@ -33,6 +33,9 @@ class Request:
             "Authorization": f"Bearer {self.identity_token}",
             "Content-type": "application/json",
         }
+    
+    def __repr__(self):
+        return f"Request({self.url})"
 
     def get_identity_token(self):
         # Attempt to fetch an identity token for the given URL

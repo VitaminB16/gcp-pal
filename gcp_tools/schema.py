@@ -435,6 +435,9 @@ class Schema:
         if is_dataframe(schema):
             schema_type = "pandas"
 
+    def __repr__(self):
+        return f"Schema({self.schema})"
+
     def infer_schema(self) -> "Schema":
         self.schema = infer_schema(self.input_schema)
         self.schema_type = "python"

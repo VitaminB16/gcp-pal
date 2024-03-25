@@ -129,12 +129,12 @@ class BigQuery:
         - `BigQuery("dataset.new_table").create_table(schema=schema)` -> Creates a new table with the specified schema.
 
         Storage-equivalent examples:
-        - `BigQuery("").ls()` -> Lists all datasets in the project.
+        - `BigQuery().ls()` -> Lists all datasets in the project.
         - `BigQuery("dataset").ls()` -> Lists all tables in the specified dataset.
-        - `BigQuery("dataset.table").delete()` -> Deletes the specified table.
-        - `BigQuery("dataset").delete()` -> Deletes the specified dataset.
         - `BigQuery("dataset.table").read()` -> Reads the entire table.
         - `BigQuery("dataset.table").write(data)` -> Writes data to the specified table.
+        - `BigQuery("dataset.table").delete()` -> Deletes the specified table.
+        - `BigQuery("dataset").delete()` -> Deletes the specified dataset.
         """
         self.table = table
         self.dataset = dataset
@@ -158,8 +158,10 @@ class BigQuery:
             self.project, self.dataset = self.dataset.split(".", 1)
 
         # table_id is the full table ID, e.g. "project.dataset.table"
-        self.table_id = f"{self.dataset}.{self.table}"
-        if self.project:
+        self.table_id = None
+        if self.table:
+            self.table_id = f"{self.dataset}.{self.table}"
+        if self.project and self.table_id:
             self.table_id = f"{self.project}.{self.table_id}"
         if self.project and self.dataset:
             self.dataset_id = f"{self.project}.{self.dataset}"
@@ -173,6 +175,9 @@ class BigQuery:
         else:
             self.client = bigquery.Client(project=self.project, location=self.location)
             BigQuery._clients[self.project] = self.client
+
+    def __repr__(self):
+        return f"BigQuery({self.table_id})"
 
     def query(self, sql, job_config=None, to_dataframe=True, params=None):
         """

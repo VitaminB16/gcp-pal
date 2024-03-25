@@ -35,6 +35,9 @@ class Storage:
             self.fs = gcsfs.GCSFileSystem(project=self.project)
             Storage._clients[self.project] = self.fs
 
+    def __repr__(self):
+        return f"Storage({self.path})"
+
 
 if __name__ == "__main__":
     print(Storage("bucket_name").bucket_name == "bucket_name")

@@ -34,6 +34,9 @@ class PubSub:
 
         self.topic_path = self.publisher.topic_path(self.project, topic)
 
+    def __repr__(self):
+        return f"PubSub({self.topic_id})"
+
     def publish(self, data) -> None:
         if isinstance(data, dict):
             data = json.dumps(data)

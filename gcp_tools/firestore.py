@@ -40,6 +40,9 @@ class Firestore:
             self.client = firestore.Client(self.project)
             Firestore._clients[self.project] = self.client
 
+    def __repr__(self):
+        return f"Firestore({self.path})"
+
     def _parse_path(self, method="get"):
         """
         Parse the path into project, bucket, and path. This allows Firestore to be used in the same way as GCS.
@@ -270,6 +273,8 @@ class Firestore:
             return [doc.id for doc in ref.stream()]
         else:
             raise ValueError("Unsupported Firestore reference type.")
+    
+
 
 
 if __name__ == "__main__":
