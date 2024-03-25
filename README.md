@@ -3,7 +3,7 @@ TODO:
 [x] Firestore Module
 [x] PubSub Module
 [x] Request Module
-[ ] BigQuery Module
+[x] BigQuery Module
 [ ] Storage Module
 [ ] Parquet Module
 [ ] Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module
