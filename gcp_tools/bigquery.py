@@ -5,7 +5,7 @@ from google.cloud import bigquery
 from google.auth import default as google_auth_default
 from google.api_core.exceptions import NotFound as NotFoundError
 
-from gcp_tools.utils import log, is_dataframe
+from gcp_tools.utils import log, is_dataframe, get_default_project
 from gcp_tools.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
 
 
@@ -131,7 +131,7 @@ class BigQuery:
         self.table = table
         self.dataset = dataset
         self.location = location
-        self.project = project or os.environ.get("PROJECT") or google_auth_default()[1]
+        self.project = project or os.environ.get("PROJECT") or get_default_project()
         if not project:
             try:
                 # E.g. BigQuery(table="project.dataset.table")

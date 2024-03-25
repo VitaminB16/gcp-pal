@@ -71,3 +71,20 @@ def reverse_dict(d):
     - dict: The reversed dictionary.
     """
     return {v: k for k, v in d.items()}
+
+
+def get_default_project():
+    """
+    Get the default project from google.auth.default() and store it in an environment variable.
+
+    Returns:
+    - str: The default project.
+    """
+    import google.auth
+
+    project = os.getenv("_GOOGLE_AUTH_DEFAULT_PROJECT", None)
+    if project is None:
+        project = google.auth.default()[1]
+        os.environ["_GOOGLE_AUTH_DEFAULT_PROJECT"] = project
+        print(f"Obtained default project: {project}")
+    return project

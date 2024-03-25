@@ -6,7 +6,7 @@ import concurrent.futures
 from google.cloud import firestore
 
 from gcp_tools.schema import enforce_schema
-from gcp_tools.utils import log, is_dataframe
+from gcp_tools.utils import log, is_dataframe, get_default_project
 
 
 class Firestore:
@@ -28,7 +28,7 @@ class Firestore:
         - Firestore("gs://project/bucket/path").write(data) -> Write to Firestore "bucket/path"
         - Firestore("gs://project/bucket/path").delete() -> Delete from Firestore "bucket/path"
         """
-        self.project = project or os.getenv("PROJECT")
+        self.project = project or os.getenv("PROJECT") or get_default_project()
         self.path = path
 
         # Only initialize the client once per project

@@ -1,8 +1,8 @@
+import os
 import json
-import google.auth
 from google.cloud import pubsub_v1
 
-from gcp_tools.utils import log
+from gcp_tools.utils import log, get_default_project
 
 
 class PubSub:
@@ -23,7 +23,7 @@ class PubSub:
         - project (str): Project ID
         """
         self.topic_id = topic
-        self.project = project or google.auth.default()[1]
+        self.project = project or os.environ.get("PROJECT") or get_default_project()
 
         # Initialize the publisher client only once per project
         if self.project in PubSub._clients:

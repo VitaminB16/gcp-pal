@@ -1,6 +1,7 @@
 import os
 import gcsfs
-import google.auth
+
+from gcp_tools.utils import get_default_project
 
 
 class Storage:
@@ -11,7 +12,7 @@ class Storage:
     _clients = {}
 
     def __init__(self, path=None, bucket_name=None, project=None):
-        self.project = project or os.environ.get("PROJECT") or google.auth.default()[1]
+        self.project = project or os.environ.get("PROJECT") or get_default_project()
         self.fs_prefix = "gs://"
 
         self.path = path or self.fs_prefix
