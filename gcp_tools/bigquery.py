@@ -454,7 +454,7 @@ class BigQuery:
         """
         datasets = list(self.client.list_datasets())
         dataset_ids = [dataset.dataset_id for dataset in datasets]
-        log("Datasets listed.")
+        log("BigQuery datasets listed.")
         return dataset_ids
 
     def list_tables(self):

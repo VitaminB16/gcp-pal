@@ -265,16 +265,18 @@ class Firestore:
             self.path = self.path + "/" + path
         ref = self.get_ref()
         if ref is None:
-            return [col.id for col in self.client.collections()]
+            output = [col.id for col in self.client.collections()]
+            log(f"Firestore collections listed.")
+            return output
         ref_type = self._ref_type(ref)
         if ref_type == "document":
-            return [doc.id for doc in ref.collections()]
+            output = [doc.id for doc in ref.collections()]
         elif ref_type == "collection":
-            return [doc.id for doc in ref.stream()]
+            output = [doc.id for doc in ref.stream()]
         else:
             raise ValueError("Unsupported Firestore reference type.")
-    
-
+        log(f"Firestore collections listed.")
+        return output
 
 
 if __name__ == "__main__":
