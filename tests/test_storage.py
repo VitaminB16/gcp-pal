@@ -25,7 +25,7 @@ def list_files(bucket_name):
 def create_file(bucket_name, file_name):
     fs = gcsfs.GCSFileSystem()
     fs.invalidate_cache()
-    fs.touch(f"gs://{bucket_name}/{file_name}")
+    fs.touch(f"gs://{bucket_name}/{file_name}", location="europe-west2")
 
 
 # Tests for the Storage class
@@ -174,4 +174,24 @@ def test_copy_move():
     success[3] = f"{start_bucket}/{file_name}" not in list_files(start_bucket)
 
     failed = [k for k, v in success.items() if not v]
+
+    Storage(start_bucket).delete()
+    Storage(end_bucket).delete()
+    assert not failed
+
+
+def test_open():
+    success = {}
+    # Test file open
+    bucket_name = f"test_bucket_{uuid4()}"
+    create_bucket(bucket_name)
+    file_name = f"test_file_{uuid4()}"
+    create_file(bucket_name, file_name)
+
+    with Storage(f"{bucket_name}/{file_name}").open() as f:
+        success[0] = f.read() == ""
+
+    failed = [k for k, v in success.items() if not v]
+
+    Storage(bucket_name).delete()
     assert not failed
