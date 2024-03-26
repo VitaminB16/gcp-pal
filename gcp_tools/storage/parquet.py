@@ -5,7 +5,7 @@ import pyarrow.parquet as pq
 from urllib.parse import unquote
 
 
-from gcp_tools import Storage, BigQuery
+from gcp_tools import BigQuery
 from gcp_tools.utils import log, is_dataframe, force_list
 
 
@@ -21,7 +21,6 @@ class Parquet:
         self,
         data,
         partition_cols: List[str] = None,
-        add_uuid: bool = False,
         schema: pa.Schema = None,
         basename_template="{i}.parquet",
         **kwargs,
@@ -32,16 +31,18 @@ class Parquet:
         Args:
         - data: The data to write.
         - partition_cols: The columns to partition by.
-        - add_uuid: Whether to add a UUID column to the DataFrame.
         - schema: The schema to write.
         - basename_template: The template for the Parquet file names.
         - kwargs: Additional arguments to pass to `pyarrow` or `pandas`.
         """
+        if schema is None:
+            from gcp_tools.schema import Schema
+
+            schema = Schema(data).infer_schema().pyarrow()
         if partition_cols:
             return self._write_partitioned(
                 data=data,
                 partition_cols=partition_cols,
-                add_uuid=add_uuid,
                 schema=schema,
                 basename_template=basename_template,
                 **kwargs,
@@ -132,6 +133,9 @@ class Parquet:
             raise ValueError(
                 f"File {self.path} is empty or not found, and allow_empty is False"
             )
+        df = self.fix_column_types(df, filters)
+
+        return df
 
     def generate_filters(self, filters: dict = None):
         """
@@ -200,6 +204,8 @@ def _get_all_partition_paths(path):
     """
     Get the partitions of the parquet file
     """
+    from gcp_tools import Storage
+
     partition_cols = _get_partition_cols(path)
     glob_query = os.path.join(path, *["*"] * len(partition_cols))
     all_partitions = Storage().glob(glob_query)
@@ -210,6 +216,8 @@ def _get_partition_cols(path):
     """
     Get the partitions of the parquet file without reading the files
     """
+    from gcp_tools import Storage
+
     glob_query = os.path.join(path, "*")
     all_paths = Storage().glob(glob_query)
     while all_paths:
@@ -218,3 +226,32 @@ def _get_partition_cols(path):
     glob_query = glob_query.split("/")
     partition_path = [x.split("=")[0] for x in glob_query if "=" in x]
     return partition_path
+
+
+if __name__ == "__main__":
+    import pandas as pd
+    from gcp_tools import Storage
+    from gcp_tools.schema import Schema
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    schema = Schema(data).infer_schema().pandas()
+    bucket_name = f"test_bucket_vita_3"
+    file_name = f"gs://{bucket_name}/file.parquet"
+    Storage().create_bucket(bucket_name)
+    Parquet(file_name).write(data, partition_cols=["a"])
+
+    success[0] = Storage().exists(file_name)
+
+    read_df = Parquet(file_name).read()
+
+    success[1] = set(data.columns) == set(read_df.columns)
+
+    # Reorder columns
+    read_df = read_df[data.columns]
+    read_df = read_df.astype(schema)
+
+    print(read_df)
+    print(data)
+    print(read_df.dtypes)
+    print(data.dtypes)
