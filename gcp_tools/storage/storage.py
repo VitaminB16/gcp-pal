@@ -125,6 +125,17 @@ class Storage:
             raise ValueError("Wildcard is not supported for the bucket name yet.")
         return self.fs.glob(self.path)
 
+    def exists(self, path=None):
+        """
+        Check if the file or directory exists in the path.
+
+        Returns:
+        - bool: Whether the file or directory exists.
+        """
+        path = self._suffix_path(path)
+        output = self.fs.exists(path)
+        return output
+
     def mkdir(self, path=None, exist_ok=True):
         """
         Create a directory in the path.
@@ -132,13 +143,9 @@ class Storage:
         Args:
         - exist_ok (bool): Whether to ignore the error if the directory already exists.
         """
-        if not path:
-            path = self.path
-        elif self.path.endswith("/"):
-            path = self.path + path
-        else:
-            path = self.path + "/" + path
+        path = self._suffix_path(path)
         output = self.fs.mkdir(path, exist_ok=exist_ok)
+        log(f"Created directory {path}")
         return output
 
     def mkdirs(self, path=None, exist_ok=True):
@@ -155,6 +162,7 @@ class Storage:
         else:
             path = self.path + "/" + path
         output = self.fs.mkdirs(path, exist_ok=exist_ok)
+        log(f"Created directories {path}")
         return output
 
     def create_bucket(self, bucket_name=None):
@@ -270,6 +278,29 @@ class Storage:
         - file: File object
         """
         return self.fs.open(self.path, mode)
+
+    def _suffix_path(self, path):
+        """
+        Append the path to the base path.
+
+        Args:
+        - path (str): Path to append
+
+        Returns:
+        - str: Suffixed path
+
+        Examples:
+        >>> Storage().suffix_path("file") -> "gs://file"
+        >>> Storage("bucket_name").suffix_path("file") -> "gs://bucket_name/file"
+        >>> Storage("bucket_name/path").suffix_path() -> "gs://bucket_name"
+        """
+        if not path:
+            path = self.path
+        elif self.path.endswith("/"):
+            path = self.path + path
+        else:
+            path = self.path + "/" + path
+        return path
 
 
 if __name__ == "__main__":
