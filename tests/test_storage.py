@@ -195,3 +195,29 @@ def test_open():
 
     Storage(bucket_name).delete()
     assert not failed
+
+
+def test_exists():
+    success = {}
+    # Test file exists
+    bucket_name = f"test_bucket_{uuid4()}"
+
+    success[0] = not Storage(bucket_name).exists()
+    create_bucket(bucket_name)
+    success[1] = Storage(bucket_name).exists()
+
+    file_name = f"test_file_{uuid4()}"
+
+    success[2] = not Storage(f"{bucket_name}/{file_name}").exists()
+    success[3] = not Storage(f"{bucket_name}").exists(file_name)
+    create_file(bucket_name, file_name)
+    success[4] = Storage(f"{bucket_name}/{file_name}").exists()
+    success[5] = Storage(f"{bucket_name}").exists(file_name)
+
+    success[6] = not Storage(f"{bucket_name}/{file_name}_not_exists").exists()
+    success[7] = not Storage(f"{bucket_name}").exists(f"{file_name}_not_exists")
+
+    failed = [k for k, v in success.items() if not v]
+
+    Storage(bucket_name).delete()
+    assert not failed
