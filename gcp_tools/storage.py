@@ -138,25 +138,39 @@ class Storage:
             path = self.path + path
         else:
             path = self.path + "/" + path
-        print(path)
         output = self.fs.mkdir(path, exist_ok=exist_ok)
         return output
 
-    # def mkdirs(self, path=None, exist_ok=True):
-    #     """
-    #     Create directories recursively in the path.
+    def mkdirs(self, path=None, exist_ok=True):
+        """
+        Create directories recursively in the path.
 
-    #     Args:
-    #     - exist_ok (bool): Whether to ignore the error if the directory already exists.
-    #     """
-    #     if not path:
-    #         path = self.path
-    #     elif self.path.endswith("/"):
-    #         path = self.path + path
-    #     else:
-    #         path = self.path + "/" + path
-    #     output = self.fs.mkdirs(path, exist_ok=exist_ok)
-    #     return output
+        Args:
+        - exist_ok (bool): Whether to ignore the error if the directory already exists.
+        """
+        if not path:
+            path = self.path
+        elif self.path.endswith("/"):
+            path = self.path + path
+        else:
+            path = self.path + "/" + path
+        output = self.fs.mkdirs(path, exist_ok=exist_ok)
+        return output
+
+    def create_bucket(self, bucket_name=None):
+        """
+        Create a bucket in the project.
+
+        Args:
+        - bucket_name (str): Name of the bucket to create.
+        """
+        if not bucket_name:
+            bucket_name = self.bucket_name
+        if not bucket_name:
+            raise ValueError("Bucket name is required.")
+        output = self.fs.mkdir(f"gs://{bucket_name}")
+        log(f"Created bucket {bucket_name}")
+        return output
 
     def walk(self):
         """
@@ -245,24 +259,6 @@ class Storage:
         """
         return self.upload(local_path, recursive=recursive)
 
-    def write(self, data, recursive=True):
-        """
-        Write data to the storage path.
-
-        Args:
-        - data (str): Data to write
-        - recursive (bool): Whether to write the data recursively.
-        """
-        output = self.fs.put(data, self.path, recursive=recursive)
-        log(f"Wrote data to {self.path}")
-        return output
-
-    def read(self):
-        """
-        Read data from the storage path.
-        """
-        return self.fs.cat(self.path)
-
     def open(self, mode="r"):
         """
         Open the storage path in the given mode.
@@ -277,15 +273,6 @@ class Storage:
 
 
 if __name__ == "__main__":
-    bucket_name = "test_bucket_vita_11"
-    Storage(bucket_name + "/test/test/test/").mkdir()
-    Storage(bucket_name + "/test/test/test").upload("tests/test_storage.py")
-    Storage(bucket_name).delete()
-    exit()
-    print(Storage().ls())
-    print(Storage(bucket_name).ls())
-    # Storage(bucket_name).delete()
-    print(Storage().ls())
     exit()
 
 

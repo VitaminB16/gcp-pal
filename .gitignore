@@ -13,3 +13,4 @@ fonts/
 .vscode
 _includes/
 output/**.py
+tests_output/*

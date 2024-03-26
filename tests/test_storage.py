@@ -1,3 +1,4 @@
+import os
 import gcsfs
 from uuid import uuid4
 from gcp_tools import Storage
@@ -6,7 +7,7 @@ from gcp_tools import Storage
 # Utilities which do not depend on Storage class
 def create_bucket(bucket_name):
     fs = gcsfs.GCSFileSystem()
-    fs.mkdir(f"gs://{bucket_name}")
+    fs.mkdir(f"gs://{bucket_name}", location="europe-west2")
 
 
 def list_buckets():
@@ -124,6 +125,53 @@ def test_delete():
     success[4] = f"{bucket_name}/{file_name}" in list_files(bucket_name)
     Storage(bucket_name).delete()
     success[5] = bucket_name + "/" not in list_buckets()
+
+    failed = [k for k, v in success.items() if not v]
+    assert not failed
+
+
+def test_upload_download():
+    success = {}
+    # Test file upload
+    bucket_name = f"test_bucket_{uuid4()}"
+    create_bucket(bucket_name)
+    file_name = f"tests/test_storage.py"
+    Storage(f"{bucket_name}/{file_name}").upload(file_name)
+    success[0] = f"{bucket_name}/{file_name}" in list_files(bucket_name + "/tests")
+
+    # Test file download
+    download_path = f"tests_output/test_storage_download.py"
+    Storage(f"{bucket_name}/{file_name}").download(download_path)
+    success[1] = os.path.exists(download_path)
+    success[2] = os.path.getsize(download_path) == os.path.getsize(file_name)
+
+    Storage(bucket_name).delete()
+
+    failed = [k for k, v in success.items() if not v]
+    assert not failed
+
+
+def test_copy_move():
+    success = {}
+    # Test file copy
+    start_bucket = f"test_bucket_{uuid4()}"
+    end_bucket = f"test_bucket_{uuid4()}"
+    print(start_bucket)
+    print(end_bucket)
+    create_bucket(start_bucket)
+    create_bucket(end_bucket)
+    file_name = f"test_file_{uuid4()}"
+    create_file(start_bucket, file_name)
+
+    # Test copy
+    Storage(f"{start_bucket}/{file_name}").copy(f"{end_bucket}/{file_name}_copy")
+    success[0] = f"{end_bucket}/{file_name}_copy" in list_files(end_bucket)
+    success[1] = f"{start_bucket}/{file_name}" in list_files(start_bucket)
+
+    # Test move
+    Storage(f"{start_bucket}/{file_name}").move(f"{end_bucket}/{file_name}_move")
+    success[2] = f"{end_bucket}/{file_name}_move" in list_files(end_bucket)
+    success[3] = f"{start_bucket}/{file_name}" not in list_files(start_bucket)
 
     failed = [k for k, v in success.items() if not v]
     assert not failed
