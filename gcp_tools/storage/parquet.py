@@ -115,8 +115,11 @@ class Parquet:
         - read_partitions_only: If true, it will read the data from partition names only using `glob`.
         """
         if read_partitions_only:
+            from gcp_tools.schema import Schema
+
             df = _get_partitions_df(self.path)
             schema = Schema(schema).pandas()
+            df = df.astype(schema)
         else:
             try:
                 df = pq.read_table(
@@ -236,12 +239,12 @@ if __name__ == "__main__":
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    bucket_name = f"test_bucket_1831e935-aac2-4529-aa3a-4c4ad77f15d6"
+    schema = Schema(data).pyarrow()
+    bucket_name = f"test_bucket_0b759c89-d519-4f14-971e-cc09727e5266"
     file_name = f"gs://{bucket_name}/file.parquet"
     # Storage().create_bucket(bucket_name)
     # Parquet(file_name).write(data, partition_cols=["a", "b"])
 
-    schema = pa.schema({"a": pa.int64(), "b": pa.int64()})
     read_df = Parquet(file_name).read(read_partitions_only=True, schema=schema)
     print(read_df)
     print(data)
