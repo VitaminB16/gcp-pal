@@ -79,7 +79,7 @@ def test_read_partitioned():
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    schema = Schema(data).infer_schema().pandas()
+    schema = Schema(data).pyarrow()
     bucket_name = f"test_bucket_{uuid4()}"
     file_name = f"gs://{bucket_name}/file.parquet"
     Storage().create_bucket(bucket_name)
@@ -87,15 +87,12 @@ def test_read_partitioned():
 
     success[0] = Storage().exists(file_name)
 
-    read_df = Parquet(file_name).read()
+    read_df = Parquet(file_name).read(schema=schema)
 
     success[1] = set(data.columns) == set(read_df.columns)
 
     # Reorder columns
     read_df = read_df[data.columns]
-
-    # Apply schema
-    read_df = read_df.astype(schema)
 
     success[2] = data.equals(read_df)
 
@@ -109,14 +106,13 @@ def test_read_partitions_only():
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    schema = Schema(data).infer_schema().pandas()
+    schema = Schema(data).pyarrow()
     bucket_name = f"test_bucket_{uuid4()}"
     file_name = f"gs://{bucket_name}/file.parquet"
     Storage().create_bucket(bucket_name)
     Parquet(file_name).write(data, partition_cols=["a", "b"])
 
-    read_df = Parquet(file_name).read(read_partitions_only=True)
-    read_df = read_df.astype(schema)
+    read_df = Parquet(file_name).read(read_partitions_only=True, schema=schema)
 
     success[0] = set(data.columns) == set(read_df.columns)
     success[1] = data.equals(read_df)

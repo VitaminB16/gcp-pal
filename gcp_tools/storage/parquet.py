@@ -121,6 +121,10 @@ class Parquet:
             schema = Schema(schema).pandas()
             df = df.astype(schema)
         else:
+            if isinstance(schema, dict):
+                from gcp_tools.schema import Schema
+
+                schema = Schema(schema).pyarrow()
             try:
                 df = pq.read_table(
                     self.path,
