@@ -80,7 +80,7 @@ def get_equivalent_schema_dict(target):
     elif target == "pyarrow":
         return {
             "int": "int64",
-            "float": "float64",
+            "float": "double",
             "str": "string",
             "bool": "bool",
             "timestamp": "timestamp[ns]",
@@ -116,7 +116,7 @@ def compute_type_matches(schema: list, target_schema: list):
     return type_matches
 
 
-def get_matching_type(schema):
+def get_matching_schema_type(schema):
     """
     Get the matching schema type for the schema.
 
@@ -126,7 +126,10 @@ def get_matching_type(schema):
     Returns:
     - str: The matching schema type.
     """
-    schema_values = get_dict_items(schema, "value")
+    if not isinstance(schema, list):
+        schema_values = get_dict_items(schema, "value")
+    else:
+        schema_values = schema
     type_matches = {}
     for target in ALL_SUPPORTED_SCHEMA_TYPES:
         target_schema = get_equivalent_schema_dict(target)
@@ -135,11 +138,15 @@ def get_matching_type(schema):
 
     matching_values = type_matches.values()
     if sum(matching_values) == 0:
-        raise ValueError("No matching schema type found.")
-    elif sum([x > 0 for x in matching_values]) > 1:
-        raise ValueError("Multiple matching schema types found.")
-
+        log("No matching schema type found.")
+        return None
+    elif sum([x == len(schema) for x in matching_values]) > 1:
+        log("Multiple matching schema types found.")
+        return None
     matching_type = max(type_matches, key=type_matches.get)
+    if type_matches[matching_type] != len(schema):
+        log("Not all schema types matched.")
+        return None
     return matching_type
 
 
@@ -277,6 +284,8 @@ def dict_to_pyarrow_fields(schema_dict):
     import pyarrow as pa
 
     fields = []
+    if not isinstance(schema_dict, dict):
+        return getattr(pa, schema_dict)()
     for col, col_type in schema_dict.items():
         if isinstance(col_type, dict):
             fields.append(pa.field(col, pa.struct(dict_to_pyarrow_fields(col_type))))
@@ -299,8 +308,12 @@ def pyarrow_fields_to_dict(schema_fields):
     - dict: The dictionary representation of the schema.
     """
     schema_dict = {}
+    # custom_field_map = {
+    #     "double": "float64",
+    # }
     for field in schema_fields:
-        schema_dict[field.name] = field.type
+        field_type = str(field.type)
+        schema_dict[field.name] = field_type
     return schema_dict
 
 
@@ -433,7 +446,7 @@ def enforce_schema(df, schema={}, dtypes={}, errors="raise"):
     return df
 
 
-def infer_schema(data):
+def infer_schema(data, schema_type="python"):
     """
     Infer a schema from a dataframe or dictionary.
 
@@ -471,7 +484,7 @@ class Schema:
     A class for for bridging the gap between different schema representations of similar data.
 
     Args:
-    - schema (dict): The schema to convert.
+    - schema (dict): The input schema dictionary.
     - schema_type (str): The schema type. Options: "str", "python", "pandas", "pyarrow".
 
     Returns:
@@ -491,9 +504,23 @@ class Schema:
         self.schema_type = schema_type or self.infer_schema_type() or "str"
         if is_dataframe(input):
             self.schema_type = "pandas"
+        if self.schema_type == "bigquery":
+            self.schema = bigquery_fields_to_dict(input)
+        elif self.schema_type == "pyarrow":
+            self.schema = pyarrow_fields_to_dict(input)
+
+        if self.schema_type != "python":
+            self.convert_schema_to_python()
 
     def __repr__(self):
         return f"Schema({self.schema})"
+
+    def convert_schema_to_python(self):
+        """
+        Convert the schema to a Python dictionary.
+        """
+        self.schema = get_equivalent_schema(self.schema, self.schema_type, "python")
+        self.schema_type = "python"
 
     def infer_schema_type(self):
         """
@@ -517,34 +544,52 @@ class Schema:
             return "pandas"
         if not isinstance(self.input_schema, dict):
             return None
-        matching_type = get_matching_type(self.input_schema)
+        matching_type = get_matching_schema_type(self.input_schema)
 
         return matching_type
 
     def infer_schema(self) -> "Schema":
-        self.schema = infer_schema(self.input_schema)
+        """
+        Infer the schema from the input.
+
+        Returns:
+        - Schema: The schema object with the schema set to the inferred schema.
+        """
+        if self.schema_type == "python":
+            return self
+        self.schema = infer_schema(self.input_schema, self.schema_type)
         self.schema_type = "python"
         return self
 
     def bigquery(self) -> dict:
+        if self.schema_type == "bigquery":
+            return self.schema
         output_schema = get_equivalent_schema(self.schema, self.schema_type, "bigquery")
         output_schema = dict_to_bigquery_fields(output_schema)
         return output_schema
 
     def python(self) -> dict:
+        if self.schema_type == "python":
+            return self.schema
         output_schema = get_equivalent_schema(self.schema, self.schema_type, "python")
         return output_schema
 
     def pandas(self) -> dict:
+        if self.schema_type == "pandas":
+            return self.schema
         output_schema = get_equivalent_schema(self.schema, self.schema_type, "pandas")
         return output_schema
 
     def pyarrow(self) -> dict:
+        if self.schema_type == "pyarrow":
+            return self.schema
         output_schema = get_equivalent_schema(self.schema, self.schema_type, "pyarrow")
         output_schema = dict_to_pyarrow_fields(output_schema)
         return output_schema
 
     def str(self) -> str:
+        if self.schema_type == "str":
+            return self.schema
         output_schema = type_to_str(self.schema)
         return output_schema
 
@@ -553,9 +598,6 @@ if __name__ == "__main__":
     import pandas as pd
     import pyarrow as pa
 
-    schema = {"a": int, "b": str}
-    str_schema = Schema(schema).str()
-
     pyarrow_schema = pa.schema(
         [
             pa.field("a", pa.int64()),
@@ -563,8 +605,10 @@ if __name__ == "__main__":
             pa.field("c", pa.float64()),
         ]
     )
-    str_schema = Schema(pyarrow_schema).str()
+    str_schema = Schema(pyarrow_schema).python()
+    print(str_schema)
     exit()
+
     inferred_schema = Schema(df, schema_type="pandas").infer_schema()
     python_schema = inferred_schema.python()
     bigquery_schema = inferred_schema.bigquery()
