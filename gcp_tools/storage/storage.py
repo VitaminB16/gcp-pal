@@ -155,12 +155,7 @@ class Storage:
         Args:
         - exist_ok (bool): Whether to ignore the error if the directory already exists.
         """
-        if not path:
-            path = self.path
-        elif self.path.endswith("/"):
-            path = self.path + path
-        else:
-            path = self.path + "/" + path
+        path = self._suffix_path(path)
         output = self.fs.mkdirs(path, exist_ok=exist_ok)
         log(f"Created directories {path}")
         return output
@@ -179,6 +174,19 @@ class Storage:
         output = self.fs.mkdir(f"gs://{bucket_name}")
         log(f"Created bucket {bucket_name}")
         return output
+
+    def create(self, path=None, exist_ok=True, bucket_name=None):
+        """
+        Alias for `create_bucket` or `mkdir`.
+
+        Args:
+        - path (str): Path to create
+        - exist_ok (bool): Whether to ignore the error if the directory already exists.
+        - bucket_name (str): Name of the bucket to create.
+        """
+        if bucket_name or self.is_bucket:
+            return self.create_bucket(bucket_name)
+        return self.mkdir(path, exist_ok=exist_ok)
 
     def walk(self):
         """
@@ -286,7 +294,7 @@ class Storage:
         """
         return self.fs.open(self.path, mode)
 
-    def _suffix_path(self, path):
+    def _suffix_path(self, path=None):
         """
         Append the path to the base path.
 
@@ -297,17 +305,15 @@ class Storage:
         - str: Suffixed path
 
         Examples:
-        >>> Storage().suffix_path("file") -> "gs://file"
-        >>> Storage("bucket_name").suffix_path("file") -> "gs://bucket_name/file"
-        >>> Storage("bucket_name/path").suffix_path() -> "gs://bucket_name"
+        >>> Storage()._suffix_path("file") -> "gs://file"
+        >>> Storage("bucket_name")._suffix_path("file") -> "gs://bucket_name/file"
+        >>> Storage("bucket_name/path")._suffix_path() -> "gs://bucket_name"
         """
-        if not path:
-            path = self.path
-        elif self.path.endswith("/"):
-            path = self.path + path
-        else:
-            path = self.path + "/" + path
-        return path
+        if path is None:
+            return self.path
+        if self.path.endswith("/"):
+            return self.path + path
+        return self.path + "/" + path
 
 
 if __name__ == "__main__":
