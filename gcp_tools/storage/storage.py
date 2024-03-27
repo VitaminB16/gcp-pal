@@ -197,11 +197,15 @@ class Storage:
         log(f"Removed {self.path}")
         return output
 
-    def rmdir(self):
+    def rmdir(self, path=None):
         """
         Remove the directory in the path.
+
+        Args:
+        - path (str): Optional path from base path to remove.
         """
-        path = self.bucket_name if self.is_bucket else self.path
+        path = self._suffix_path(path)
+        path = self.bucket_name if self.is_bucket else path
         output = self.fs.rmdir(path)
         log(f"Removed {path}")
         return output
@@ -222,7 +226,10 @@ class Storage:
         path = self.path
         if path.endswith("/"):
             path = path[:-1]
-        output = self.rm(path)
+        try:
+            output = self.rm()
+        except FileNotFoundError:
+            output = self.rmdir()
         return output
 
     def copy(self, destination_path, recursive=True):

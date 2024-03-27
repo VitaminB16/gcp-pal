@@ -33,6 +33,10 @@ def delete_test_storage_buckets():
     del_fun = lambda x: Storage(x).delete()
     with ThreadPoolExecutor() as executor:
         executor.map(del_fun, buckets_to_delete)
+    buckets = Storage().ls()
+    buckets_to_delete = [b for b in buckets if b.startswith("test_")]
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, buckets_to_delete)
 
 
 if __name__ == "__main__":
