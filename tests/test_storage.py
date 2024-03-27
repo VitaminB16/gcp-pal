@@ -97,6 +97,28 @@ def test_mkdir():
     assert not failed
 
 
+def test_create_bucket():
+    success = {}
+    # Test bucket create
+    bucket_name = f"test_bucket_{uuid4()}"
+    Storage(bucket_name).create_bucket()
+    success[0] = bucket_name + "/" in list_buckets()
+
+    failed = [k for k, v in success.items() if not v]
+    assert not failed
+
+
+def test_create():
+    success = {}
+    # Test bucket create
+    bucket_name = f"test_bucket_{uuid4()}"
+    Storage(bucket_name).create()
+    success[0] = bucket_name + "/" in list_buckets()
+
+    failed = [k for k, v in success.items() if not v]
+    assert not failed
+
+
 def test_delete():
     success = {}
     # Test bucket delete
@@ -220,4 +242,15 @@ def test_exists():
     failed = [k for k, v in success.items() if not v]
 
     Storage(bucket_name).delete()
+    assert not failed
+
+
+def test_suffix_path():
+    success = {}
+    success[0] = Storage()._suffix_path("file") == "gs://file"
+    success[1] = Storage("bucket_name")._suffix_path("file") == "gs://bucket_name/file"
+    success[2] = Storage("bucket_name/path")._suffix_path() == "gs://bucket_name/path"
+
+    failed = [k for k, v in success.items() if not v]
+
     assert not failed
