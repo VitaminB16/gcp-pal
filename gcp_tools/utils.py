@@ -108,6 +108,19 @@ def is_dataframe(obj):
     return type(obj).__name__ == "DataFrame"
 
 
+def is_numpy_array(obj):
+    """
+    Check if an object is a numpy array without importing numpy.
+
+    Args:
+    - obj: The object to check.
+
+    Returns:
+    - bool: Whether the object is a numpy array.
+    """
+    return str(type(obj)).startswith("<class 'numpy.")
+
+
 def is_pyarrow_schema(obj):
     """
     Check if an object is a pyarrow schema without importing pyarrow.

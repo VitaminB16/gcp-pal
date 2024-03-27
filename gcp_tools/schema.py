@@ -21,21 +21,7 @@ def get_equivalent_schema_dict(target):
     Returns:
     - dict: The equivalent schema dictionary in the target system.
     """
-    if target == "bigquery":
-        return {
-            "int": "INTEGER",
-            "float": "FLOAT",
-            "str": "STRING",
-            "bool": "BOOLEAN",
-            "timestamp": "TIMESTAMP",
-            "date": "DATE",
-            "time": "TIME",
-            "datetime": "DATETIME",
-            "bytes": "BYTES",
-            "array": "ARRAY",
-            "struct": "STRUCT",
-        }
-    elif target == "str":
+    if target == "str":
         return {
             "int": "int",
             "float": "float",
@@ -62,6 +48,20 @@ def get_equivalent_schema_dict(target):
             "bytes": bytes,
             "array": list,
             "struct": dict,
+        }
+    elif target == "bigquery":
+        return {
+            "int": "INTEGER",
+            "float": "FLOAT",
+            "str": "STRING",
+            "bool": "BOOLEAN",
+            "timestamp": "TIMESTAMP",
+            "date": "DATE",
+            "time": "TIME",
+            "datetime": "DATETIME",
+            "bytes": "BYTES",
+            "array": "ARRAY",
+            "struct": "STRUCT",
         }
     elif target == "pandas":
         return {
@@ -225,6 +225,7 @@ def dtype_str_to_type(dtype_str):
         "str": str,
         "bool": bool,
         "object": str,
+        "datetime64[ns]": datetime,
     }
     return python_types.get(dtype_str, dtype_str)
 
@@ -498,12 +499,15 @@ class Schema:
     - `Schema({"a": "int", "b": "str"}, schema_type="str").str()` -> String schema
     """
 
-    def __init__(self, input: dict = {}, schema_type: str = None):
+    def __init__(self, input: dict = {}, schema_type: str = None, is_data=False):
         self.input_schema = input
         self.schema = input
-        self.schema_type = schema_type or self.infer_schema_type() or "str"
-        if is_dataframe(input):
-            self.schema_type = "pandas"
+        self.is_data = is_data
+        self.schema_type = schema_type or self.infer_schema_type()
+
+        # Now the goal is to convert whatever schema into a dictionary of Python types
+        if is_dataframe(input) or self.is_data:
+            self.infer_schema()
         if self.schema_type == "bigquery":
             self.schema = bigquery_fields_to_dict(input)
         elif self.schema_type == "pyarrow":
@@ -511,6 +515,7 @@ class Schema:
 
         if self.schema_type != "python":
             self.convert_schema_to_python()
+        # Now the schema is a dictionary of Python types
 
     def __repr__(self):
         return f"Schema({self.schema})"
@@ -540,8 +545,9 @@ class Schema:
             return "pyarrow"
         if is_bigquery_schema(self.input_schema):
             return "bigquery"
-        if is_dataframe(self.input_schema):
-            return "pandas"
+        if is_dataframe(self.input_schema) or self.is_data:
+            # We return None here because self.input_schema is not a schema dictionary
+            return None
         if not isinstance(self.input_schema, dict):
             return None
         matching_type = get_matching_schema_type(self.input_schema)
@@ -598,15 +604,18 @@ if __name__ == "__main__":
     import pandas as pd
     import pyarrow as pa
 
-    pyarrow_schema = pa.schema(
-        [
-            pa.field("a", pa.int64()),
-            pa.field("b", pa.string()),
-            pa.field("c", pa.float64()),
-        ]
-    )
-    str_schema = Schema(pyarrow_schema).python()
-    print(str_schema)
+    data = {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1.0, 2.0, 3.0],
+        "date": [datetime.now() for _ in range(3)],
+    }
+    inferred_schema = Schema(data, is_data=True)
+    python_schema = inferred_schema.python()
+    bigquery_schema = inferred_schema.bigquery()
+    str_schema = inferred_schema.str()
+    pyarrow_schema = inferred_schema.pyarrow()
+    print(bigquery_schema)
     exit()
 
     inferred_schema = Schema(df, schema_type="pandas").infer_schema()

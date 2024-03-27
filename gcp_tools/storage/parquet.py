@@ -116,6 +116,7 @@ class Parquet:
         """
         if read_partitions_only:
             df = _get_partitions_df(self.path)
+            schema = Schema(schema).pandas()
         else:
             try:
                 df = pq.read_table(
@@ -235,22 +236,13 @@ if __name__ == "__main__":
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    schema = Schema(data).infer_schema().pandas()
-    bucket_name = f"test_bucket_vita_3"
+    bucket_name = f"test_bucket_1831e935-aac2-4529-aa3a-4c4ad77f15d6"
     file_name = f"gs://{bucket_name}/file.parquet"
-    Storage().create_bucket(bucket_name)
-    Parquet(file_name).write(data, partition_cols=["a"])
+    # Storage().create_bucket(bucket_name)
+    # Parquet(file_name).write(data, partition_cols=["a", "b"])
 
-    success[0] = Storage().exists(file_name)
-
-    read_df = Parquet(file_name).read()
-
-    success[1] = set(data.columns) == set(read_df.columns)
-
-    # Reorder columns
-    read_df = read_df[data.columns]
-    read_df = read_df.astype(schema)
-
+    schema = pa.schema({"a": pa.int64(), "b": pa.int64()})
+    read_df = Parquet(file_name).read(read_partitions_only=True, schema=schema)
     print(read_df)
     print(data)
     print(read_df.dtypes)
