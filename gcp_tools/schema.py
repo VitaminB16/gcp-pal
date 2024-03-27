@@ -1,5 +1,14 @@
 from datetime import datetime, date, time
-from gcp_tools.utils import force_list, is_series, is_dataframe, log, reverse_dict
+from gcp_tools.utils import (
+    force_list,
+    is_series,
+    is_dataframe,
+    log,
+    reverse_dict,
+    is_pyarrow_schema,
+    is_bigquery_schema,
+    get_dict_items,
+)
 
 
 def get_equivalent_schema_dict(target):
@@ -84,6 +93,54 @@ def get_equivalent_schema_dict(target):
         }
     else:
         raise ValueError(f"Unsupported target system: {target}")
+
+
+ALL_SUPPORTED_SCHEMA_TYPES = ["bigquery", "str", "python", "pandas", "pyarrow"]
+
+
+def compute_type_matches(schema: list, target_schema: list):
+    """
+    Compute the type matches between two schema lists.
+
+    Args:
+    - schema (list): The input schema values.
+    - target_schema (list): The target schema values against which to compare.
+
+    Returns:
+    - int: The number of type matches.
+    """
+    type_matches = 0
+    for value in schema:
+        if value in target_schema:
+            type_matches += 1
+    return type_matches
+
+
+def get_matching_type(schema):
+    """
+    Get the matching schema type for the schema.
+
+    Args:
+    - schema (dict): The schema.
+
+    Returns:
+    - str: The matching schema type.
+    """
+    schema_values = get_dict_items(schema, "value")
+    type_matches = {}
+    for target in ALL_SUPPORTED_SCHEMA_TYPES:
+        target_schema = get_equivalent_schema_dict(target)
+        target_values = get_dict_items(target_schema, "value")
+        type_matches[target] = compute_type_matches(schema_values, target_values)
+
+    matching_values = type_matches.values()
+    if sum(matching_values) == 0:
+        raise ValueError("No matching schema type found.")
+    elif sum([x > 0 for x in matching_values]) > 1:
+        raise ValueError("Multiple matching schema types found.")
+
+    matching_type = max(type_matches, key=type_matches.get)
+    return matching_type
 
 
 def get_equivalent_schema_type(schema_type, target="bigquery", direction="forward"):
@@ -428,15 +485,41 @@ class Schema:
     - `Schema({"a": "int", "b": "str"}, schema_type="str").str()` -> String schema
     """
 
-    def __init__(self, schema: dict = {}, schema_type: str = "str"):
-        self.input_schema = schema
-        self.schema = schema
-        self.schema_type = schema_type
-        if is_dataframe(schema):
-            schema_type = "pandas"
+    def __init__(self, input: dict = {}, schema_type: str = None):
+        self.input_schema = input
+        self.schema = input
+        self.schema_type = schema_type or self.infer_schema_type() or "str"
+        if is_dataframe(input):
+            self.schema_type = "pandas"
 
     def __repr__(self):
         return f"Schema({self.schema})"
+
+    def infer_schema_type(self):
+        """
+        Infer the schema type from the input.
+
+        Returns:
+        - str: The schema type.
+
+        Examples:
+        - `Schema({"a": int, "b": str}).infer_schema_type()` -> "python"
+        - `Schema({"a": "int", "b": "str"}).infer_schema_type()` -> "str"
+        - `Schema({"a": "int64", "b": "str"}).infer_schema_type()` -> "pandas"
+        - `Schema(pa.schema([pa.field("a", pa.int64()), pa.field("b", pa.string())])).infer_schema_type()` -> "pyarrow"
+        - `Schema([bigquery.SchemaField("a", "INTEGER"), bigquery.SchemaField("b", "STRING")]).infer_schema_type()` -> "bigquery"
+        """
+        if is_pyarrow_schema(self.input_schema):
+            return "pyarrow"
+        if is_bigquery_schema(self.input_schema):
+            return "bigquery"
+        if is_dataframe(self.input_schema):
+            return "pandas"
+        if not isinstance(self.input_schema, dict):
+            return None
+        matching_type = get_matching_type(self.input_schema)
+
+        return matching_type
 
     def infer_schema(self) -> "Schema":
         self.schema = infer_schema(self.input_schema)
@@ -468,9 +551,20 @@ class Schema:
 
 if __name__ == "__main__":
     import pandas as pd
+    import pyarrow as pa
 
-    table_id = "test.test_table"
-    df = pd.DataFrame({"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]})
+    schema = {"a": int, "b": str}
+    str_schema = Schema(schema).str()
+
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+        ]
+    )
+    str_schema = Schema(pyarrow_schema).str()
+    exit()
     inferred_schema = Schema(df, schema_type="pandas").infer_schema()
     python_schema = inferred_schema.python()
     bigquery_schema = inferred_schema.bigquery()

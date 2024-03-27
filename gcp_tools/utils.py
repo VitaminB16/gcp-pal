@@ -25,22 +25,131 @@ def force_list(x):
         return [x]
 
 
+def get_dict_items(d, item_type="value"):
+    """
+    Get the items of a dictionary as a list of tuples.
+
+    Args:
+    - d (dict): The dictionary.
+    - item_type (str): The type of item to get. Can be "key" or "value".
+
+    Returns:
+    - list: The items of the dictionary.
+
+    Examples:
+    >>> get_dict_items({"a": 1, "b": 2, "c": 3}, item_type="key")
+    ["a", "b", "c"]
+    >>> get_dict_items({"a": 1, "b": 2, "c": 3}, item_type="value")
+    [1, 2, 3]
+    >>> get_dict_items({"a": 1, "b": {"c": 2}, "d": 3}, item_type="value")
+    [1, 2, 3]
+    >>> get_dict_items({"a": 1, "b": {"c": 2}, "d": 3}, item_type="key")
+    ["a", "b", "c", "d"]
+    >>> get_dict_items({"a": 1, "b": [1, [2, [3, 4]]]}, item_type="value")
+    [1, 1, 2, 3, 4]
+    >>> get_dict_items({"a": 1, "b": {"c": 2}, "d": [3, {"e": 4}]}, item_type="value")
+    [1, 2, 3, 4]
+    """
+    output = []
+    if isinstance(d, dict):
+        for key, value in d.items():
+            # {key: value}
+            if item_type == "key":
+                # {<key>: value}
+                output.append(key)
+                if isinstance(value, (dict, list)):
+                    # {key: {<key>: value}}
+                    output.extend(get_dict_items(value, item_type))
+            elif item_type == "value":
+                if isinstance(value, (dict, list)):
+                    # {key: {key: <value>}}
+                    output.extend(get_dict_items(value, item_type))
+                else:
+                    # {key: <value>}
+                    output.append(value)
+    elif isinstance(d, list):
+        # [value, value, ...]
+        for i in d:
+            if isinstance(i, (dict, list)):
+                # [{key: value}, {key: value}, ...]
+                output.extend(get_dict_items(i, item_type))
+            elif item_type == "value":
+                # [<value>, <value>, ...]
+                output.append(i)
+    else:
+        # <value>
+        output.append(d)
+    return output
+
+
 def is_series(obj):
-    """Check if an object is a pandas Series without importing pandas."""
+    """
+    Check if an object is a pandas Series without importing pandas.
+
+    Args:
+    - obj: The object to check.
+
+    Returns:
+    - bool: Whether the object is a pandas Series.
+    """
     return type(obj).__name__ == "Series"
 
 
 def is_dataframe(obj):
-    """Check if an object is a pandas DataFrame without importing pandas."""
+    """
+    Check if an object is a pandas DataFrame without importing pandas.
+
+    Args:
+    - obj: The object to check.
+
+    Returns:
+    - bool: Whether the object is a pandas Series.
+    """
     return type(obj).__name__ == "DataFrame"
+
+
+def is_pyarrow_schema(obj):
+    """
+    Check if an object is a pyarrow schema without importing pyarrow.
+
+    Args:
+    - obj: The object to check.
+
+    Returns:
+    - bool: Whether the object is a pandas Series.
+    """
+    return str(type(obj)) == "<class 'pyarrow.lib.Schema'>"
+
+
+def is_bigquery_schema(obj):
+    """
+    Check if an object is a bigquery schema without importing google.cloud.bigquery.
+
+    Args:
+    - obj: The object to check.
+
+    Returns:
+    - bool: Whether the object is a pandas Series.
+    """
+    if isinstance(obj, list):
+        return all([is_bigquery_schema(x) for x in obj])
+    return str(type(obj)) == "<class 'google.cloud.bigquery.schema.SchemaField'>"
 
 
 def log(*args, **kwargs):
     """
     Function for logging to Google Cloud Logs. Logs a message as usual, and logs a dictionary of data as jsonPayload.
 
-    Arguments:
+    Args:
         *args (list): list of elements to "print" to google cloud logs.
+        **kwargs (dict): dictionary of elements to "print" to google cloud logs.
+
+    Examples:
+    >>> log("Hello, world!")
+    message: "Hello, world!"
+    >>> log("Hello, world!", {"a": 1, "b": 2})
+    message: "Hello, world!"
+    payload: {"a": 1, "b": 2}
     """
     # Use these environment variables as payload to log to Google Cloud Logs
     env_keys = ["PLATFORM"]
