@@ -4,7 +4,14 @@ import pandas as pd
 import pyarrow as pa
 from google.cloud import bigquery
 
-from gcp_tools.schema import enforce_schema, infer_schema, Schema
+from gcp_tools.schema import (
+    enforce_schema,
+    infer_schema,
+    Schema,
+    compute_type_matches,
+    get_equivalent_schema_dict,
+    get_matching_schema_type,
+)
 
 
 @pytest.mark.parametrize(
@@ -192,3 +199,87 @@ def test_schema_nested():
             ),
         ]
     )
+
+
+def test_compute_type_matches():
+    success = {}
+
+    schema = ["str", "float", "int"]
+    target_schema = get_equivalent_schema_dict("bigquery").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[0] = matches == 0
+    target_schema = get_equivalent_schema_dict("python").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[1] = matches == 0
+    target_schema = get_equivalent_schema_dict("str").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[2] = matches == 3
+
+    schema = [str, float, int]
+    target_schema = get_equivalent_schema_dict("bigquery").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[3] = matches == 0
+    target_schema = get_equivalent_schema_dict("python").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[4] = matches == 3
+    target_schema = get_equivalent_schema_dict("str").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[5] = matches == 0
+
+    schema = ["int64", "object", "float64"]
+    target_schema = get_equivalent_schema_dict("bigquery").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[6] = matches == 0
+    target_schema = get_equivalent_schema_dict("python").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[7] = matches == 0
+    target_schema = get_equivalent_schema_dict("str").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[8] = matches == 0
+    target_schema = get_equivalent_schema_dict("pandas").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[9] = matches == 3
+
+    schema = ["int", "int64"]
+    target_schema = get_equivalent_schema_dict("pandas").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[10] = matches == 1
+    target_schema = get_equivalent_schema_dict("str").values()
+    matches = compute_type_matches(schema, target_schema)
+    success[11] = matches == 1
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_get_matching_schema_type():
+    success = {}
+
+    schema = {"a": int, "b": str, "c": float}
+    matching_type = get_matching_schema_type(schema)
+    success[0] = matching_type == "python"
+
+    schema = {"a": "int", "b": "str", "c": "float"}
+    matching_type = get_matching_schema_type(schema)
+    success[1] = matching_type == "str"
+
+    schema = {"a": "INTEGER", "b": "STRING", "c": "FLOAT"}
+    matching_type = get_matching_schema_type(schema)
+    success[2] = matching_type == "bigquery"
+
+    schema = {"a": "int64", "b": "object", "c": "float64"}
+    matching_type = get_matching_schema_type(schema)
+    success[3] = matching_type == "pandas"
+
+    schema = {"a": "int", "b": "int64"}
+    matching_type = get_matching_schema_type(schema)
+    success[4] = matching_type is None
+
+    schema = {"a": "int", "b": "ints"}
+    matching_type = get_matching_schema_type(schema)
+    success[5] = matching_type is None
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
