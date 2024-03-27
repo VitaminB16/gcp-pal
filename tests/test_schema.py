@@ -11,6 +11,7 @@ from gcp_tools.schema import (
     compute_type_matches,
     get_equivalent_schema_dict,
     get_matching_schema_type,
+    dict_to_pyarrow_fields,
 )
 
 
@@ -81,7 +82,7 @@ def test_infer_schema():
         "a": int,
         "b": str,
         "c": float,
-        "date": "datetime64[ns]",
+        "date": datetime.datetime,
     }
     failed = [k for k, v in success.items() if not v]
     assert not failed
@@ -94,7 +95,7 @@ def test_schema():
         "c": [1.0, 2.0, 3.0],
         "date": [datetime.datetime.now() for _ in range(3)],
     }
-    inferred_schema = Schema(data).infer_schema()
+    inferred_schema = Schema(data, is_data=True).infer_schema()
     python_schema = inferred_schema.python()
     bigquery_schema = inferred_schema.bigquery()
     str_schema = inferred_schema.str()
@@ -133,7 +134,201 @@ def test_schema():
     )
 
 
+def test_convert_all_schemas():
+    success = {}
+
+    ### python ###
+    python_schema = {"a": int, "b": str, "c": float}
+
+    # 1. python -> pyarrow
+    schema = Schema(python_schema).pyarrow()
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+        ]
+    )
+    success[0] = schema == pyarrow_schema
+
+    # 2. python -> str
+    schema = Schema(python_schema).str()
+    str_schema = {"a": "int", "b": "str", "c": "float"}
+    success[1] = schema == str_schema
+
+    # 3. python -> bigquery
+    schema = Schema(python_schema).bigquery()
+    bigquery_schema = [
+        bigquery.SchemaField("a", "INTEGER"),
+        bigquery.SchemaField("b", "STRING"),
+        bigquery.SchemaField("c", "FLOAT"),
+    ]
+    success[2] = schema == bigquery_schema
+
+    # 4. python -> pandas
+    schema = Schema(python_schema).pandas()
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    success[3] = schema == pandas_schema
+
+    ### pyarrow ###
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+        ]
+    )
+
+    # 1. pyarrow -> str
+    schema = Schema(pyarrow_schema).str()
+    str_schema = {"a": "int", "b": "str", "c": "float"}
+    success[4] = schema == str_schema
+
+    # 2. pyarrow -> python
+    schema = Schema(pyarrow_schema).python()
+    python_schema = {"a": int, "b": str, "c": float}
+    success[5] = schema == python_schema
+
+    # 3. pyarrow -> bigquery
+    schema = Schema(pyarrow_schema).bigquery()
+    bigquery_schema = [
+        bigquery.SchemaField("a", "INTEGER"),
+        bigquery.SchemaField("b", "STRING"),
+        bigquery.SchemaField("c", "FLOAT"),
+    ]
+    success[6] = schema == bigquery_schema
+
+    # 4. pyarrow -> pandas
+    schema = Schema(pyarrow_schema).pandas()
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    success[7] = schema == pandas_schema
+
+    ### strings ###
+    str_schema = {"a": "int", "b": "str", "c": "float"}
+
+    # 1. str -> pyarrow
+    schema = Schema(str_schema).pyarrow()
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+        ]
+    )
+    success[8] = schema == pyarrow_schema
+
+    # 2. str -> python
+    schema = Schema(str_schema).python()
+    python_schema = {"a": int, "b": str, "c": float}
+    success[9] = schema == python_schema
+
+    # 3. str -> bigquery
+    schema = Schema(str_schema).bigquery()
+    bigquery_schema = [
+        bigquery.SchemaField("a", "INTEGER"),
+        bigquery.SchemaField("b", "STRING"),
+        bigquery.SchemaField("c", "FLOAT"),
+    ]
+    success[10] = schema == bigquery_schema
+
+    # 4. str -> pandas
+    schema = Schema(str_schema).pandas()
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    success[11] = schema == pandas_schema
+
+    ### bigquery ###
+    bigquery_schema = [
+        bigquery.SchemaField("a", "INTEGER"),
+        bigquery.SchemaField("b", "STRING"),
+        bigquery.SchemaField("c", "FLOAT"),
+    ]
+
+    # 1. bigquery -> pyarrow
+    schema = Schema(bigquery_schema).pyarrow()
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+        ]
+    )
+    success[12] = schema == pyarrow_schema
+
+    # 2. bigquery -> str
+    schema = Schema(bigquery_schema).str()
+    str_schema = {"a": "int", "b": "str", "c": "float"}
+    success[13] = schema == str_schema
+
+    # 3. bigquery -> python
+    schema = Schema(bigquery_schema).python()
+    python_schema = {"a": int, "b": str, "c": float}
+    success[14] = schema == python_schema
+
+    # 4. bigquery -> pandas
+    schema = Schema(bigquery_schema).pandas()
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    success[15] = schema == pandas_schema
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_schema_from_dataframe():
+    success = {}
+    df = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": ["a", "b", "c"],
+            "c": [1.0, 2.0, 3.0],
+            "date": [datetime.datetime.now() for _ in range(3)],
+        }
+    )
+
+    # string
+    schema = Schema(df).str()
+    str_schema = {"a": "int", "b": "str", "c": "float", "date": "datetime"}
+    success[0] = schema == str_schema
+
+    # python
+    schema = Schema(df).python()
+    python_schema = {
+        "a": int,
+        "b": str,
+        "c": float,
+        "date": datetime.datetime,
+    }
+    success[1] = schema == python_schema
+
+    # bigquery
+    schema = Schema(df).bigquery()
+    bigquery_schema = [
+        bigquery.SchemaField("a", "INTEGER"),
+        bigquery.SchemaField("b", "STRING"),
+        bigquery.SchemaField("c", "FLOAT"),
+        bigquery.SchemaField("date", "DATETIME"),
+    ]
+    success[2] = schema == bigquery_schema
+
+    # pyarrow
+    schema = Schema(df).pyarrow()
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+            pa.field("date", pa.timestamp("ns")),
+        ]
+    )
+    success[3] = schema == pyarrow_schema
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
 def test_schema_nested():
+    success = {}
     data = {
         "a": [1, 2, 3],
         "b": ["a", "b", "c"],
@@ -141,26 +336,26 @@ def test_schema_nested():
         "date": [datetime.datetime.now() for _ in range(3)],
         "nested": {"a": [1, 2, 3], "b": ["a", "b", "c"]},
     }
-    inferred_schema = Schema(data).infer_schema()
+    inferred_schema = Schema(data, is_data=True).infer_schema()
     python_schema = inferred_schema.python()
     bigquery_schema = inferred_schema.bigquery()
     str_schema = inferred_schema.str()
     pyarrow_schema = inferred_schema.pyarrow()
-    assert inferred_schema.schema == {
+    success[0] = inferred_schema.schema == {
         "a": int,
         "b": str,
         "c": float,
         "date": datetime.datetime,
         "nested": {"a": int, "b": str},
     }
-    assert python_schema == {
+    success[1] = python_schema == {
         "a": int,
         "b": str,
         "c": float,
         "date": datetime.datetime,
         "nested": {"a": int, "b": str},
     }
-    assert bigquery_schema == [
+    success[2] = bigquery_schema == [
         bigquery.SchemaField("a", "INTEGER"),
         bigquery.SchemaField("b", "STRING"),
         bigquery.SchemaField("c", "FLOAT"),
@@ -175,14 +370,14 @@ def test_schema_nested():
             ],
         ),
     ]
-    assert str_schema == {
+    success[3] = str_schema == {
         "a": "int",
         "b": "str",
         "c": "float",
         "date": "datetime",
         "nested": {"a": "int", "b": "str"},
     }
-    assert pyarrow_schema == pa.schema(
+    success[4] = pyarrow_schema == pa.schema(
         [
             pa.field("a", pa.int64()),
             pa.field("b", pa.string()),
@@ -199,6 +394,79 @@ def test_schema_nested():
             ),
         ]
     )
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_dict_to_pyarrow_fields():
+    success = {}
+
+    schema = {"a": "int64", "b": "string", "c": "float64"}
+    pa_fields = dict_to_pyarrow_fields(schema)
+    exp_fields = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+        ]
+    )
+    success[0] = pa_fields == exp_fields
+
+    schema = {
+        "a": "int64",
+        "b": "string",
+        "c": "float64",
+        "date": "timestamp[ns]",
+        "nested": {"a": "int64", "b": "string"},
+    }
+    pa_fields = dict_to_pyarrow_fields(schema)
+    exp_fields = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+            pa.field("date", pa.timestamp("ns")),
+            pa.field(
+                "nested",
+                pa.struct(
+                    [
+                        pa.field("a", pa.int64()),
+                        pa.field("b", pa.string()),
+                    ]
+                ),
+            ),
+        ]
+    )
+    success[1] = pa_fields == exp_fields
+
+    schema = {
+        "a": "int64",
+        "b": ["string"],
+        "nested": {"a": "int64", "b": ["string"]},
+    }
+    pa_fields = dict_to_pyarrow_fields(schema)
+    exp_fields = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.list_(pa.string())),
+            pa.field(
+                "nested",
+                pa.struct(
+                    [
+                        pa.field("a", pa.int64()),
+                        pa.field("b", pa.list_(pa.string())),
+                    ]
+                ),
+            ),
+        ]
+    )
+    success[2] = pa_fields == exp_fields
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_compute_type_matches():
