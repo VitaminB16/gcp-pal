@@ -131,7 +131,17 @@ def is_pyarrow_schema(obj):
     Returns:
     - bool: Whether the object is a pandas Series.
     """
-    return str(type(obj)) == "<class 'pyarrow.lib.Schema'>"
+    if str(type(obj)) == "<class 'pyarrow.lib.Schema'>":
+        return True
+    elif str(type(obj)) == "<class 'pyarrow.lib.Field'>":
+        return True
+    elif str(type(obj)) == "<class 'pyarrow.lib.DataType'>":
+        return True
+    if isinstance(obj, dict):
+        return all([is_pyarrow_schema(x) for x in obj.values()])
+    elif isinstance(obj, list):
+        return all([is_pyarrow_schema(x) for x in obj])
+    return False
 
 
 def is_bigquery_schema(obj):

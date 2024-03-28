@@ -269,6 +269,90 @@ def test_convert_all_schemas():
     pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
     success[15] = schema == pandas_schema
 
+    ### bigquery as a dict ###
+    bigquery_schema = {
+        "a": "INTEGER",
+        "b": "STRING",
+        "c": "FLOAT",
+    }
+
+    # 1. bigquery -> pyarrow
+    schema = Schema(bigquery_schema).pyarrow()
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+        ]
+    )
+    success[16] = schema == pyarrow_schema
+
+    # 2. bigquery -> str
+    schema = Schema(bigquery_schema).str()
+    str_schema = {"a": "int", "b": "str", "c": "float"}
+    success[17] = schema == str_schema
+
+    # 3. bigquery -> python
+    schema = Schema(bigquery_schema).python()
+    python_schema = {"a": int, "b": str, "c": float}
+    success[18] = schema == python_schema
+
+    # 4. bigquery -> pandas
+    schema = Schema(bigquery_schema).pandas()
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    success[19] = schema == pandas_schema
+
+    ### pyarrow as a dict ###
+    pyarrow_schema = {
+        "a": pa.int64(),
+        "b": pa.string(),
+        "c": {"c1": pa.float64(), "c2": pa.int64()},
+    }
+
+    # 1. pyarrow -> str
+    schema = Schema(pyarrow_schema).str()
+    str_schema = {
+        "a": "int",
+        "b": "str",
+        "c": {"c1": "float", "c2": "int"},
+    }
+    success[20] = schema == str_schema
+
+    # 2. pyarrow -> python
+    schema = Schema(pyarrow_schema).python()
+    python_schema = {
+        "a": int,
+        "b": str,
+        "c": {"c1": float, "c2": int},
+    }
+    success[21] = schema == python_schema
+
+    # 3. pyarrow -> bigquery
+    schema = Schema(pyarrow_schema).bigquery()
+    bigquery_schema = [
+        bigquery.SchemaField("a", "INTEGER"),
+        bigquery.SchemaField("b", "STRING"),
+        bigquery.SchemaField(
+            "c",
+            "RECORD",
+            mode="NULLABLE",
+            fields=[
+                bigquery.SchemaField("c1", "FLOAT"),
+                bigquery.SchemaField("c2", "INTEGER"),
+            ],
+        ),
+    ]
+    success[22] = schema == bigquery_schema
+
+    # 4. pyarrow -> pandas
+    schema = Schema(pyarrow_schema).pandas()
+    pandas_schema = {
+        "a": "int64",
+        "b": "object",
+        "c": {"c1": "float64", "c2": "int64"},
+    }
+    success[23] = schema == pandas_schema
+
     failed = [k for k, v in success.items() if not v]
 
     assert not failed

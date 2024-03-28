@@ -256,6 +256,31 @@ def dict_to_bigquery_fields(schema_dict):
     return schema
 
 
+def bigquery_fields_dict_to_dict(schema_fields_dict):
+    """
+    Convert BigQuery schema fields dictionary to a string dictionary.
+
+    Args:
+    - schema_fields_dict (dict[bigquery.SchemaField]): The BigQuery schema fields dictionary.
+
+    Returns:
+    - dict: The dictionary representation of the schema.
+
+    Examples:
+    >>> bigquery_fields_dict_to_dict({"a": bigquery.SchemaField("a", "INTEGER"), "b": bigquery.SchemaField("b", "STRING")})
+    {"a": "INTEGER", "b": "STRING"}
+    """
+    schema_dict = {}
+    for col, col_type in schema_fields_dict.items():
+        if isinstance(col_type, dict):
+            schema_dict[col] = bigquery_fields_dict_to_dict(col_type)
+        elif isinstance(col_type, str):
+            schema_dict[col] = col_type
+        else:
+            schema_dict[col] = col_type.field_type
+    return schema_dict
+
+
 def bigquery_fields_to_dict(schema_fields):
     """
     Convert BigQuery schema fields to a dictionary.
@@ -270,6 +295,23 @@ def bigquery_fields_to_dict(schema_fields):
     for field in schema_fields:
         schema_dict[field.name] = field.field_type
     return schema_dict
+
+
+def bigquery_to_dict(schema):
+    """
+    Convert a BigQuery schema to a dictionary.
+
+    Args:
+    - schema (list[bigquery.SchemaField]): The BigQuery schema.
+
+    Returns:
+    - dict[str, str]: The dictionary representation of the schema with string types.
+    """
+    if isinstance(schema, dict):
+        output = bigquery_fields_dict_to_dict(schema)
+    else:
+        output = bigquery_fields_to_dict(schema)
+    return output
 
 
 def dict_to_pyarrow_fields(schema_dict):
@@ -298,24 +340,65 @@ def dict_to_pyarrow_fields(schema_dict):
     return schema
 
 
+def pyarrow_fields_dict_to_dict(schema_fields_dict):
+    """
+    Convert PyArrow schema fields dictionary to a string dictionary.
+
+    Args:
+    - schema_fields_dict (dict[pyarrow.SchemaField]): The PyArrow schema fields dictionary.
+
+    Returns:
+    - dict: The dictionary representation of the schema.
+
+    Examples:
+    >>> pyarrow_fields_dict_to_dict({"a": pa.int64(), "b": pa.string(), "c": {"d": pa.float64()}})
+    {"a": "int64", "b": "string", "c": {"d": "double"}}
+    """
+    schema_dict = {}
+    for col, col_type in schema_fields_dict.items():
+        if isinstance(col_type, dict):
+            schema_dict[col] = pyarrow_fields_dict_to_dict(col_type)
+        else:
+            schema_dict[col] = str(col_type)
+    return schema_dict
+
+
 def pyarrow_fields_to_dict(schema_fields):
     """
     Convert PyArrow schema fields to a dictionary.
 
     Args:
-    - schema_fields (pyarrow.Schema): The PyArrow schema.
+    - schema_fields (pyarrow.schema): The PyArrow schema.
 
     Returns:
     - dict: The dictionary representation of the schema.
     """
     schema_dict = {}
-    # custom_field_map = {
-    #     "double": "float64",
-    # }
     for field in schema_fields:
-        field_type = str(field.type)
-        schema_dict[field.name] = field_type
+        field_type = field.type
+        # Check if nested
+        if field_type.num_fields > 0:
+            schema_dict[field.name] = pyarrow_fields_to_dict(field_type)
+        else:
+            schema_dict[field.name] = str(field_type)
     return schema_dict
+
+
+def pyarrow_to_dict(schema):
+    """
+    Convert a PyArrow schema to a dictionary.
+
+    Args:
+    - schema (pyarrow.Schema): The PyArrow schema as a dictionary or pa.schema object.
+
+    Returns:
+    - dict[str, str]: The dictionary representation of the schema with string types.
+    """
+    if isinstance(schema, dict):
+        output = pyarrow_fields_dict_to_dict(schema)
+    else:
+        output = pyarrow_fields_to_dict(schema)
+    return output
 
 
 def type_to_str(schema_dict):
@@ -509,9 +592,9 @@ class Schema:
         if is_dataframe(input) or self.is_data:
             self.infer_schema()
         if self.schema_type == "bigquery":
-            self.schema = bigquery_fields_to_dict(input)
+            self.schema = bigquery_to_dict(input)
         elif self.schema_type == "pyarrow":
-            self.schema = pyarrow_fields_to_dict(input)
+            self.schema = pyarrow_to_dict(input)
 
         if self.schema_type != "python":
             self.convert_schema_to_python()
@@ -541,9 +624,9 @@ class Schema:
         - `Schema(pa.schema([pa.field("a", pa.int64()), pa.field("b", pa.string())])).infer_schema_type()` -> "pyarrow"
         - `Schema([bigquery.SchemaField("a", "INTEGER"), bigquery.SchemaField("b", "STRING")]).infer_schema_type()` -> "bigquery"
         """
-        if is_pyarrow_schema(self.input_schema):
+        if is_pyarrow_schema(self.input_schema) and not self.is_data:
             return "pyarrow"
-        if is_bigquery_schema(self.input_schema):
+        if is_bigquery_schema(self.input_schema) and not self.is_data:
             return "bigquery"
         if is_dataframe(self.input_schema) or self.is_data:
             # We return None here because self.input_schema is not a schema dictionary
@@ -604,18 +687,35 @@ if __name__ == "__main__":
     import pandas as pd
     import pyarrow as pa
 
-    data = {
-        "a": [1, 2, 3],
-        "b": ["a", "b", "c"],
-        "c": [1.0, 2.0, 3.0],
-        "date": [datetime.now() for _ in range(3)],
+    bigquery_schema = {
+        "a": "INTEGER",
+        "b": "STRING",
+        "c": "FLOAT",
     }
-    inferred_schema = Schema(data, is_data=True)
-    python_schema = inferred_schema.python()
-    bigquery_schema = inferred_schema.bigquery()
-    str_schema = inferred_schema.str()
-    pyarrow_schema = inferred_schema.pyarrow()
-    print(bigquery_schema)
+
+    # 1. bigquery -> pyarrow
+    schema = Schema(bigquery_schema).pyarrow()
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+        ]
+    )
+    print(schema)
+    print(pyarrow_schema)
+    exit()
+
+if __name__ == "__main__":
+    import pandas as pd
+    import pyarrow as pa
+
+    pyarrow_schema = {"a": pa.int64(), "b": pa.string(), "c": {"d": pa.float64()}}
+
+    # 1. pyarrow -> str
+    schema = Schema(pyarrow_schema).str()
+    str_schema = {"a": "int", "b": "str", "c": "float"}
+    print(str_schema)
     exit()
 
     inferred_schema = Schema(df, schema_type="pandas").infer_schema()
