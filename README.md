@@ -39,7 +39,7 @@ gcloud config set project PROJECT_ID
 
 ## Firestore Module
 
-The Firestore module in the `gcp-tools` library allows you to perform read and write operations on Firestore documents and collections with ease.
+The Firestore module in the `gcp-tools` library allows you to perform read and write operations on Firestore documents and collections.
 
 ### Initializing Firestore
 
@@ -125,7 +125,7 @@ print(docs)
 
 ## PubSub Module
 
-The PubSub module in the `gcp-tools` library allows you to publish and subscribe to PubSub topics with ease.
+The PubSub module in the `gcp-tools` library allows you to publish and subscribe to PubSub topics.
 
 ### Initializing PubSub
 
@@ -149,7 +149,7 @@ PubSub(topic).publish(message)
 
 ## Request Module
 
-The Request module in the `gcp-tools` library allows you to make authorized HTTP requests with ease.
+The Request module in the `gcp-tools` library allows you to make authorized HTTP requests.
 
 ### Initializing Request
 
@@ -181,7 +181,7 @@ print(put_response)
 
 ## BigQuery Module
 
-The BigQuery module in the `gcp-tools` library allows you to perform read and write operations on BigQuery datasets and tables with ease.
+The BigQuery module in the `gcp-tools` library allows you to perform read and write operations on BigQuery datasets and tables.
 
 ### Initializing BigQuery
 
@@ -275,3 +275,198 @@ BigQuery("dataset.table").insert(data)
 # Output: Data inserted
 ```
 
+
+---
+
+## Storage Module
+
+The Storage module in the `gcp-tools` library allows you to perform read and write operations on Google Cloud Storage buckets and objects.
+
+### Initializing Storage
+
+Import the Storage class from the `gcp_tools` module:
+
+```python
+from gcp_tools import Storage
+```
+
+### Listing objects
+
+Similar to the other modules, listing objects in a bucket is done using the `ls` method:
+
+```python
+buckets = Storage().ls()
+print(buckets)
+# Output: ['bucket1', 'bucket2']
+objects = Storage("bucket1").ls()
+print(objects)
+# Output: ['object1', 'object2']
+```
+
+### Creating buckets
+
+To create a bucket, use the `create` method:
+
+```python
+Storage("new-bucket").create()
+# Output: Bucket "new-bucket" created
+```
+
+### Deleting objects
+
+Deleting objects is similar to creating them, but you use the `delete` method instead:
+
+```python
+Storage("bucket").delete()
+# Output: Bucket "bucket" and all its objects deleted
+Storage("bucket/object").delete()
+# Output: Object "object" in bucket "bucket" deleted
+```
+
+### Uploading and downloading objects
+
+To upload an object to a bucket, use the `upload` method:
+
+```python
+Storage("bucket/uploaded_file.txt").upload("local_file.txt")
+# Output: File "local_file.txt" uploaded to "bucket/uploaded_file.txt"
+```
+
+To download an object from a bucket, use the `download` method:
+
+```python
+Storage("bucket/uploaded_file.txt").download("downloaded_file.txt")
+# Output: File "bucket/uploaded_file.txt" downloaded to "downloaded_file.txt"
+```
+
+---
+
+## Parquet Module
+
+The Parquet module in the `gcp-tools` library allows you to read and write Parquet files in Google Cloud Storage.
+
+### Initializing Parquet
+
+Import the Parquet class from the `gcp_tools` module:
+
+```python
+from gcp_tools import Parquet
+```
+
+### Reading Parquet files
+
+To read a Parquet file from Google Cloud Storage, use the `read` method:
+
+```python
+data = Parquet("bucket/file.parquet").read()
+print(data)
+# Output: pd.DataFrame({'field1': ['value1'], 'field2': ['value2']})
+```
+
+### Writing Parquet files
+
+To write a Pandas DataFrame to a Parquet file in Google Cloud Storage, use the `write` method:
+
+```python
+df = pd.DataFrame({
+    "field1": ["value1"],
+    "field2": ["value2"]
+})
+Parquet("bucket/file.parquet").write(df)
+# Output: Parquet file "file.parquet" created in "bucket"
+```
+
+Partitioning can be specified via the `partition_cols` parameter:
+
+```python
+Parquet("bucket/file.parquet").write(df, partition_cols=["field1"])
+# Output: Parquet file "file.parquet" created in "bucket" partitioned by "field1"
+```
+
+---
+
+## Schema Module
+
+The Schema module allows one to translate schemas between different formats, such as Python, PyArrow, BigQuery, and Pandas.
+
+### Initializing Schema
+
+Import the Schema class from the `gcp-tools.schema` module:
+
+```python
+from gcp_tools.schema import Schema
+```
+
+### Translating schemas
+
+To translate a schema from one format to another, use the respective methods:
+
+```python
+python_schema = {
+    "a": int,
+    "b": str,
+    "c": float,
+    "d": datetime,
+}
+str_schema = Schema(python_schema).str()
+# {
+#    "a": "int",
+#    "b": "str",
+#    "c": "float",
+#    "d": "datetime",
+# }
+pyarrow_schema = Schema(python_schema).pyarrow()
+# pa.schema(
+#    [
+#        pa.field("a", pa.int64()),
+#        pa.field("b", pa.string()),
+#        pa.field("c", pa.float64()),
+#        pa.field("d", pa.timestamp("ns")),
+#    ]
+# )
+bigquery_schema = Schema(python_schema).bigquery()
+# [
+#     bigquery.SchemaField("a", "INTEGER"),
+#     bigquery.SchemaField("b", "STRING"),
+#     bigquery.SchemaField("c", "FLOAT"),
+#     bigquery.SchemaField("d", "TIMESTAMP"),
+# ]
+pandas_schema = Schema(python_schema).pandas()
+# {
+#    "a": "int64",
+#    "b": "object",
+#    "c": "float64",
+#    "d": "datetime64[ns]",
+# }
+```
+
+### Infering schemas
+
+To infer and translate a schema from a dictionary of data or a Pandas DataFrame, use the `is_data` parameter:
+
+```python
+df = pd.DataFrame(
+    {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1.0, 2.0, 3.0],
+        "date": [datetime.datetime.now() for _ in range(3)],
+    }
+)
+inferred_schema = Schema(df, is_data=True).schema
+# {
+#   "a": int,
+#   "b": str,
+#   "c": float,
+#   "date": datetime,
+# }
+pyarrow_schema = Schema(df, is_data=True).pyarrow()
+# pa.schema(
+#    [
+#        pa.field("a", pa.int64()),
+#        pa.field("b", pa.string()),
+#        pa.field("c", pa.float64()),
+#        pa.field("date", pa.timestamp("ns")),
+#    ]
+# )
+```
