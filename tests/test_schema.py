@@ -1,7 +1,7 @@
 import pytest
-import datetime
 import pandas as pd
 import pyarrow as pa
+from datetime import datetime
 from google.cloud import bigquery
 
 from gcp_tools.schema import (
@@ -53,14 +53,14 @@ def test_infer_schema():
         "a": [1, 2, 3],
         "b": ["a", "b", "c"],
         "c": [1.0, 2.0, 3.0],
-        "date": [datetime.datetime.now() for _ in range(3)],
+        "date": [datetime.now() for _ in range(3)],
     }
     python_schema = infer_schema(data)
     success[0] = python_schema == {
         "a": int,
         "b": str,
         "c": float,
-        "date": datetime.datetime,
+        "date": datetime,
     }
     data = {"a": 1, "b": [2.0], "c": {"c1": ["w", "w"], "c2": [0, 1]}}
     python_schema = infer_schema(data)
@@ -74,7 +74,7 @@ def test_infer_schema():
             "a": [1, 2, 3],
             "b": ["a", "b", "c"],
             "c": [1.0, 2.0, 3.0],
-            "date": [datetime.datetime.now() for _ in range(3)],
+            "date": [datetime.now() for _ in range(3)],
         }
     )
     pandas_schema = infer_schema(data)
@@ -82,7 +82,7 @@ def test_infer_schema():
         "a": int,
         "b": str,
         "c": float,
-        "date": datetime.datetime,
+        "date": datetime,
     }
     failed = [k for k, v in success.items() if not v]
     assert not failed
@@ -93,7 +93,7 @@ def test_schema():
         "a": [1, 2, 3],
         "b": ["a", "b", "c"],
         "c": [1.0, 2.0, 3.0],
-        "date": [datetime.datetime.now() for _ in range(3)],
+        "date": [datetime.now() for _ in range(3)],
     }
     inferred_schema = Schema(data, is_data=True).infer_schema()
     python_schema = inferred_schema.python()
@@ -104,13 +104,13 @@ def test_schema():
         "a": int,
         "b": str,
         "c": float,
-        "date": datetime.datetime,
+        "date": datetime,
     }
     assert python_schema == {
         "a": int,
         "b": str,
         "c": float,
-        "date": datetime.datetime,
+        "date": datetime,
     }
     assert bigquery_schema == [
         bigquery.SchemaField("a", "INTEGER"),
@@ -358,6 +358,92 @@ def test_convert_all_schemas():
     assert not failed
 
 
+def test_convert_nested_schema():
+
+    success = {}
+    python_schema = {
+        "name": str,
+        "age": int,
+        "income": float,
+        "is_student": bool,
+        "created_at": datetime,
+        "details": {
+            "address": str,
+            "phone": int,
+        },
+    }
+
+    # 1. python -> pyarrow
+    schema = Schema(python_schema).pyarrow()
+    pyarrow_schema = pa.schema(
+        [
+            pa.field("name", pa.string()),
+            pa.field("age", pa.int64()),
+            pa.field("income", pa.float64()),
+            pa.field("is_student", pa.bool_()),
+            pa.field("created_at", pa.timestamp("ns")),
+            pa.field(
+                "details",
+                pa.struct(
+                    [
+                        pa.field("address", pa.string()),
+                        pa.field("phone", pa.int64()),
+                    ]
+                ),
+            ),
+        ]
+    )
+    success[0] = schema == pyarrow_schema
+
+    # 2. python -> str
+    schema = Schema(python_schema).str()
+    str_schema = {
+        "name": "str",
+        "age": "int",
+        "income": "float",
+        "is_student": "bool",
+        "created_at": "datetime",
+        "details": {"address": "str", "phone": "int"},
+    }
+    success[1] = schema == str_schema
+
+    # 3. python -> bigquery
+    schema = Schema(python_schema).bigquery()
+    bigquery_schema = [
+        bigquery.SchemaField("name", "STRING"),
+        bigquery.SchemaField("age", "INTEGER"),
+        bigquery.SchemaField("income", "FLOAT"),
+        bigquery.SchemaField("is_student", "BOOLEAN"),
+        bigquery.SchemaField("created_at", "DATETIME"),
+        bigquery.SchemaField(
+            "details",
+            "RECORD",
+            mode="NULLABLE",
+            fields=[
+                bigquery.SchemaField("address", "STRING"),
+                bigquery.SchemaField("phone", "INTEGER"),
+            ],
+        ),
+    ]
+    success[2] = schema == bigquery_schema
+
+    # 4. python -> pandas
+    schema = Schema(python_schema).pandas()
+    pandas_schema = {
+        "name": "object",
+        "age": "int64",
+        "income": "float64",
+        "is_student": "bool",
+        "created_at": "datetime64[ns]",
+        "details": {"address": "object", "phone": "int64"},
+    }
+    success[3] = schema == pandas_schema
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
 def test_schema_from_dataframe():
     success = {}
     df = pd.DataFrame(
@@ -365,7 +451,7 @@ def test_schema_from_dataframe():
             "a": [1, 2, 3],
             "b": ["a", "b", "c"],
             "c": [1.0, 2.0, 3.0],
-            "date": [datetime.datetime.now() for _ in range(3)],
+            "date": [datetime.now() for _ in range(3)],
         }
     )
 
@@ -380,7 +466,7 @@ def test_schema_from_dataframe():
         "a": int,
         "b": str,
         "c": float,
-        "date": datetime.datetime,
+        "date": datetime,
     }
     success[1] = schema == python_schema
 
@@ -417,7 +503,7 @@ def test_schema_nested():
         "a": [1, 2, 3],
         "b": ["a", "b", "c"],
         "c": [1.0, 2.0, 3.0],
-        "date": [datetime.datetime.now() for _ in range(3)],
+        "date": [datetime.now() for _ in range(3)],
         "nested": {"a": [1, 2, 3], "b": ["a", "b", "c"]},
     }
     inferred_schema = Schema(data, is_data=True).infer_schema()
@@ -429,14 +515,14 @@ def test_schema_nested():
         "a": int,
         "b": str,
         "c": float,
-        "date": datetime.datetime,
+        "date": datetime,
         "nested": {"a": int, "b": str},
     }
     success[1] = python_schema == {
         "a": int,
         "b": str,
         "c": float,
-        "date": datetime.datetime,
+        "date": datetime,
         "nested": {"a": int, "b": str},
     }
     success[2] = bigquery_schema == [
