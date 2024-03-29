@@ -515,6 +515,10 @@ class BigQuery:
             source_format = "CSV"
         elif uri.endswith(".json"):
             source_format = "NEWLINE_DELIMITED_JSON"
+        elif uri.endswith(".avro"):
+            source_format = "AVRO"
+        elif uri.endswith(".orc"):
+            source_format = "ORC"
         return uri, source_format, extra_metadata
 
     def create_dataset(self, exists_ok=True):

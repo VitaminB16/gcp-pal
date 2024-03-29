@@ -429,10 +429,12 @@ def test_exists():
     assert not failed
 
 
-def test_create_extable():
+def test_create_extable_partitioned_parquet():
     import pandas as pd
     from gcp_tools import Storage, Parquet
     from gcp_tools.schema import Schema
+
+    # Test partitioned parquet
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
@@ -457,8 +459,215 @@ def test_create_extable():
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
-    success[100] = data.equals(queried_df)
-    success[101] = data.dtypes.equals(queried_df.dtypes)
+    success[3] = data.equals(queried_df)
+    success[4] = data.dtypes.equals(queried_df.dtypes)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_create_extable_single_parquet():
+    import pandas as pd
+    from gcp_tools import Storage, Parquet
+    from gcp_tools.schema import Schema
+
+    # Test partitioned parquet
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    pa_schema = Schema(data, is_data=True).pyarrow()
+    bq_schema = Schema(data, is_data=True).bigquery()
+    bucket_name = f"test_bucket_{uuid4().hex}"
+    file_name = f"gs://{bucket_name}/file.parquet"
+
+    Storage(bucket_name).create()
+
+    Parquet(file_name).write(data, schema=pa_schema)
+    success[0] = Storage(file_name).exists()
+    success[1] = not Storage(file_name).isdir()
+    success[2] = Storage(file_name).isfile()
+
+    dataset_name = f"test_dataset_{uuid4().hex}"
+    table_name = f"test_ext_table"
+    table_id = f"{dataset_name}.{table_name}"
+    BigQuery(table_id).create(file_name, schema=bq_schema)
+    success[3] = BigQuery(table_id).exists()
+
+    queried_df = BigQuery().read(file_name, schema=bq_schema)
+
+    queried_df = queried_df.sort_values("a").reset_index(drop=True)
+    queried_df = queried_df[data.columns]
+    success[4] = data.equals(queried_df)
+    success[5] = data.dtypes.equals(queried_df.dtypes)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_create_extable_csv():
+    import pandas as pd
+    from gcp_tools import Storage, Parquet
+    from gcp_tools.schema import Schema
+
+    # Test partitioned parquet
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    pa_schema = Schema(data, is_data=True).pyarrow()
+    bq_schema = Schema(data, is_data=True).bigquery()
+    bucket_name = f"test_bucket_{uuid4().hex}"
+    file_name = f"gs://{bucket_name}/file.csv"
+
+    Storage(bucket_name).create()
+
+    data.to_csv(file_name, index=False)
+    success[0] = Storage(file_name).exists()
+    success[1] = not Storage(file_name).isdir()
+    success[2] = Storage(file_name).isfile()
+
+    dataset_name = f"test_dataset_{uuid4().hex}"
+    table_name = f"test_ext_table"
+    table_id = f"{dataset_name}.{table_name}"
+    BigQuery(table_id).create(file_name, schema=bq_schema)
+    success[3] = BigQuery(table_id).exists()
+
+    queried_df = BigQuery().read(file_name, schema=bq_schema)
+
+    queried_df = queried_df.sort_values("a").reset_index(drop=True)
+    queried_df = queried_df[data.columns]
+    success[4] = data.equals(queried_df)
+    success[5] = data.dtypes.equals(queried_df.dtypes)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_create_extable_json():
+    import pandas as pd
+    from gcp_tools import Storage, Parquet
+    from gcp_tools.schema import Schema
+
+    # Test partitioned parquet
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    pa_schema = Schema(data, is_data=True).pyarrow()
+    bq_schema = Schema(data, is_data=True).bigquery()
+    bucket_name = f"test_bucket_{uuid4().hex}"
+    file_name = f"gs://{bucket_name}/file.json"
+
+    Storage(bucket_name).create()
+
+    data.to_json(file_name, orient="records", lines=True)
+    success[0] = Storage(file_name).exists()
+    success[1] = not Storage(file_name).isdir()
+    success[2] = Storage(file_name).isfile()
+
+    dataset_name = f"test_dataset_{uuid4().hex}"
+    table_name = f"test_ext_table"
+    table_id = f"{dataset_name}.{table_name}"
+    BigQuery(table_id).create(file_name, schema=bq_schema)
+    success[3] = BigQuery(table_id).exists()
+
+    queried_df = BigQuery().read(file_name, schema=bq_schema)
+
+    queried_df = queried_df.sort_values("a").reset_index(drop=True)
+    queried_df = queried_df[data.columns]
+    success[4] = data.equals(queried_df)
+    success[5] = data.dtypes.equals(queried_df.dtypes)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_create_extable_avro():
+    import pandas as pd
+    from gcp_tools import Storage, Parquet
+    from gcp_tools.schema import Schema
+    from fastavro import writer, parse_schema
+
+    # Test partitioned parquet
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    avro_schema = parse_schema(
+        {
+            "type": "record",
+            "name": "test",
+            "fields": [
+                {"name": "a", "type": "int"},
+                {"name": "b", "type": "int"},
+            ],
+        }
+    )
+    pa_schema = Schema(data, is_data=True).pyarrow()
+    bq_schema = Schema(data, is_data=True).bigquery()
+    bucket_name = f"test_bucket_{uuid4().hex}"
+    file_name = f"gs://{bucket_name}/file.avro"
+
+    Storage(bucket_name).create()
+
+    with Storage(file_name).open("wb") as f:
+        writer(f, avro_schema, data.to_dict(orient="records"))
+    success[0] = Storage(file_name).exists()
+    success[1] = not Storage(file_name).isdir()
+    success[2] = Storage(file_name).isfile()
+
+    dataset_name = f"test_dataset_{uuid4().hex}"
+    table_name = f"test_ext_table"
+    table_id = f"{dataset_name}.{table_name}"
+    BigQuery(table_id).create(file_name, schema=bq_schema)
+    success[3] = BigQuery(table_id).exists()
+
+    queried_df = BigQuery().read(file_name, schema=bq_schema)
+
+    queried_df = queried_df.sort_values("a").reset_index(drop=True)
+    queried_df = queried_df[data.columns]
+    success[4] = data.equals(queried_df)
+    success[5] = data.dtypes.equals(queried_df.dtypes)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_create_extable_orc():
+    import pandas as pd
+    from gcp_tools import Storage, Parquet
+    from gcp_tools.schema import Schema
+
+    # Test partitioned parquet
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    pa_schema = Schema(data, is_data=True).pyarrow()
+    bq_schema = Schema(data, is_data=True).bigquery()
+    bucket_name = f"test_bucket_{uuid4().hex}"
+    file_name = f"gs://{bucket_name}/file.orc"
+
+    Storage(bucket_name).create()
+
+    data.to_orc(file_name)
+    success[0] = Storage(file_name).exists()
+    success[1] = not Storage(file_name).isdir()
+    success[2] = Storage(file_name).isfile()
+
+    dataset_name = f"test_dataset_{uuid4().hex}"
+    table_name = f"test_ext_table"
+    table_id = f"{dataset_name}.{table_name}"
+    BigQuery(table_id).create(file_name, schema=bq_schema)
+    success[3] = BigQuery(table_id).exists()
+
+    queried_df = BigQuery().read(file_name, schema=bq_schema)
+
+    queried_df = queried_df.sort_values("a").reset_index(drop=True)
+    queried_df = queried_df[data.columns]
+    success[4] = data.equals(queried_df)
+    success[5] = data.dtypes.equals(queried_df.dtypes)
 
     failed = [k for k, v in success.items() if not v]
 
