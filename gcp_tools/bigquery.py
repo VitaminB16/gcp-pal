@@ -179,7 +179,7 @@ class BigQuery:
     def __repr__(self):
         return f"BigQuery({self.table_id})"
 
-    def query(self, sql, job_config=None, to_dataframe=True, params=None):
+    def query(self, sql, job_config=None, schema=None, to_dataframe=True, params=None):
         """
         Executes a query against BigQuery.
 
@@ -198,9 +198,12 @@ class BigQuery:
         log(f"Query executed: {sql}")
         if to_dataframe:
             output = output.to_dataframe().convert_dtypes()
+        if schema and is_dataframe(output):
+            pd_schema = Schema(schema).pandas()
+            output = output.astype(pd_schema)
         return output
 
-    def read(
+    def read_table(
         self,
         job_config=None,
         to_dataframe=True,
@@ -211,6 +214,17 @@ class BigQuery:
     ):
         """
         Reads entire table from BigQuery.
+
+        Args:
+        - job_config (bigquery.QueryJobConfig): Optional configuration for the query job.
+        - to_dataframe (bool): If True, returns the results as a pandas DataFrame.
+        - columns (list): Columns to select.
+        - filters (list): Filters to apply.
+        - schema (list): Schema to apply.
+        - limit (int): Limit the number of rows to return.
+
+        Returns:
+        - Query results as a pandas DataFrame or BigQuery job object.
         """
         sql, params = (
             SQLBuilder(self.table_id)
@@ -223,8 +237,61 @@ class BigQuery:
             sql=sql,
             job_config=job_config,
             to_dataframe=to_dataframe,
+            schema=schema,
             params=params,
         )
+
+    def read(
+        self,
+        filepath=None,
+        job_config=None,
+        to_dataframe=True,
+        columns=None,
+        filters=None,
+        schema=None,
+        limit=None,
+    ):
+        """
+        Reads entire table from BigQuery.
+        If the Google Storage filepath is provided, it will create an external table and read from it.
+        This is generally faster than reading the data from storage using e.g. Pyarrow or Pandas.
+
+        Args:
+        - filepath (str): The Google Storage filepath to read from.
+        - job_config (bigquery.QueryJobConfig): Optional configuration for the query job.
+        - to_dataframe (bool): If True, returns the results as a pandas DataFrame.
+        - columns (list): Columns to select.
+        - filters (list): Filters to apply.
+        - schema (list): Schema to apply.
+        - limit (int): Limit the number of rows to return.
+
+        Returns:
+        - Query results as a pandas DataFrame or BigQuery job object.
+        """
+        if filepath is not None and isinstance(filepath, str):
+            random_dataset = f"temp_dataset_{os.urandom(8).hex()}"
+            random_table = f"temp_table_{os.urandom(8).hex()}"
+            table_id = f"{random_dataset}.{random_table}"
+            BigQuery(table_id).create_external_table(filepath, schema=schema)
+            output = BigQuery(table_id).read_table(
+                job_config=job_config,
+                to_dataframe=to_dataframe,
+                columns=columns,
+                filters=filters,
+                schema=schema,
+                limit=limit,
+            )
+            BigQuery(dataset=random_dataset).delete()
+            return output
+        else:
+            return self.read_table(
+                job_config=job_config,
+                to_dataframe=to_dataframe,
+                columns=columns,
+                filters=filters,
+                schema=schema,
+                limit=limit,
+            )
 
     def _parse_query_params(self, params, job_config=None):
         """
@@ -374,6 +441,82 @@ class BigQuery:
             return self._create_table(data=data, schema=schema, exists_ok=exists_ok)
         return False
 
+    def create_external_table(
+        self, uri, source_format=None, schema=None, infer_uri=True, exists_ok=True
+    ):
+        """
+        Creates an external table in BigQuery.
+
+        Args:
+        - uri (str): The URI of the external data source.
+        - source_format (str): The format of the external data source.
+        - schema (list of bigquery.SchemaField): The schema of the external table.
+
+        Returns:
+        - True if successful.
+
+        Examples:
+        - BigQuery("dataset.external_table").create_external_table("gs://bucket/file.parquet")
+        """
+        if infer_uri:
+            uri, source_format, extra_metadata = self._infer_uri(uri, source_format)
+
+        external_config = bigquery.ExternalConfig(source_format=source_format)
+        external_config.source_uris = [uri]
+        # if schema:
+        # external_config.schema = schema
+        external_config.autodetect = True
+        partition_columns = extra_metadata.get("partition_columns", None)
+        if source_format == "PARQUET" and partition_columns:
+            source_uri_prefix = uri.replace("*", "")
+            partition_options = bigquery.external_config.HivePartitioningOptions
+            options = {
+                "mode": "STRINGS",
+                "sourceUriPrefix": source_uri_prefix,
+            }
+            external_config.hive_partitioning = partition_options.from_api_repr(options)
+
+        table = bigquery.Table(self.table_id)
+        table.external_data_configuration = external_config
+        try:
+            self.client.create_table(table, exists_ok=exists_ok)
+        except NotFoundError:
+            # Dataset does not exist, so create it and try again
+            self.create_dataset()
+            self.client.create_table(table)
+        log(f"External table created: {self.table_id}")
+        return True
+
+    def _infer_uri(self, uri, source_format=None):
+        """
+        Helper method to infer the source format from the URI.
+
+        Args:
+        - uri (str): The URI of the external data source, or the path to the file.
+        - source_format (str): The format of the external data source.
+
+        Returns:
+        - Tuple of URI and source format.
+        """
+        extra_metadata = {}
+        from gcp_tools.storage import Storage
+
+        if uri.endswith(".parquet"):
+            source_format = "PARQUET"
+            # Check is the file is partitioned
+            from gcp_tools.storage import Storage
+
+            if Storage(uri).isdir():
+                from gcp_tools.storage.parquet import _get_partition_cols
+
+                extra_metadata["partition_columns"] = _get_partition_cols(uri)
+                uri = f"{uri}*"
+        elif uri.endswith(".csv"):
+            source_format = "CSV"
+        elif uri.endswith(".json"):
+            source_format = "NEWLINE_DELIMITED_JSON"
+        return uri, source_format, extra_metadata
+
     def create_dataset(self, exists_ok=True):
         """
         Creates a new BigQuery dataset.
@@ -390,13 +533,24 @@ class BigQuery:
         """
         Creates a new BigQuery dataset or table.
 
+        Args:
+        - data (pandas.DataFrame|str): If a DataFrame, creates a table with the DataFrame schema.
+                                       If a string, considers it a URI for an external table.
+        - schema (list of bigquery.SchemaField): The schema definition for the new table.
+        - exists_ok (bool): If True, the table will be replaced if it already exists.
+
         Returns:
         - True if successful.
         """
-        if self.table:
-            return self.create_table(data=data, schema=schema, exists_ok=exists_ok)
-        else:
+        if not self.table:
+            # Working with a dataset.
             return self.create_dataset(exists_ok=exists_ok)
+        elif isinstance(data, str):
+            # Working with a table and input is a URI.
+            return self.create_external_table(data, schema=schema, exists_ok=exists_ok)
+        else:
+            # Working with a table and input is a DataFrame.
+            return self.create_table(data=data, schema=schema, exists_ok=exists_ok)
 
     def delete_table(self, errors="raise"):
         """
@@ -484,6 +638,28 @@ class BigQuery:
         else:
             return self.list_datasets()
 
+    def exists(self):
+        """
+        Checks if a dataset or table exists.
+
+        Returns:
+        - True if the dataset or table exists.
+        """
+        output = False
+        if self.table:
+            try:
+                self.client.get_table(self.table_id)
+                output = True
+            except NotFoundError:
+                output = False
+        else:
+            try:
+                self.client.get_dataset(self.dataset_id)
+                output = True
+            except NotFoundError:
+                output = False
+        return output
+
     def create_snapshot(self, snapshot_name: str):
         """
         Creates a snapshot of a BigQuery table.
@@ -552,6 +728,33 @@ class BigQuery:
         table = self.get_table()
         table.schema = schema
         return self.client.update_table(table, ["schema"])
+
+
+if __name__ == "__main__":
+    import pandas as pd
+    from uuid import uuid4
+    from gcp_tools.storage import Storage, Parquet
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    pa_schema = Schema(data, is_data=True).pyarrow()
+    bq_schema = Schema(data, is_data=True).bigquery()
+    bucket_name = f"test_bucket_{uuid4().hex}"
+    file_name = f"gs://{bucket_name}/file.parquet"
+    Storage(bucket_name).create()
+
+    Parquet(file_name).write(data, partition_cols=["a"], schema=pa_schema)
+
+    dataset_name = f"test_dataset_{uuid4().hex}"
+    table_name = f"test_ext_table"
+    table_id = f"{dataset_name}.{table_name}"
+    BigQuery(table_id).create(file_name, schema=bq_schema)
+
+    queried_df = BigQuery().read(file_name, schema=bq_schema)
+
+    print(queried_df)
+    print(data)
+    exit()
 
 
 if __name__ == "__main__":

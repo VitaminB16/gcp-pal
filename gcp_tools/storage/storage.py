@@ -136,6 +136,46 @@ class Storage:
         output = self.fs.exists(path)
         return output
 
+    def isdir(self, path=None):
+        """
+        Check if the path is a directory.
+
+        Returns:
+        - bool: Whether the path is a directory.
+        """
+        path = self._suffix_path(path)
+        output = self.fs.isdir(path)
+        try:
+            object_info = self.fs.info(path)
+        except FileNotFoundError:
+            return output
+        metadata = object_info.get("metadata", {})
+        if metadata.get("arrow/gcsfs", "") == "directory":
+            output = True
+        elif object_info.get("name", "").endswith("/"):
+            output = True
+        return output
+
+    def isfile(self, path=None):
+        """
+        Check if the path is a file.
+
+        Returns:
+        - bool: Whether the path is a file.
+        """
+        path = self._suffix_path(path)
+        output = self.fs.isfile(path)
+        try:
+            object_info = self.fs.info(path)
+        except FileNotFoundError:
+            return output
+        metadata = object_info.get("metadata", {})
+        if metadata.get("arrow/gcsfs", "") == "directory":
+            output = False
+        elif object_info.get("name", "").endswith("/"):
+            output = False
+        return output
+
     def mkdir(self, path=None, exist_ok=True):
         """
         Create a directory in the path.
@@ -311,13 +351,11 @@ class Storage:
         """
         if path is None:
             return self.path
+        if path.startswith("/"):
+            path = path[1:]
         if self.path.endswith("/"):
             return self.path + path
         return self.path + "/" + path
-
-
-if __name__ == "__main__":
-    exit()
 
 
 if __name__ == "__main__":

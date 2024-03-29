@@ -40,6 +40,16 @@ class Parquet:
 
             schema = Schema(data).infer_schema().pyarrow()
         if partition_cols:
+            if set(partition_cols) == set(data.columns):
+                msg = (
+                    f"Partition columns {partition_cols} are the same as data columns."
+                )
+                msg += "\nThis might cause unexpected behaviour with BigQuery external tables."
+                # msg += "\nAdding an `__index` column to the data."
+                # log(msg)
+                # data["__index"] = range(len(data))
+                # if schema:
+                #     schema = schema.append(pa.field("__index", pa.int64()))
             return self._write_partitioned(
                 data=data,
                 partition_cols=partition_cols,
@@ -141,6 +151,8 @@ class Parquet:
             raise ValueError(
                 f"File {self.path} is empty or not found, and allow_empty is False"
             )
+        if "__index" in df.columns:
+            df = df.drop(columns="__index")
         df = self.fix_column_types(df, filters)
 
         return df

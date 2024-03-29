@@ -4,8 +4,9 @@ TODO:
 [x] PubSub Module
 [x] Request Module
 [x] BigQuery Module
-[ ] Storage Module
-[ ] Parquet Module
+[x] Storage Module
+[x] Parquet Module
+[x] Schema Module
 [ ] Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module
 [ ] Logging Module
 [ ] Secret Manager Module
