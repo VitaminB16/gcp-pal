@@ -131,6 +131,8 @@ def is_pyarrow_schema(obj):
     Returns:
     - bool: Whether the object is a pandas Series.
     """
+    if not obj:
+        return False
     if str(type(obj)) == "<class 'pyarrow.lib.Schema'>":
         return True
     elif str(type(obj)) == "<class 'pyarrow.lib.Field'>":
@@ -154,9 +156,30 @@ def is_bigquery_schema(obj):
     Returns:
     - bool: Whether the object is a pandas Series.
     """
+    if not obj:
+        return False
     if isinstance(obj, list):
         return all([is_bigquery_schema(x) for x in obj])
     return str(type(obj)) == "<class 'google.cloud.bigquery.schema.SchemaField'>"
+
+
+def is_python_schema(obj):
+    """
+    Check if an object is a python schema without importing google.cloud.bigquery.
+
+    Args:
+    - obj: The object to check.
+
+    Returns:
+    - bool: Whether the object is a pandas Series.
+    """
+    if not obj:
+        return False
+    if isinstance(obj, dict):
+        return all([is_python_schema(x) for x in obj.values()])
+    elif isinstance(obj, list):
+        return all([is_python_schema(x) for x in obj])
+    return str(type(obj)) == "<class 'type'>"
 
 
 def log(*args, **kwargs):
