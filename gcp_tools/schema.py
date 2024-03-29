@@ -7,6 +7,7 @@ from gcp_tools.utils import (
     reverse_dict,
     is_pyarrow_schema,
     is_bigquery_schema,
+    is_python_schema,
     get_dict_items,
 )
 
@@ -137,6 +138,7 @@ def get_matching_schema_type(schema):
         type_matches[target] = compute_type_matches(schema_values, target_values)
 
     matching_values = type_matches.values()
+    matching_type = max(type_matches, key=type_matches.get)
     if sum(matching_values) == 0:
         log("No matching schema type found.")
         return None
@@ -144,7 +146,7 @@ def get_matching_schema_type(schema):
         log("Multiple matching schema types found.")
         return None
     matching_type = max(type_matches, key=type_matches.get)
-    if type_matches[matching_type] != len(schema):
+    if type_matches[matching_type] != len(schema_values):
         log("Not all schema types matched.")
         return None
     return matching_type
@@ -585,7 +587,7 @@ class Schema:
     def __init__(self, input: dict = {}, schema_type: str = None, is_data=False):
         self.input_schema = input
         self.schema = input
-        self.is_data = is_data
+        self.is_data = is_data if not is_dataframe(input) else True
         self.schema_type = schema_type or self.infer_schema_type()
 
         # Now the goal is to convert whatever schema into a dictionary of Python types
@@ -624,11 +626,13 @@ class Schema:
         - `Schema(pa.schema([pa.field("a", pa.int64()), pa.field("b", pa.string())])).infer_schema_type()` -> "pyarrow"
         - `Schema([bigquery.SchemaField("a", "INTEGER"), bigquery.SchemaField("b", "STRING")]).infer_schema_type()` -> "bigquery"
         """
-        if is_pyarrow_schema(self.input_schema) and not self.is_data:
+        if not self.is_data and is_pyarrow_schema(self.input_schema):
             return "pyarrow"
-        if is_bigquery_schema(self.input_schema) and not self.is_data:
+        if not self.is_data and is_bigquery_schema(self.input_schema):
             return "bigquery"
-        if is_dataframe(self.input_schema) or self.is_data:
+        if not self.is_data and is_python_schema(self.input_schema):
+            return "python"
+        if self.is_data or is_dataframe(self.input_schema):
             # We return None here because self.input_schema is not a schema dictionary
             return None
         if not isinstance(self.input_schema, dict):
