@@ -254,3 +254,81 @@ def test_suffix_path():
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
+
+
+def test_is_directory():
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    import pandas as pd
+
+    success = {}
+    bucket_name = f"test_bucket_{uuid4()}"
+    create_bucket(bucket_name)
+    success[0] = Storage(bucket_name).isdir()
+    success[1] = not Storage(f"{bucket_name}/file").isdir()
+
+    create_file(bucket_name, "folder/folder/file.txt")
+    success[2] = Storage(f"{bucket_name}/folder").isdir()
+    success[3] = Storage(f"{bucket_name}").isdir("folder")
+    success[4] = Storage(f"{bucket_name}/folder").isdir("folder")
+    success[5] = Storage(f"{bucket_name}/").isdir("folder/folder")
+    success[6] = not Storage(f"{bucket_name}/folder/folder").isdir("/file.txt")
+    success[7] = not Storage(f"{bucket_name}/folder/folder/file.txt").isdir()
+    success[8] = Storage().isdir(f"{bucket_name}")
+    success[9] = not Storage().isdir(f"{bucket_name}/folder/folder/file.txt")
+
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    partition_cols = ["a"]
+    file_name = f"gs://{bucket_name}/file.parquet"
+    table = pa.Table.from_pandas(df)
+    pq.write_to_dataset(
+        table, file_name, partition_cols=partition_cols, basename_template="{i}.parquet"
+    )
+
+    success[10] = Storage(file_name).isdir()
+    success[11] = Storage(file_name).isdir("a=1")
+    success[12] = not Storage(file_name).isdir("a=1/0.parquet")
+
+    failed = [k for k, v in success.items() if not v]
+
+    Storage(bucket_name).delete()
+    assert not failed
+
+
+def test_is_file():
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    import pandas as pd
+
+    success = {}
+    bucket_name = f"test_bucket_{uuid4()}"
+    create_bucket(bucket_name)
+    success[0] = not Storage(bucket_name).isfile()
+    success[1] = not Storage(f"{bucket_name}/file").isfile()
+
+    create_file(bucket_name, "folder/folder/file.txt")
+    success[2] = not Storage(f"{bucket_name}/folder").isfile()
+    success[3] = not Storage(f"{bucket_name}").isfile("folder")
+    success[4] = not Storage(f"{bucket_name}/folder").isfile("folder")
+    success[5] = not Storage(f"{bucket_name}/").isfile("folder/folder")
+    success[6] = Storage(f"{bucket_name}/folder/folder").isfile("/file.txt")
+    success[7] = Storage(f"{bucket_name}/folder/folder/file.txt").isfile()
+    success[8] = Storage().isfile(f"{bucket_name}/folder/folder/file.txt")
+
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    partition_cols = ["a"]
+    file_name = f"gs://{bucket_name}/file.parquet"
+    table = pa.Table.from_pandas(df)
+    pq.write_to_dataset(
+        table, file_name, partition_cols=partition_cols, basename_template="{i}.parquet"
+    )
+
+    success[10] = not Storage(file_name).isfile()
+    success[11] = not Storage(file_name).isfile("a=1")
+    success[12] = Storage(file_name).isfile("a=1/0.parquet")
+
+    Storage(bucket_name).delete()
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed

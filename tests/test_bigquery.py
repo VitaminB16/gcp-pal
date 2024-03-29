@@ -363,10 +363,103 @@ def test_write():
     ).convert_dtypes()
     BigQuery(table_id).write(df)
     queried_df = BigQuery(table_id).read()
-    print(df)
-    print(queried_df)
-    print(df.dtypes)
-    print(queried_df.dtypes)
     success = df.equals(queried_df)
     delete_dataset(dataset)
     assert success
+
+
+def test_infer_uri():
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from gcp_tools import Storage
+
+    success = {}
+
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
+    partition_cols = ["a"]
+
+    bucket_name = f"test_bucket_{uuid4().hex}"
+    file_name = f"file.parquet"
+    file_path = f"gs://{bucket_name}/{file_name}"
+    Storage(bucket_name).create()
+
+    pq.write_to_dataset(
+        table=pa.Table.from_pandas(df),
+        root_path=file_path,
+        partition_cols=partition_cols,
+    )
+
+    inferred_uri, inferred_format, _ = BigQuery()._infer_uri(file_path)
+    success[0] = inferred_uri == file_path + "*"
+    success[1] = inferred_format == "PARQUET"
+
+    file_name = f"file.csv"
+    file_path = f"gs://{bucket_name}/{file_name}"
+    with Storage(file_path).open("w") as f:
+        df.to_csv(f, index=False)
+
+    inferred_uri, inferred_format, _ = BigQuery()._infer_uri(file_path)
+    success[2] = inferred_uri == file_path
+    success[3] = inferred_format == "CSV"
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_exists():
+    success = {}
+
+    table_name = f"test_table_{uuid4().hex}"
+    dataset = f"test_dataset_{uuid4().hex}"
+    table_id = f"{dataset}.{table_name}"
+
+    success[0] = not BigQuery(dataset=dataset).exists()
+    success[1] = not BigQuery(table_id).exists()
+    BigQuery(table_id).create_table()
+    success[2] = BigQuery(dataset=dataset).exists()
+    success[3] = BigQuery(table_id).exists()
+    BigQuery(table_id).delete()
+    success[4] = not BigQuery(table_id).exists()
+    BigQuery(dataset=dataset).delete()
+    success[5] = not BigQuery(dataset=dataset).exists()
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_create_extable():
+    import pandas as pd
+    from gcp_tools import Storage, Parquet
+    from gcp_tools.schema import Schema
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    pa_schema = Schema(data, is_data=True).pyarrow()
+    bq_schema = Schema(data, is_data=True).bigquery()
+    bucket_name = f"test_bucket_{uuid4().hex}"
+    file_name = f"gs://{bucket_name}/file.parquet"
+
+    Storage(bucket_name).create()
+
+    Parquet(file_name).write(data, partition_cols=["a"], schema=pa_schema)
+    success[0] = Storage(file_name).exists()
+    success[1] = Storage(file_name).isdir()
+
+    dataset_name = f"test_dataset_{uuid4().hex}"
+    table_name = f"test_ext_table"
+    table_id = f"{dataset_name}.{table_name}"
+    BigQuery(table_id).create(file_name, schema=bq_schema)
+    success[2] = BigQuery(table_id).exists()
+
+    queried_df = BigQuery().read(file_name, schema=bq_schema)
+
+    queried_df = queried_df.sort_values("a").reset_index(drop=True)
+    queried_df = queried_df[data.columns]
+    success[100] = data.equals(queried_df)
+    success[101] = data.dtypes.equals(queried_df.dtypes)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
