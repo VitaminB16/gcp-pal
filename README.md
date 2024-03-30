@@ -276,6 +276,17 @@ BigQuery("dataset.table").insert(data)
 # Output: Data inserted
 ```
 
+### External tables
+
+One can also create BigQuery external tables by specifying the file path:
+
+```python
+file_path = "gs://bucket/file.parquet"
+BigQuery("dataset.external_table").create(file_path)
+# Output: Dataset "dataset" created, external table "dataset.external_table" created
+```
+
+The allowed file formats are CSV, JSON, Avro, Parquet (single and partitioned), ORC.
 
 ---
 
@@ -456,10 +467,10 @@ df = pd.DataFrame(
 )
 inferred_schema = Schema(df, is_data=True).schema
 # {
-#   "a": int,
-#   "b": str,
-#   "c": float,
-#   "date": datetime,
+#   "a": "int",
+#   "b": "str",
+#   "c": "float",
+#   "date": "datetime",
 # }
 pyarrow_schema = Schema(df, is_data=True).pyarrow()
 # pa.schema(

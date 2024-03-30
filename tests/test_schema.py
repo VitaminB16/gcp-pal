@@ -57,17 +57,17 @@ def test_infer_schema():
     }
     python_schema = infer_schema(data)
     success[0] = python_schema == {
-        "a": int,
-        "b": str,
-        "c": float,
-        "date": datetime,
+        "a": "int",
+        "b": "str",
+        "c": "float",
+        "date": "datetime",
     }
     data = {"a": 1, "b": [2.0], "c": {"c1": ["w", "w"], "c2": [0, 1]}}
     python_schema = infer_schema(data)
     success[1] = python_schema == {
-        "a": int,
-        "b": float,
-        "c": {"c1": str, "c2": int},
+        "a": "int",
+        "b": "float",
+        "c": {"c1": "str", "c2": "int"},
     }
     data = pd.DataFrame(
         {
@@ -79,10 +79,10 @@ def test_infer_schema():
     )
     pandas_schema = infer_schema(data)
     success[2] = pandas_schema == {
-        "a": int,
-        "b": str,
-        "c": float,
-        "date": datetime,
+        "a": "int",
+        "b": "str",
+        "c": "float",
+        "date": "datetime",
     }
     failed = [k for k, v in success.items() if not v]
     assert not failed
@@ -101,10 +101,10 @@ def test_schema():
     str_schema = inferred_schema.str()
     pyarrow_schema = inferred_schema.pyarrow()
     assert inferred_schema.schema == {
-        "a": int,
-        "b": str,
-        "c": float,
-        "date": datetime,
+        "a": "int",
+        "b": "str",
+        "c": "float",
+        "date": "datetime",
     }
     assert python_schema == {
         "a": int,
@@ -138,7 +138,7 @@ def test_convert_all_schemas():
     success = {}
 
     ### python ###
-    python_schema = {"a": int, "b": str, "c": float}
+    python_schema = {"a": int, "b": str, "c": float, "d": datetime}
 
     # 1. python -> pyarrow
     schema = Schema(python_schema).pyarrow()
@@ -147,13 +147,14 @@ def test_convert_all_schemas():
             pa.field("a", pa.int64()),
             pa.field("b", pa.string()),
             pa.field("c", pa.float64()),
+            pa.field("d", pa.timestamp("ns")),
         ]
     )
     success[0] = schema == pyarrow_schema
 
     # 2. python -> str
     schema = Schema(python_schema).str()
-    str_schema = {"a": "int", "b": "str", "c": "float"}
+    str_schema = {"a": "int", "b": "str", "c": "float", "d": "datetime"}
     success[1] = schema == str_schema
 
     # 3. python -> bigquery
@@ -162,12 +163,13 @@ def test_convert_all_schemas():
         bigquery.SchemaField("a", "INTEGER"),
         bigquery.SchemaField("b", "STRING"),
         bigquery.SchemaField("c", "FLOAT"),
+        bigquery.SchemaField("d", "DATETIME"),
     ]
     success[2] = schema == bigquery_schema
 
     # 4. python -> pandas
     schema = Schema(python_schema).pandas()
-    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64", "d": "datetime64[ns]"}
     success[3] = schema == pandas_schema
 
     ### pyarrow ###
@@ -176,17 +178,18 @@ def test_convert_all_schemas():
             pa.field("a", pa.int64()),
             pa.field("b", pa.string()),
             pa.field("c", pa.float64()),
+            pa.field("d", pa.timestamp("ns")),
         ]
     )
 
     # 1. pyarrow -> str
     schema = Schema(pyarrow_schema).str()
-    str_schema = {"a": "int", "b": "str", "c": "float"}
+    str_schema = {"a": "int", "b": "str", "c": "float", "d": "datetime"}
     success[4] = schema == str_schema
 
     # 2. pyarrow -> python
     schema = Schema(pyarrow_schema).python()
-    python_schema = {"a": int, "b": str, "c": float}
+    python_schema = {"a": int, "b": str, "c": float, "d": datetime}
     success[5] = schema == python_schema
 
     # 3. pyarrow -> bigquery
@@ -195,16 +198,17 @@ def test_convert_all_schemas():
         bigquery.SchemaField("a", "INTEGER"),
         bigquery.SchemaField("b", "STRING"),
         bigquery.SchemaField("c", "FLOAT"),
+        bigquery.SchemaField("d", "DATETIME"),
     ]
     success[6] = schema == bigquery_schema
 
     # 4. pyarrow -> pandas
     schema = Schema(pyarrow_schema).pandas()
-    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64", "d": "datetime64[ns]"}
     success[7] = schema == pandas_schema
 
     ### strings ###
-    str_schema = {"a": "int", "b": "str", "c": "float"}
+    str_schema = {"a": "int", "b": "str", "c": "float", "d": "timestamp"}
 
     # 1. str -> pyarrow
     schema = Schema(str_schema).pyarrow()
@@ -213,13 +217,14 @@ def test_convert_all_schemas():
             pa.field("a", pa.int64()),
             pa.field("b", pa.string()),
             pa.field("c", pa.float64()),
+            pa.field("d", pa.timestamp("ns")),
         ]
     )
     success[8] = schema == pyarrow_schema
 
     # 2. str -> python
     schema = Schema(str_schema).python()
-    python_schema = {"a": int, "b": str, "c": float}
+    python_schema = {"a": int, "b": str, "c": float, "d": datetime}
     success[9] = schema == python_schema
 
     # 3. str -> bigquery
@@ -228,12 +233,13 @@ def test_convert_all_schemas():
         bigquery.SchemaField("a", "INTEGER"),
         bigquery.SchemaField("b", "STRING"),
         bigquery.SchemaField("c", "FLOAT"),
+        bigquery.SchemaField("d", "TIMESTAMP"),
     ]
     success[10] = schema == bigquery_schema
 
     # 4. str -> pandas
     schema = Schema(str_schema).pandas()
-    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64", "d": "datetime64[ns]"}
     success[11] = schema == pandas_schema
 
     ### bigquery ###
@@ -241,6 +247,7 @@ def test_convert_all_schemas():
         bigquery.SchemaField("a", "INTEGER"),
         bigquery.SchemaField("b", "STRING"),
         bigquery.SchemaField("c", "FLOAT"),
+        bigquery.SchemaField("d", "TIMESTAMP"),
     ]
 
     # 1. bigquery -> pyarrow
@@ -250,23 +257,24 @@ def test_convert_all_schemas():
             pa.field("a", pa.int64()),
             pa.field("b", pa.string()),
             pa.field("c", pa.float64()),
+            pa.field("d", pa.timestamp("ns")),
         ]
     )
     success[12] = schema == pyarrow_schema
 
     # 2. bigquery -> str
     schema = Schema(bigquery_schema).str()
-    str_schema = {"a": "int", "b": "str", "c": "float"}
+    str_schema = {"a": "int", "b": "str", "c": "float", "d": "timestamp"}
     success[13] = schema == str_schema
 
     # 3. bigquery -> python
     schema = Schema(bigquery_schema).python()
-    python_schema = {"a": int, "b": str, "c": float}
+    python_schema = {"a": int, "b": str, "c": float, "d": datetime}
     success[14] = schema == python_schema
 
     # 4. bigquery -> pandas
     schema = Schema(bigquery_schema).pandas()
-    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64", "d": "datetime64[ns]"}
     success[15] = schema == pandas_schema
 
     ### bigquery as a dict ###
@@ -274,6 +282,7 @@ def test_convert_all_schemas():
         "a": "INTEGER",
         "b": "STRING",
         "c": "FLOAT",
+        "d": "TIMESTAMP",
     }
 
     # 1. bigquery -> pyarrow
@@ -283,23 +292,24 @@ def test_convert_all_schemas():
             pa.field("a", pa.int64()),
             pa.field("b", pa.string()),
             pa.field("c", pa.float64()),
+            pa.field("d", pa.timestamp("ns")),
         ]
     )
     success[16] = schema == pyarrow_schema
 
     # 2. bigquery -> str
     schema = Schema(bigquery_schema).str()
-    str_schema = {"a": "int", "b": "str", "c": "float"}
+    str_schema = {"a": "int", "b": "str", "c": "float", "d": "timestamp"}
     success[17] = schema == str_schema
 
     # 3. bigquery -> python
     schema = Schema(bigquery_schema).python()
-    python_schema = {"a": int, "b": str, "c": float}
+    python_schema = {"a": int, "b": str, "c": float, "d": datetime}
     success[18] = schema == python_schema
 
     # 4. bigquery -> pandas
     schema = Schema(bigquery_schema).pandas()
-    pandas_schema = {"a": "int64", "b": "object", "c": "float64"}
+    pandas_schema = {"a": "int64", "b": "object", "c": "float64", "d": "datetime64[ns]"}
     success[19] = schema == pandas_schema
 
     ### pyarrow as a dict ###
@@ -307,6 +317,7 @@ def test_convert_all_schemas():
         "a": pa.int64(),
         "b": pa.string(),
         "c": {"c1": pa.float64(), "c2": pa.int64()},
+        "d": pa.timestamp("ns"),
     }
 
     # 1. pyarrow -> str
@@ -315,6 +326,7 @@ def test_convert_all_schemas():
         "a": "int",
         "b": "str",
         "c": {"c1": "float", "c2": "int"},
+        "d": "datetime",
     }
     success[20] = schema == str_schema
 
@@ -324,6 +336,7 @@ def test_convert_all_schemas():
         "a": int,
         "b": str,
         "c": {"c1": float, "c2": int},
+        "d": datetime,
     }
     success[21] = schema == python_schema
 
@@ -341,6 +354,7 @@ def test_convert_all_schemas():
                 bigquery.SchemaField("c2", "INTEGER"),
             ],
         ),
+        bigquery.SchemaField("d", "DATETIME"),
     ]
     success[22] = schema == bigquery_schema
 
@@ -350,6 +364,7 @@ def test_convert_all_schemas():
         "a": "int64",
         "b": "object",
         "c": {"c1": "float64", "c2": "int64"},
+        "d": "datetime64[ns]",
     }
     success[23] = schema == pandas_schema
 
@@ -361,27 +376,38 @@ def test_convert_all_schemas():
 def test_convert_nested_schema():
 
     success = {}
-    python_schema = {
-        "name": str,
-        "age": int,
-        "income": float,
-        "is_student": bool,
-        "created_at": datetime,
+    str_schema = {
+        "name": "str",
+        "age": "int",
+        "income": "float",
+        "is_student": "bool",
+        "created_at": {
+            "date": "datetime",
+            "time": "timestamp",
+        },
         "details": {
-            "address": str,
-            "phone": int,
+            "address": "str",
+            "phone": "int",
         },
     }
 
-    # 1. python -> pyarrow
-    schema = Schema(python_schema).pyarrow()
+    # 1. str -> pyarrow
+    schema = Schema(str_schema).pyarrow()
     pyarrow_schema = pa.schema(
         [
             pa.field("name", pa.string()),
             pa.field("age", pa.int64()),
             pa.field("income", pa.float64()),
             pa.field("is_student", pa.bool_()),
-            pa.field("created_at", pa.timestamp("ns")),
+            pa.field(
+                "created_at",
+                pa.struct(
+                    [
+                        pa.field("date", pa.timestamp("ns")),
+                        pa.field("time", pa.timestamp("ns")),
+                    ]
+                ),
+            ),
             pa.field(
                 "details",
                 pa.struct(
@@ -395,26 +421,40 @@ def test_convert_nested_schema():
     )
     success[0] = schema == pyarrow_schema
 
-    # 2. python -> str
-    schema = Schema(python_schema).str()
-    str_schema = {
-        "name": "str",
-        "age": "int",
-        "income": "float",
-        "is_student": "bool",
-        "created_at": "datetime",
-        "details": {"address": "str", "phone": "int"},
+    # 2. str -> python
+    schema = Schema(str_schema).python()
+    python_schema = {
+        "name": str,
+        "age": int,
+        "income": float,
+        "is_student": bool,
+        "created_at": {
+            "date": datetime,
+            "time": datetime,
+        },
+        "details": {
+            "address": str,
+            "phone": int,
+        },
     }
-    success[1] = schema == str_schema
+    success[1] = schema == python_schema
 
-    # 3. python -> bigquery
-    schema = Schema(python_schema).bigquery()
+    # 3. str -> bigquery
+    schema = Schema(str_schema).bigquery()
     bigquery_schema = [
         bigquery.SchemaField("name", "STRING"),
         bigquery.SchemaField("age", "INTEGER"),
         bigquery.SchemaField("income", "FLOAT"),
         bigquery.SchemaField("is_student", "BOOLEAN"),
-        bigquery.SchemaField("created_at", "DATETIME"),
+        bigquery.SchemaField(
+            "created_at",
+            "RECORD",
+            mode="NULLABLE",
+            fields=[
+                bigquery.SchemaField("date", "DATETIME"),
+                bigquery.SchemaField("time", "TIMESTAMP"),
+            ],
+        ),
         bigquery.SchemaField(
             "details",
             "RECORD",
@@ -427,14 +467,14 @@ def test_convert_nested_schema():
     ]
     success[2] = schema == bigquery_schema
 
-    # 4. python -> pandas
-    schema = Schema(python_schema).pandas()
+    # 4. str -> pandas
+    schema = Schema(str_schema).pandas()
     pandas_schema = {
         "name": "object",
         "age": "int64",
         "income": "float64",
         "is_student": "bool",
-        "created_at": "datetime64[ns]",
+        "created_at": {"date": "datetime64[ns]", "time": "datetime64[ns]"},
         "details": {"address": "object", "phone": "int64"},
     }
     success[3] = schema == pandas_schema
@@ -512,11 +552,11 @@ def test_schema_nested():
     str_schema = inferred_schema.str()
     pyarrow_schema = inferred_schema.pyarrow()
     success[0] = inferred_schema.schema == {
-        "a": int,
-        "b": str,
-        "c": float,
-        "date": datetime,
-        "nested": {"a": int, "b": str},
+        "a": "int",
+        "b": "str",
+        "c": "float",
+        "date": "datetime",
+        "nested": {"a": "int", "b": "str"},
     }
     success[1] = python_schema == {
         "a": int,
