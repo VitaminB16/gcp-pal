@@ -79,110 +79,122 @@ def test_BigQuery_init():
 
 
 def test_create_table():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
-    success1 = not table_exists(table_id)
+    success[1] = not table_exists(table_id)
     BigQuery(table_id).create_table()  # Testing: table created
-    success2 = table_exists(table_id)
+    success[2] = table_exists(table_id)
     delete_table(table_id)
-    assert success1
-    assert success2
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_create_table_df():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
-    success1 = not table_exists(table_id)
+    success[1] = not table_exists(table_id)
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
     BigQuery(table_id).create_table(data=df)  # Testing: table created & data correct
-    success2 = table_exists(table_id)
+    success[2] = table_exists(table_id)
     queried_df = read_gbq(f"SELECT * FROM {table_id}")
-    success3 = df.equals(queried_df)
+    success[3] = df.equals(queried_df)
     delete_table(table_id)
-    assert success1
-    assert success2
-    assert success3
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_delete_table():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
     BigQuery(table_id).create_table()  # Testing: table created
-    success1 = table_exists(table_id)
+    success[1] = table_exists(table_id)
     BigQuery(table_id).delete_table()  # Testing: table deleted
-    success2 = not table_exists(table_id)
-    assert success1
-    assert success2
+    success[2] = not table_exists(table_id)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_delete_dataset():
+    success = {}
     dataset = f"test_dataset_{uuid4().hex}"
     bq = bigquery.Client(location="europe-west2")
     bq.create_dataset(dataset)
-    success1 = dataset in list_datasets()
+    success[1] = dataset in list_datasets()
     BigQuery(dataset=dataset).delete_dataset()  # Testing: dataset deleted
-    success2 = dataset not in list_datasets()
-    assert success1
-    assert success2
+    success[2] = dataset not in list_datasets()
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_delete():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
-    success1 = not table_exists(table_id)
+    success[1] = not table_exists(table_id)
     BigQuery(table_id).create_table()  # Testing table and dataset created
-    success2 = table_exists(table_id)
-    success3 = dataset_exists(dataset)
+    success[2] = table_exists(table_id)
+    success[3] = dataset_exists(dataset)
     BigQuery(table_id).delete()  # Testing: table deleted but not dataset
-    success4 = not table_exists(table_id)
-    success5 = dataset_exists(dataset)
+    success[4] = not table_exists(table_id)
+    success[5] = dataset_exists(dataset)
     BigQuery(dataset=dataset).delete()  # Testing: dataset deleted
-    success6 = not dataset_exists(dataset)
-    assert success1
-    assert success2
-    assert success3
-    assert success4
-    assert success5
-    assert success6
+    success[6] = not dataset_exists(dataset)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_all_BQ():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
-    success1 = not table_exists(table_id)
+    success[1] = not table_exists(table_id)
 
     BigQuery(table_id).create_table()  # Testing: table created
-    success2 = table_exists(table_id)
-    success3 = dataset in BigQuery().ls()  # Testing: dataset listed
-    success4 = table_name in BigQuery(dataset=dataset).ls()  # Testing: table listed
+    success[2] = table_exists(table_id)
+    success[3] = dataset in BigQuery().ls()  # Testing: dataset listed
+    success[4] = table_name in BigQuery(dataset=dataset).ls()  # Testing: table listed
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
     BigQuery(table_id).insert(df)  # Testing: data inserted
     query = f"SELECT * FROM {table_id}"
 
-    queried_df = BigQuery(table_id).query(query)  # Testing: data correct
-    success5 = df.equals(queried_df)
+    queried_df = BigQuery(table_id).query(
+        query, to_dataframe=True
+    )  # Testing: data queried
+    success[5] = df.equals(queried_df)
 
     BigQuery(table_id).delete()  # Testing: table deleted
-    success6 = not table_exists(table_id)
+    success[6] = not table_exists(table_id)
 
     BigQuery(dataset=dataset).delete()  # Testing: dataset deleted
-    success7 = not dataset_exists(dataset)
-    assert success1
-    assert success2
-    assert success3
-    assert success4
-    assert success5
-    assert success6
-    assert success7
+    success[7] = not dataset_exists(dataset)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_sql_builder():
     from gcp_tools.bigquery import SQLBuilder
+
+    success = {}
 
     sql_builder = SQLBuilder("clean2.new_table")
 
@@ -197,13 +209,18 @@ def test_sql_builder():
     )
     expected_query2 = "SELECT `name` FROM `clean2.new_table` WHERE `age` > @param_0 AND `age` < @param_1 LIMIT 10"
 
-    assert query1 == expected_query1
-    assert params1 == {"param_0": 25}
-    assert query2 == expected_query2
-    assert params2 == {"param_0": 25, "param_1": 35}
+    success[0] = query1 == expected_query1
+    success[1] = params1 == {"param_0": 25}
+    success[2] = query2 == expected_query2
+    success[3] = params2 == {"param_0": 25, "param_1": 35}
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_bq_read():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
@@ -217,40 +234,38 @@ def test_bq_read():
     queried_df6 = BigQuery(table_id).read(
         columns=["a"], filters=[("a", ">", 1), ("b", ">", 5)]
     )
-    success1 = df.equals(queried_df1)
-    success2 = df.head(1).equals(queried_df2)
-    success3 = df[["a"]].equals(queried_df3)
-    success4 = df[["a"]].head(1).equals(queried_df4)
-    success5 = df[df["a"] > 1][["a"]].reset_index(drop=True).equals(queried_df5)
-    success6 = (
+    success[1] = df.equals(queried_df1)
+    success[2] = df.head(1).equals(queried_df2)
+    success[3] = df[["a"]].equals(queried_df3)
+    success[4] = df[["a"]].head(1).equals(queried_df4)
+    success[5] = df[df["a"] > 1][["a"]].reset_index(drop=True).equals(queried_df5)
+    success[6] = (
         df[(df["a"] > 1) & (df["b"] > 5)][["a"]]
         .reset_index(drop=True)
         .equals(queried_df6)
     )
-    assert success1
-    assert success2
-    assert success3
-    assert success4
-    assert success5
-    assert success6
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_get_table():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
     BigQuery(table_id).create_table(data=df)
     table_ref = BigQuery(table_id).get_table()
-    success1 = table_ref.table_id == table_name
-    success2 = table_ref.dataset_id == dataset
-    success3 = table_ref.num_rows == 3
-    success4 = table_ref.num_bytes > 0
-    delete_dataset(dataset)
-    assert success1
-    assert success2
-    assert success3
-    assert success4
+    success[1] = table_ref.table_id == table_name
+    success[2] = table_ref.dataset_id == dataset
+    success[3] = table_ref.num_rows == 3
+    success[4] = table_ref.num_bytes > 0
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_get_dataset():
@@ -265,6 +280,7 @@ def test_get_dataset():
 
 
 def test_get():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
@@ -272,23 +288,21 @@ def test_get():
     BigQuery(table_id).create_table(data=df)
 
     table_ref = BigQuery(table_id).get()  # Testing: get_table
-    success1 = table_ref.table_id == table_name
-    success2 = table_ref.dataset_id == dataset
-    success3 = table_ref.num_rows == 3
-    success4 = table_ref.num_bytes > 0
+    success[1] = table_ref.table_id == table_name
+    success[2] = table_ref.dataset_id == dataset
+    success[3] = table_ref.num_rows == 3
+    success[4] = table_ref.num_bytes > 0
 
     dataset_ref = BigQuery(dataset=dataset).get()  # Testing: get_dataset
-    success5 = dataset_ref.dataset_id == dataset
+    success[5] = dataset_ref.dataset_id == dataset
 
-    delete_dataset(dataset)
-    assert success1
-    assert success2
-    assert success3
-    assert success4
-    assert success5
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_schema():
+    success = {}
     table_name = f"test_table_{uuid4().hex}"
     dataset = f"test_dataset_{uuid4().hex}"
     table_id = f"{dataset}.{table_name}"
@@ -297,22 +311,19 @@ def test_schema():
     ).convert_dtypes()
     BigQuery(table_id).create_table(data=df)
     schema_field = BigQuery(table_id).schema()
-    success1 = schema_field[0].name == "a"
-    success2 = schema_field[1].name == "b"
-    success3 = schema_field[2].name == "c"
-    success4 = schema_field[0].field_type == "INTEGER"
-    success5 = schema_field[1].field_type == "FLOAT"
-    success6 = schema_field[2].field_type == "STRING"
-    success7 = len(schema_field) == 3
+    success[1] = schema_field[0].name == "a"
+    success[2] = schema_field[1].name == "b"
+    success[3] = schema_field[2].name == "c"
+    success[4] = schema_field[0].field_type == "INTEGER"
+    success[5] = schema_field[1].field_type == "FLOAT"
+    success[6] = schema_field[2].field_type == "STRING"
+    success[7] = len(schema_field) == 3
 
     delete_dataset(dataset)
-    assert success1
-    assert success2
-    assert success3
-    assert success4
-    assert success5
-    assert success6
-    assert success7
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_set_schema():
