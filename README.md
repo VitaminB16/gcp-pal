@@ -414,41 +414,56 @@ from gcp_tools.schema import Schema
 To translate a schema from one format to another, use the respective methods:
 
 ```python
-python_schema = {
-    "a": int,
-    "b": str,
-    "c": float,
-    "d": datetime,
+str_schema = {
+    "a": "int",
+    "b": "str",
+    "c": "float",
+    "d": {
+        "d1": "datetime",
+        "d2": "timestamp",
+    },
 }
-str_schema = Schema(python_schema).str()
+python_schema = Schema(str_schema).str()
 # {
-#    "a": "int",
-#    "b": "str",
-#    "c": "float",
-#    "d": "datetime",
+#    "a": int,
+#    "b": str,
+#    "c": float,
+#    "d": {
+#        "d1": datetime,
+#        "d2": datetime,
+#    },
 # }
-pyarrow_schema = Schema(python_schema).pyarrow()
+pyarrow_schema = Schema(str_schema).pyarrow()
 # pa.schema(
 #    [
 #        pa.field("a", pa.int64()),
 #        pa.field("b", pa.string()),
 #        pa.field("c", pa.float64()),
-#        pa.field("d", pa.timestamp("ns")),
+#        pa.field("d", pa.struct([
+#            pa.field("d1", pa.timestamp("ns")),
+#            pa.field("d2", pa.timestamp("ns")),
+#        ])),
 #    ]
 # )
-bigquery_schema = Schema(python_schema).bigquery()
+bigquery_schema = Schema(str_schema).bigquery()
 # [
 #     bigquery.SchemaField("a", "INTEGER"),
 #     bigquery.SchemaField("b", "STRING"),
 #     bigquery.SchemaField("c", "FLOAT"),
-#     bigquery.SchemaField("d", "TIMESTAMP"),
+#     bigquery.SchemaField("d", "RECORD", fields=[
+#        bigquery.SchemaField("d1", "DATETIME"),
+#        bigquery.SchemaField("d2", "TIMESTAMP"),
+#     ]),
 # ]
-pandas_schema = Schema(python_schema).pandas()
+pandas_schema = Schema(str_schema).pandas()
 # {
 #    "a": "int64",
 #    "b": "object",
 #    "c": "float64",
-#    "d": "datetime64[ns]",
+#    "d": {
+#        "d1": "datetime64[ns]",
+#        "d2": "datetime64[ns]",
+#    },
 # }
 ```
 
