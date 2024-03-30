@@ -179,7 +179,7 @@ class BigQuery:
     def __repr__(self):
         return f"BigQuery({self.table_id})"
 
-    def query(self, sql, job_config=None, schema=None, to_dataframe=True, params=None):
+    def query(self, sql, job_config=None, schema=None, to_dataframe=False, params=None):
         """
         Executes a query against BigQuery.
 
@@ -195,12 +195,18 @@ class BigQuery:
         if params:
             job_config = self._parse_query_params(params)
         output = self.client.query(sql, job_config=job_config)
-        log(f"Query executed: {sql}")
         if to_dataframe:
             output = output.to_dataframe().convert_dtypes()
-        if schema and is_dataframe(output):
-            pd_schema = Schema(schema).pandas()
-            output = output.astype(pd_schema)
+            if schema and is_dataframe(output):
+                pd_schema = Schema(schema).pandas()
+                output = output.astype(pd_schema)
+        else:
+            output = output.result()
+            try:
+                output = list(output)
+            except Exception as e:
+                log(f"Error converting query results to list: {e}")
+        log(f"Query executed: {sql}")
         return output
 
     def read_table(
@@ -732,6 +738,14 @@ class BigQuery:
         table = self.get_table()
         table.schema = schema
         return self.client.update_table(table, ["schema"])
+
+
+if __name__ == "__main__":
+    output = BigQuery().query(
+        "CREATE OR REPLACE TABLE `example_dataset.example_table` AS SELECT 1 AS x, 'test' AS y"
+    )
+    print(list(output))
+    exit()
 
 
 if __name__ == "__main__":
