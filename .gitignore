@@ -14,3 +14,4 @@ fonts/
 _includes/
 output/**.py
 tests_output/*
+*.txt

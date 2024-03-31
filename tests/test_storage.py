@@ -25,7 +25,8 @@ def list_files(bucket_name):
 def create_file(bucket_name, file_name):
     fs = gcsfs.GCSFileSystem()
     fs.invalidate_cache()
-    fs.touch(f"gs://{bucket_name}/{file_name}", location="europe-west2")
+    with fs.open(f"gs://{bucket_name}/{file_name}", "w") as f:
+        f.write("abc")
 
 
 # Tests for the Storage class
@@ -211,7 +212,7 @@ def test_open():
     create_file(bucket_name, file_name)
 
     with Storage(f"{bucket_name}/{file_name}").open() as f:
-        success[0] = f.read() == ""
+        success[0] = f.read() == "abc"
 
     failed = [k for k, v in success.items() if not v]
 

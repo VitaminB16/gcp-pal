@@ -3,6 +3,10 @@ from gcp_tools.utils import (
     is_series,
     force_list,
     is_dataframe,
+    is_pyarrow_schema,
+    is_bigquery_schema,
+    is_numpy_array,
+    is_python_schema,
     reverse_dict,
     get_dict_items,
 )
@@ -71,6 +75,90 @@ def test_get_dict_items():
     success[6] = set(t) == set([1, 2, 3, 4])
     t = get_dict_items({"a": 1, "b": [1, [2, [3, 4]]]}, item_type="value")
     success[7] = set(t) == set([1, 1, 2, 3, 4])
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_is_pyarrow_schema():
+    import pyarrow as pa
+
+    success = {}
+
+    schema = pa.schema(
+        [
+            pa.field("a", pa.int64()),
+            pa.field("b", pa.string()),
+            pa.field("c", pa.float64()),
+            pa.field("d", pa.list_(pa.int64())),
+        ]
+    )
+    success[0] = is_pyarrow_schema(schema) == True
+
+    schema = pa.schema([])
+
+    success[1] = is_pyarrow_schema(schema) == False
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_is_numpy_array():
+    df = pd.DataFrame({"a": [1, 2, 3]})
+
+    success = {}
+
+    success[0] = is_numpy_array(df["a"].values) == True
+    success[1] = is_numpy_array(df.values) == True
+    success[2] = is_numpy_array(df) == False
+    success[3] = is_numpy_array([1, 2, 3]) == False
+    success[4] = is_numpy_array(1) == False
+    success[5] = is_numpy_array("a") == False
+    success[6] = is_numpy_array(None) == False
+    success[7] = is_numpy_array(True) == False
+    success[8] = is_numpy_array(False) == False
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_is_python_schema():
+    success = {}
+
+    schema = {
+        "a": int,
+        "b": str,
+        "c": float,
+        "d": list,
+    }
+    success[0] = is_python_schema(schema) == True
+
+    schema = {}
+    success[1] = is_python_schema(schema) == False
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_is_bigquery_schema():
+    success = {}
+
+    from google.cloud.bigquery import SchemaField
+
+    schema = [
+        SchemaField("a", "INTEGER"),
+        SchemaField("b", "STRING"),
+        SchemaField("c", "FLOAT"),
+        SchemaField("d", "RECORD"),
+    ]
+    success[0] = is_bigquery_schema(schema) == True
+
+    schema = []
+    success[1] = is_bigquery_schema(schema) == False
 
     failed = [k for k, v in success.items() if not v]
 
