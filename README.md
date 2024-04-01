@@ -256,6 +256,7 @@ data = BigQuery("dataset.table").read(
     columns=["field1"],
     filters=[("field1", "=", "value1")],
     limit=1,
+    to_dataframe=True,
 )
 print(data)
 # Output: pd.DataFrame({'field1': ['value1']})
