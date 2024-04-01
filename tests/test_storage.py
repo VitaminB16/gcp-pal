@@ -333,3 +333,59 @@ def test_is_file():
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
+
+
+def test_write():
+    success = {}
+    bucket_name = f"test_bucket_{uuid4()}"
+    file_name = f"test_file_{uuid4()}.csv"
+    file_path = f"{bucket_name}/{file_name}"
+    create_bucket(bucket_name)
+    data = {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1, 2, 3],
+    }
+    data_str = "\n".join([",".join(map(str, row)) for row in zip(*data.values())])
+
+    # Test write w
+
+    Storage(file_path).write(data_str)
+
+    success[0] = Storage(file_path).exists()
+    success[1] = Storage(file_path).isfile()
+
+    with Storage(file_path).open() as f:
+        read_file = f.read()
+
+    success[2] = read_file == data_str
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_read():
+    success = {}
+    bucket_name = f"test_bucket_{uuid4()}"
+    file_name = f"test_file_{uuid4()}.csv"
+    file_path = f"{bucket_name}/{file_name}"
+    create_bucket(bucket_name)
+    data = {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1, 2, 3],
+    }
+    data_str = "\n".join([",".join(map(str, row)) for row in zip(*data.values())])
+    with Storage(file_path).open(mode="w") as f:
+        f.write(data_str)
+    success[0] = Storage(file_path).exists()
+    success[1] = Storage(file_path).isfile()
+
+    # Test read
+    read_data = Storage(file_path).read()
+    success[2] = read_data == data_str
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed

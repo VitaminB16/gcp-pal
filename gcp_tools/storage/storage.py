@@ -327,12 +327,14 @@ class Storage:
         Open the storage path in the given mode.
 
         Args:
-        - mode (str): Mode to open the file in
+        - mode (str): Mode with which to open the file
+        - path (str): Path to open
 
         Returns:
         - file: File object
         """
-        return self.fs.open(self.path, mode)
+        self.fs.invalidate_cache()
+        return self.fs.open(self.path, mode=mode)
 
     def _suffix_path(self, path=None):
         """
@@ -351,11 +353,46 @@ class Storage:
         """
         if path is None:
             return self.path
+        if path.startswith(self.fs_prefix):
+            return path
         if path.startswith("/"):
             path = path[1:]
         if self.path.endswith("/"):
             return self.path + path
         return self.path + "/" + path
+
+    def write(self, data, path=None, mode="w", **kwargs):
+        """
+        Write data to the path.
+
+        Args:
+        - data: Data to write
+        - path (str): Path to write
+        - mode (str): Mode with which to write the file
+        - kwargs: Additional arguments to pass to the write method
+        """
+        path = self._suffix_path(path)
+        with self.fs.open(path, mode=mode) as f:
+            f.write(data)
+        log(f"Wrote data to {path}")
+
+    def read(self, path=None, **kwargs):
+        """
+        Read data from the path.
+
+        Args:
+        - path (str): Path to read
+        - kwargs: Additional arguments to pass to the read
+
+        Returns:
+        - str: Data read from the path
+        """
+        self.fs.invalidate_cache()
+        path = self._suffix_path(path)
+        with self.fs.open(path, mode="r") as f:
+            data = f.read()
+        log(f"Read data from {path}")
+        return data
 
 
 if __name__ == "__main__":
