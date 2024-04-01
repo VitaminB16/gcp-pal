@@ -199,7 +199,7 @@ def test_sql_builder():
     sql_builder = SQLBuilder("clean2.new_table")
 
     query1, params1 = sql_builder.select("name").where([("age", ">", 25)]).build()
-    expected_query1 = "SELECT `name` FROM `clean2.new_table` WHERE `age` > @param_0"
+    expected_query1 = """SELECT `name` FROM `clean2.new_table` WHERE `age` > @param_0"""
 
     query2, params2 = (
         sql_builder.select("name")
@@ -207,7 +207,7 @@ def test_sql_builder():
         .limit(10)
         .build()
     )
-    expected_query2 = "SELECT `name` FROM `clean2.new_table` WHERE `age` > @param_0 AND `age` < @param_1 LIMIT 10"
+    expected_query2 = """SELECT `name` FROM `clean2.new_table` WHERE `age` > @param_0 AND `age` < @param_1 LIMIT 10"""
 
     success[0] = query1 == expected_query1
     success[1] = params1 == {"param_0": 25}
@@ -226,13 +226,15 @@ def test_bq_read():
     table_id = f"{dataset}.{table_name}"
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
     BigQuery(table_id).create_table(data=df)  # Testing: table created & data correct
-    queried_df1 = BigQuery(table_id).read()
-    queried_df2 = BigQuery(table_id).read(limit=1)
-    queried_df3 = BigQuery(table_id).read(columns=["a"])
-    queried_df4 = BigQuery(table_id).read(columns=["a"], limit=1)
-    queried_df5 = BigQuery(table_id).read(columns=["a"], filters=[("a", ">", 1)])
+    queried_df1 = BigQuery(table_id).read(to_dataframe=True)
+    queried_df2 = BigQuery(table_id).read(limit=1, to_dataframe=True)
+    queried_df3 = BigQuery(table_id).read(columns=["a"], to_dataframe=True)
+    queried_df4 = BigQuery(table_id).read(columns=["a"], limit=1, to_dataframe=True)
+    queried_df5 = BigQuery(table_id).read(
+        columns=["a"], filters=[("a", ">", 1)], to_dataframe=True
+    )
     queried_df6 = BigQuery(table_id).read(
-        columns=["a"], filters=[("a", ">", 1), ("b", ">", 5)]
+        columns=["a"], filters=[("a", ">", 1), ("b", ">", 5)], to_dataframe=True
     )
     success[1] = df.equals(queried_df1)
     success[2] = df.head(1).equals(queried_df2)
@@ -373,7 +375,7 @@ def test_write():
         {"a": [1, 2, 3], "b": [4.0, 5.1, 6.0], "c": ["a", "b", "c"]}
     ).convert_dtypes()
     BigQuery(table_id).write(df)
-    queried_df = BigQuery(table_id).read()
+    queried_df = BigQuery(table_id).read(to_dataframe=True)
     success = df.equals(queried_df)
     delete_dataset(dataset)
     assert success
@@ -466,7 +468,7 @@ def test_create_extable_partitioned_parquet():
     BigQuery(table_id).create(file_name, schema=bq_schema)
     success[2] = BigQuery(table_id).exists()
 
-    queried_df = BigQuery().read(file_name, schema=bq_schema)
+    queried_df = BigQuery().read(file_name, schema=bq_schema, to_dataframe=True)
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
@@ -505,7 +507,7 @@ def test_create_extable_single_parquet():
     BigQuery(table_id).create(file_name, schema=bq_schema)
     success[3] = BigQuery(table_id).exists()
 
-    queried_df = BigQuery().read(file_name, schema=bq_schema)
+    queried_df = BigQuery().read(file_name, schema=bq_schema, to_dataframe=True)
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
@@ -544,7 +546,7 @@ def test_create_extable_csv():
     BigQuery(table_id).create(file_name, schema=bq_schema)
     success[3] = BigQuery(table_id).exists()
 
-    queried_df = BigQuery().read(file_name, schema=bq_schema)
+    queried_df = BigQuery().read(file_name, schema=bq_schema, to_dataframe=True)
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
@@ -583,7 +585,7 @@ def test_create_extable_json():
     BigQuery(table_id).create(file_name, schema=bq_schema)
     success[3] = BigQuery(table_id).exists()
 
-    queried_df = BigQuery().read(file_name, schema=bq_schema)
+    queried_df = BigQuery().read(file_name, schema=bq_schema, to_dataframe=True)
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
@@ -634,7 +636,7 @@ def test_create_extable_avro():
     BigQuery(table_id).create(file_name, schema=bq_schema)
     success[3] = BigQuery(table_id).exists()
 
-    queried_df = BigQuery().read(file_name, schema=bq_schema)
+    queried_df = BigQuery().read(file_name, schema=bq_schema, to_dataframe=True)
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
@@ -673,7 +675,7 @@ def test_create_extable_orc():
     BigQuery(table_id).create(file_name, schema=bq_schema)
     success[3] = BigQuery(table_id).exists()
 
-    queried_df = BigQuery().read(file_name, schema=bq_schema)
+    queried_df = BigQuery().read(file_name, schema=bq_schema, to_dataframe=True)
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]

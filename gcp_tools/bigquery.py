@@ -72,8 +72,13 @@ class SQLBuilder:
         """
         conditions = []
         params = {}
-        for i, (col, op, value) in enumerate(filters):
-            self._check_illegal_filters(filters)
+        for i, filter in enumerate(filters):
+            if isinstance(filter, dict):
+                col, value = list(filter.items())[0]
+                op = "IN"
+            else:
+                col, op, value = filter
+            self._check_illegal_filters(col, op, value)
             param_name = f"param_{i}"
             if isinstance(value, list):
                 placeholders = ", ".join(
@@ -87,23 +92,21 @@ class SQLBuilder:
                 params[param_name] = value
         return " AND ".join(conditions), params
 
-    def _check_illegal_filters(self, filters):
+    def _check_illegal_filters(self, col, op, value):
         """
         Helper to check for illegal characters in filters.
         """
-        for col, op, value in filters:
-            op = op.upper()
-            if op not in self.ALLOWED_OPERATIONS:
-                raise ValueError(f"Filter operator not allowed: {op}")
-            if "`" in col:
-                raise ValueError("Column or value contains illegal character: `")
-            if "--" in col:
-                raise ValueError("Column or value contains illegal character: --")
-            if isinstance(value, str) and "--" in value:
-                raise ValueError("Column or value contains illegal character: --")
-            if isinstance(value, str) and "`" in value:
-                raise ValueError("Column or value contains illegal character: `")
-        return filters
+        op = op.upper()
+        if op not in self.ALLOWED_OPERATIONS:
+            raise ValueError(f"Filter operator not allowed: {op}")
+        if "`" in col:
+            raise ValueError("Column or value contains illegal character: `")
+        if "--" in col:
+            raise ValueError("Column or value contains illegal character: --")
+        if isinstance(value, str) and "--" in value:
+            raise ValueError("Column or value contains illegal character: --")
+        if isinstance(value, str) and "`" in value:
+            raise ValueError("Column or value contains illegal character: `")
 
 
 class BigQuery:
@@ -193,7 +196,7 @@ class BigQuery:
         - Query results as a pandas DataFrame or BigQuery job object.
         """
         if params:
-            job_config = self._parse_query_params(params)
+            job_config = self._parse_query_params(params, job_config=job_config)
         output = self.client.query(sql, job_config=job_config)
         if to_dataframe:
             output = output.to_dataframe().convert_dtypes()
@@ -206,7 +209,11 @@ class BigQuery:
                 output = list(output)
             except Exception as e:
                 log(f"Error converting query results to list: {e}")
-        log(f"Query executed: {sql}")
+        sql_print = sql
+        if params:
+            for key, value in params.items():
+                sql_print = sql_print.replace(f"@{key}", str(value))
+        log(f"Query executed: \n{sql_print}")
         return output
 
     def read_table(
@@ -251,7 +258,7 @@ class BigQuery:
         self,
         filepath=None,
         job_config=None,
-        to_dataframe=True,
+        to_dataframe=False,
         columns=None,
         filters=None,
         schema=None,
@@ -447,7 +454,7 @@ class BigQuery:
             return self._create_table(data=data, schema=schema, exists_ok=exists_ok)
         return False
 
-    def create_external_table(
+    def _create_external_table(
         self, uri, source_format=None, schema=None, infer_uri=True, exists_ok=True
     ):
         """
@@ -493,6 +500,28 @@ class BigQuery:
         log(f"External table created: {self.table_id}")
         return True
 
+    def create_external_table(self, uri, schema=None, exists_ok=True):
+        """
+        Creates an external table in BigQuery.
+
+        Args:
+        - uri (str): The URI of the external data source.
+        - source_format (str): The format of the external data source.
+        - schema (list of bigquery.SchemaField): The schema of the external table.
+
+        Returns:
+        - True if successful.
+
+        Examples:
+        - BigQuery("dataset.external_table").create_external_table("gs://bucket/file.parquet")
+        """
+        try:
+            return self._create_external_table(uri, schema=schema, exists_ok=exists_ok)
+        except NotFoundError:
+            # Dataset does not exist, so create it and try again
+            self.create_dataset(exists_ok=exists_ok)
+            return self._create_external_table(uri, schema=schema, exists_ok=exists_ok)
+
     def _infer_uri(self, uri, source_format=None):
         """
         Helper method to infer the source format from the URI.
@@ -516,6 +545,8 @@ class BigQuery:
                 from gcp_tools.storage.parquet import _get_partition_cols
 
                 extra_metadata["partition_columns"] = _get_partition_cols(uri)
+                if uri.endswith("/"):
+                    uri = uri[:-1]
                 uri = f"{uri}*"
         elif uri.endswith(".csv"):
             source_format = "CSV"
@@ -600,6 +631,9 @@ class BigQuery:
     def delete(self, errors="raise"):
         """
         Deletes a BigQuery dataset or table.
+
+        Args:
+        - errors (str): If "raise", errors will be raised. If "ignore", errors will be ignored.
 
         Returns:
         - True if successful.
@@ -741,10 +775,12 @@ class BigQuery:
 
 
 if __name__ == "__main__":
-    output = BigQuery().query(
-        "CREATE OR REPLACE TABLE `example_dataset.example_table` AS SELECT 1 AS x, 'test' AS y"
+    result = BigQuery("vitaminb16.example_dataset.example_table").read(
+        columns=["name", "age", "income", "is_student", "created_at", "details"],
+        filters=[{"name": ["Alice", "Bob"]}, ("age", ">=", 25)],
+        limit=10,
     )
-    print(list(output))
+    print(result)
     exit()
 
 
