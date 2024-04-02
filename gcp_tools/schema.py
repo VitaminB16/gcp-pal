@@ -35,6 +35,7 @@ def get_equivalent_schema_dict(target):
             "bytes": "bytes",
             "array": "array",
             "struct": "struct",
+            "null": "null",
         }
     elif target == "python":
         return {
@@ -49,9 +50,11 @@ def get_equivalent_schema_dict(target):
             "bytes": bytes,
             "array": list,
             "struct": dict,
+            "null": type(None),
         }
     elif target == "bigquery":
         return {
+            "null": "BOOLEAN",
             "int": "INTEGER",
             "float": "FLOAT",
             "str": "STRING",
@@ -66,17 +69,18 @@ def get_equivalent_schema_dict(target):
         }
     elif target == "pandas":
         return {
-            "int": "int64",
-            "float": "float64",
-            "str": "object",
-            "bool": "bool",
+            "int": "Int64",
+            "float": "Float64",
+            "str": "string",
+            "bool": "boolean",
             "timestamp": "datetime64[ns]",
             "date": "datetime64[ns]",
             "time": "datetime64[ns]",
             "datetime": "datetime64[ns]",
-            "bytes": "object",
-            "array": "object",
-            "struct": "object",
+            "bytes": "bytes",
+            "array": "list",
+            "struct": "struct",
+            "null": "object",
         }
     elif target == "pyarrow":
         return {
@@ -91,6 +95,7 @@ def get_equivalent_schema_dict(target):
             "bytes": "binary",
             "array": "list",
             "struct": "struct",
+            "null": "null",
         }
     else:
         raise ValueError(f"Unsupported target system: {target}")
@@ -234,10 +239,14 @@ def dtype_str_to_type(dtype_str, target="str"):
         target_types = {
             "int": "int",
             "int64": "int",
+            "Int64": "int",
             "float": "float",
             "float64": "float",
+            "Float64": "float",
             "str": "str",
+            "string": "str",
             "bool": "bool",
+            "boolean": "bool",
             "object": "str",
             "datetime64[ns]": "datetime",
         }
@@ -556,22 +565,26 @@ def infer_schema(data, schema_type="python"):
     """
     schema = {}
     if is_dataframe(data):
+        data = data.convert_dtypes(convert_integer=False)
         for col, dtype in data.dtypes.items():
             schema[col] = dtype_str_to_type(str(dtype))
     elif isinstance(data, dict):
         for col, values in data.items():
             if isinstance(values, dict):
                 schema[col] = infer_schema(values)
-            elif values:
-                value = values[0] if isinstance(values, list) else values
-                if isinstance(value, int):
+            elif values or isinstance(values, bool) or values is None:
+                non_null_values = [v for v in force_list(values) if v is not None]
+                value = non_null_values[0] if non_null_values else None
+                if value is None:
+                    schema[col] = "null"
+                elif isinstance(value, bool):
+                    schema[col] = "bool"
+                elif isinstance(value, int):
                     schema[col] = "int"
                 elif isinstance(value, float):
                     schema[col] = "float"
                 elif isinstance(value, str):
                     schema[col] = "str"
-                elif isinstance(value, bool):
-                    schema[col] = "bool"
                 else:
                     schema[col] = type(value).__name__
     return schema
@@ -597,9 +610,11 @@ class Schema:
     """
 
     def __init__(self, input: dict = {}, schema_type: str = None, is_data=False):
+        self.is_data = is_data if not is_dataframe(input) else True
+        if self.is_data and isinstance(input, list) and isinstance(input[0], dict):
+            input = input[0]
         self.input_schema = input
         self.schema = input
-        self.is_data = is_data if not is_dataframe(input) else True
         self.schema_type = schema_type or self.infer_schema_type()
 
         # Now the goal is to convert whatever schema into a dictionary of Python types
@@ -609,7 +624,6 @@ class Schema:
             self.schema = bigquery_to_dict(input)
         elif self.schema_type == "pyarrow":
             self.schema = pyarrow_to_dict(input)
-
         if self.schema_type != "str":
             self.convert_schema_to_str()
         # Now the schema is a dictionary of Python types
@@ -703,39 +717,22 @@ if __name__ == "__main__":
     import pandas as pd
     import pyarrow as pa
 
-    str_schema = {
-        "name": "str",
-        "age": "int",
-        "income": "float",
-        "is_student": "bool",
-        "created_at": {
-            "date": "datetime",
-            "time": "timestamp",
-        },
-        "details": {
-            "address": "str",
-            "phone": "int",
-        },
-    }
+    success = {}
+    df = pd.DataFrame(
+        {
+            "a": [1, 2, 3],
+            "b": ["a", "b", "c"],
+            "c": [1.0, 2.0, 3.0],
+            "date": [datetime.now() for _ in range(3)],
+        }
+    )
 
-    # 2. str -> python
-    schema = Schema(str_schema).str()
-    python_schema = {
-        "name": str,
-        "age": int,
-        "income": float,
-        "is_student": bool,
-        "created_at": {
-            "date": datetime,
-            "time": datetime,
-        },
-        "details": {
-            "address": str,
-            "phone": int,
-        },
-    }
-    print(str_schema)
-    print(python_schema)
+    # string
+    schema = Schema(df).str()
+    str_schema = {"a": "int", "b": "str", "c": "float", "date": "datetime"}
+    success[0] = schema == str_schema
+
+    print(schema)
 
     exit()
 

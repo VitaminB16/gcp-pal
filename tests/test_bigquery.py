@@ -472,8 +472,8 @@ def test_create_extable_partitioned_parquet():
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
-    success[3] = data.equals(queried_df)
-    success[4] = data.dtypes.equals(queried_df.dtypes)
+    success[3] = data.convert_dtypes().equals(queried_df)
+    success[4] = data.convert_dtypes().dtypes.equals(queried_df.dtypes)
 
     failed = [k for k, v in success.items() if not v]
 
@@ -511,8 +511,8 @@ def test_create_extable_single_parquet():
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
-    success[4] = data.equals(queried_df)
-    success[5] = data.dtypes.equals(queried_df.dtypes)
+    success[4] = data.convert_dtypes().equals(queried_df)
+    success[5] = data.convert_dtypes().dtypes.equals(queried_df.dtypes)
 
     failed = [k for k, v in success.items() if not v]
 
@@ -550,8 +550,8 @@ def test_create_extable_csv():
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
-    success[4] = data.equals(queried_df)
-    success[5] = data.dtypes.equals(queried_df.dtypes)
+    success[4] = data.convert_dtypes().equals(queried_df)
+    success[5] = data.convert_dtypes().dtypes.equals(queried_df.dtypes)
 
     failed = [k for k, v in success.items() if not v]
 
@@ -589,8 +589,8 @@ def test_create_extable_json():
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
-    success[4] = data.equals(queried_df)
-    success[5] = data.dtypes.equals(queried_df.dtypes)
+    success[4] = data.convert_dtypes().equals(queried_df)
+    success[5] = data.convert_dtypes().dtypes.equals(queried_df.dtypes)
 
     failed = [k for k, v in success.items() if not v]
 
@@ -640,8 +640,8 @@ def test_create_extable_avro():
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
-    success[4] = data.equals(queried_df)
-    success[5] = data.dtypes.equals(queried_df.dtypes)
+    success[4] = data.convert_dtypes().equals(queried_df)
+    success[5] = data.convert_dtypes().dtypes.equals(queried_df.dtypes)
 
     failed = [k for k, v in success.items() if not v]
 
@@ -679,8 +679,8 @@ def test_create_extable_orc():
 
     queried_df = queried_df.sort_values("a").reset_index(drop=True)
     queried_df = queried_df[data.columns]
-    success[4] = data.equals(queried_df)
-    success[5] = data.dtypes.equals(queried_df.dtypes)
+    success[4] = data.convert_dtypes().equals(queried_df)
+    success[5] = data.convert_dtypes().dtypes.equals(queried_df.dtypes)
 
     failed = [k for k, v in success.items() if not v]
 

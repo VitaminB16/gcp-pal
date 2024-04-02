@@ -115,7 +115,7 @@ def test_read_partitions_only():
     read_df = Parquet(file_name).read(read_partitions_only=True, schema=schema)
 
     success[0] = set(data.columns) == set(read_df.columns)
-    success[1] = data.equals(read_df)
+    success[1] = data.convert_dtypes().equals(read_df)
 
     failed = [k for k, v in success.items() if not v]
 
