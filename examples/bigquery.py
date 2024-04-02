@@ -2,6 +2,8 @@
 Example module to demonstrate how to use this library.
 """
 
+from uuid import uuid4
+
 
 def example_table():
     """
@@ -98,7 +100,7 @@ def example_external_table():
         "income": [50000.0, 20000.0, 30000.0],
         "is_student": [False, True, False],
     }
-    bucket_name = "example_bucket"
+    bucket_name = f"example_bucket_{uuid4()}"
     file_name = "example_data.csv"
     file_path = f"{bucket_name}/{file_name}"
     write_external_csv_file(data, bucket_name, file_name)
@@ -119,4 +121,4 @@ def example_external_table():
 
 
 if __name__ == "__main__":
-    example_table()
+    example_external_table()
