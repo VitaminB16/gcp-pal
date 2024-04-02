@@ -534,6 +534,9 @@ class BigQuery:
         - Tuple of URI and source format.
         """
         extra_metadata = {}
+        if not uri.startswith("gs://"):
+            uri = f"gs://{uri}"
+
         from gcp_tools.storage import Storage
 
         if uri.endswith(".parquet"):
