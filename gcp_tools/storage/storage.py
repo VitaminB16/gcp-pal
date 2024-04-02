@@ -37,8 +37,10 @@ class Storage:
         self.file_name = self.base_path[len(self.bucket_name) + 1 :]
         self.file_name = self.file_name if self.file_name != "" else None
 
+        self.bucket_path = self.fs_prefix + self.bucket_name
         if self.bucket_name == "":
             self.bucket_name = None
+            self.bucket_path = None
 
         self.ref_type = self._ref_type()
 
@@ -143,6 +145,7 @@ class Storage:
         Returns:
         - bool: Whether the path is a directory.
         """
+        self.fs.invalidate_cache()
         path = self._suffix_path(path)
         output = self.fs.isdir(path)
         try:
@@ -163,6 +166,7 @@ class Storage:
         Returns:
         - bool: Whether the path is a file.
         """
+        self.fs.invalidate_cache()
         path = self._suffix_path(path)
         output = self.fs.isfile(path)
         try:
@@ -211,7 +215,7 @@ class Storage:
             bucket_name = self.bucket_name
         if not bucket_name:
             raise ValueError("Bucket name is required.")
-        output = self.fs.mkdir(f"gs://{bucket_name}")
+        output = self.fs.mkdir(bucket_name)
         log(f"Created bucket: {bucket_name}")
         return output
 
