@@ -100,7 +100,7 @@ class Storage:
         - local_path (str): Local path where the file will be downloaded.
         """
         output = self.fs.get(self.path, local_path)
-        log(f"Downloaded {self.path} to {local_path}")
+        log(f"Downloaded: {self.path} -> {local_path}")
         return output
 
     def glob(self, query=None):
@@ -185,7 +185,7 @@ class Storage:
         """
         path = self._suffix_path(path)
         output = self.fs.mkdir(path, exist_ok=exist_ok)
-        log(f"Created directory {path}")
+        log(f"Created directory: {path}")
         return output
 
     def mkdirs(self, path=None, exist_ok=True):
@@ -197,7 +197,7 @@ class Storage:
         """
         path = self._suffix_path(path)
         output = self.fs.mkdirs(path, exist_ok=exist_ok)
-        log(f"Created directories {path}")
+        log(f"Created directories: {path}")
         return output
 
     def create_bucket(self, bucket_name=None):
@@ -212,7 +212,7 @@ class Storage:
         if not bucket_name:
             raise ValueError("Bucket name is required.")
         output = self.fs.mkdir(f"gs://{bucket_name}")
-        log(f"Created bucket {bucket_name}")
+        log(f"Created bucket: {bucket_name}")
         return output
 
     def create(self, path=None, exist_ok=True, bucket_name=None):
@@ -242,7 +242,7 @@ class Storage:
         - recursive (bool): Whether to remove the directory recursively.
         """
         output = self.fs.rm(self.path, recursive=recursive)
-        log(f"Removed {self.path}")
+        log(f"Removed: {self.path}")
         return output
 
     def rmdir(self, path=None):
@@ -255,7 +255,7 @@ class Storage:
         path = self._suffix_path(path)
         path = self.bucket_name if self.is_bucket else path
         output = self.fs.rmdir(path)
-        log(f"Removed {path}")
+        log(f"Removed: {path}")
         return output
 
     def remove(self, recursive=True):
@@ -289,7 +289,7 @@ class Storage:
         - recursive (bool): Whether to copy the directory recursively.
         """
         output = self.fs.copy(self.path, destination_path, recursive=recursive)
-        log(f"Copied {self.path} to {destination_path}")
+        log(f"Copied: {self.path} -> {destination_path}")
         return output
 
     def move(self, destination_path, recursive=True):
@@ -301,7 +301,7 @@ class Storage:
         - recursive (bool): Whether to move the directory recursively.
         """
         output = self.fs.move(self.path, destination_path, recursive=recursive)
-        log(f"Moved {self.path} to {destination_path}")
+        log(f"Moved: {self.path} -> {destination_path}")
         return output
 
     def upload(self, local_path, recursive=True):
@@ -313,7 +313,7 @@ class Storage:
         - recursive (bool): Whether to upload the directory recursively.
         """
         output = self.fs.put(local_path, self.path, recursive=recursive)
-        log(f"Uploaded {local_path} to {self.path}")
+        log(f"Uploaded: {local_path} -> {self.path}")
         return output
 
     def put(self, local_path, recursive=True):
@@ -374,7 +374,7 @@ class Storage:
         path = self._suffix_path(path)
         with self.fs.open(path, mode=mode) as f:
             f.write(data)
-        log(f"Wrote data to {path}")
+        log(f"Written: {path}")
 
     def read(self, path=None, **kwargs):
         """
@@ -391,7 +391,7 @@ class Storage:
         path = self._suffix_path(path)
         with self.fs.open(path, mode="r") as f:
             data = f.read()
-        log(f"Read data from {path}")
+        log(f"Read: {path}")
         return data
 
 

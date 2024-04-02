@@ -370,10 +370,10 @@ class BigQuery:
             )
 
         if errors == []:
-            log(f"Data inserted into {self.table}")
+            log(f"Data inserted into: {self.table}")
             return True
         else:
-            log(f"Errors occurred while inserting data into {self.table}: {errors}")
+            log(f"Errors occurred while inserting data into: {self.table} -- {errors}")
             return False
 
     def write(self, data, schema=None):

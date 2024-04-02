@@ -12,4 +12,4 @@ def write_external_csv_file(data, bucket_name, file_name):
     Storage(bucket_name).create()
     txt_data = "\n".join([",".join(map(str, row)) for row in zip(*data.values())])
     with Storage(file_path).open(mode="w") as f:
-        f.write("\n".join([",".join(map(str, row)) for row in zip(*data.values())]))
+        f.write(txt_data)
