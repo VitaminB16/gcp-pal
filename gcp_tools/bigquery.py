@@ -5,7 +5,7 @@ from google.cloud import bigquery
 from google.auth import default as google_auth_default
 from google.api_core.exceptions import NotFound as NotFoundError
 
-from gcp_tools.utils import log, is_dataframe, get_default_project
+from gcp_tools.utils import log, is_dataframe, get_default_project, orient_dict
 from gcp_tools.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
 
 
@@ -358,6 +358,9 @@ class BigQuery:
                 location=self.location,
             )
 
+        if isinstance(data, dict):
+            data = orient_dict(data, orientation="index")
+
         if not schema and isinstance(data, list):
             table = self.client.get_table(self.table_id)  # Make sure the table exists
             errors = self.client.insert_rows_json(table, data)
@@ -412,6 +415,9 @@ class BigQuery:
         - exists_ok (bool): If True, the table will be replaced if it already exists.
 
         """
+        if isinstance(schema, dict):
+            schema = dict_to_bigquery_fields(schema)
+
         if is_dataframe(data):
             from pandas_gbq import to_gbq
 
@@ -423,12 +429,12 @@ class BigQuery:
                 if_exists=if_exists,
                 location=self.location,
             )
-        if isinstance(schema, dict):
-            schema = dict_to_bigquery_fields(schema)
         table = bigquery.Table(self.table_id, schema=schema)
         table = self.client.create_table(table, exists_ok=exists_ok)
         log(f"Table created: {self.table_id}")
 
+        if data is not None:
+            self.insert(data, schema=schema)
         return True
 
     def create_table(self, data=None, schema=None, exists_ok=True):
@@ -573,7 +579,7 @@ class BigQuery:
         log(f"Dataset created: {self.dataset_id}")
         return True
 
-    def create(self, data=None, schema=None, exists_ok=True):
+    def create(self, data=None, schema=None, exists_ok=True, infer_schema=False):
         """
         Creates a new BigQuery dataset or table.
 
@@ -589,12 +595,19 @@ class BigQuery:
         if not self.table:
             # Working with a dataset.
             return self.create_dataset(exists_ok=exists_ok)
-        elif isinstance(data, str):
+
+        # Auto infer the schema if not provided.
+        if not schema and infer_schema is True:
+            schema = Schema(data, is_data=True).bigquery()
+
+        if isinstance(data, str):
             # Working with a table and input is a URI.
             return self.create_external_table(data, schema=schema, exists_ok=exists_ok)
-        else:
+        if isinstance(data, (list, dict)) or is_dataframe(data):
             # Working with a table and input is a DataFrame.
             return self.create_table(data=data, schema=schema, exists_ok=exists_ok)
+        else:
+            raise ValueError("Invalid input for creating a table.")
 
     def delete_table(self, errors="raise"):
         """
@@ -778,12 +791,38 @@ class BigQuery:
 
 
 if __name__ == "__main__":
-    result = BigQuery("vitaminb16.example_dataset.example_table").read(
-        columns=["name", "age", "income", "is_student", "created_at", "details"],
-        filters=[{"name": ["Alice", "Bob"]}, ("age", ">=", 25)],
-        limit=10,
-    )
-    print(result)
+    import pandas as pd
+    from gcp_tools import Storage
+
+    success = {}
+    data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    pa_schema = Schema(data, is_data=True).pyarrow()
+    bq_schema = Schema(data, is_data=True).bigquery()
+    bucket_name = f"test_bucket_vita_123"
+    file_name = f"gs://{bucket_name}/file.csv"
+
+    Storage(bucket_name).create()
+
+    data.to_csv(file_name, index=False)
+    success[0] = Storage(file_name).exists()
+    success[1] = not Storage(file_name).isdir()
+    success[2] = Storage(file_name).isfile()
+
+    dataset_name = f"test_dataset_123"
+    table_name = f"test_ext_table123"
+    table_id = f"{dataset_name}.{table_name}"
+    BigQuery(table_id).create(file_name, schema=bq_schema)
+    success[3] = BigQuery(table_id).exists()
+
+    queried_df = BigQuery().read(file_name, schema=bq_schema, to_dataframe=True)
+
+    queried_df = queried_df.sort_values("a").reset_index(drop=True)
+    queried_df = queried_df[data.columns]
+
+    print(queried_df)
+    print(data)
+    print(queried_df.dtypes)
+    print(data.dtypes)
     exit()
 
 

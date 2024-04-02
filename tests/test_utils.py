@@ -9,6 +9,7 @@ from gcp_tools.utils import (
     is_python_schema,
     reverse_dict,
     get_dict_items,
+    orient_dict,
 )
 
 
@@ -159,6 +160,49 @@ def test_is_bigquery_schema():
 
     schema = []
     success[1] = is_bigquery_schema(schema) == False
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_orient_dict():
+    success = {}
+
+    d = {"a": 1, "b": 2, "c": 3}
+    t = orient_dict(d, "columns")
+    success[0] = t == d
+    t = orient_dict(d, "index")
+    success[1] = t == [{"a": 1, "b": 2, "c": 3}]
+
+    d = {"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]}
+    t = orient_dict(d, "columns")
+    success[2] = t == d
+    t = orient_dict(d, "index")
+    t_index = [
+        {"a": 1, "b": 4, "c": 7},
+        {"a": 2, "b": 5, "c": 8},
+        {"a": 3, "b": 6, "c": 9},
+    ]
+    success[3] = t == t_index
+
+    d = [{"a": 1, "b": 4, "c": 7}, {"a": 2, "b": 5, "c": 8}, {"a": 3, "b": 6, "c": 9}]
+    t = orient_dict(d, "columns")
+    success[4] = t == {"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]}
+    t = orient_dict(d, "index")
+    success[5] = t == d
+
+    d = {"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]}
+    tt = orient_dict(orient_dict(d, "index"), "columns")
+    success[6] = tt == d
+
+    # d = {}
+    # t = orient_dict(d, "columns")
+    # success[7] = t == d
+
+    # d = [{}]
+    # t = orient_dict(d, "columns")
+    # success[8] = t == d
 
     failed = [k for k, v in success.items() if not v]
 

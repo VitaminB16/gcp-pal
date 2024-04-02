@@ -228,6 +228,37 @@ def reverse_dict(d):
     return {v: k for k, v in d.items()}
 
 
+def orient_dict(d, orientation=""):
+    """
+    Orient a dictionary so that it can be used as a pandas DataFrame.
+
+    Args:
+    - d (dict): The dictionary to orient.
+    - orientation (str): The orientation to use. Can be "columns" or "index".
+
+    Returns:
+    - dict: The oriented dictionary.
+
+    Examples:
+    >>> orient_dict({"a": [1, 2], "b": [3, 4]}, orientation="index")
+    [{"a": 1, "b": 3}, {"a": 2, "b": 4}]
+    >>> orient_dict([{"a": 1, "b": 3}, {"a": 2, "b": 4}], orientation="columns")
+    """
+    if orientation == "index" and isinstance(d, dict):
+        keys = list(d.keys())
+        n_values = len(force_list(d[keys[0]]))
+        range_n = range(n_values)
+        output = [{k: force_list(d[k])[n] for k in d} for n in range_n]
+    elif orientation == "columns" and isinstance(d, list):
+        keys = list(d[0].keys())
+        n_values = len(d)
+        range_n = range(n_values)
+        output = {k: [d[i][k] for i in range_n] for k in keys}
+    else:
+        output = d
+    return output
+
+
 def get_default_project():
     """
     Get the default project from google.auth.default() and store it in an environment variable.

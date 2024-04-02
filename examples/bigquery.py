@@ -120,5 +120,31 @@ def example_external_table():
     print(result)
 
 
+def example_table_from_data():
+    """
+    Example function to demonstrate how to use the BigQuery module for creating a table directly from data.
+    """
+    from gcp_tools import BigQuery, Schema
+
+    data = {
+        "name": ["Alice", "Bob", "Charlie"],
+        "age": [25, 30, 35],
+        "income": [50000.0, 20000.0, 30000.0],
+        "is_student": [False, True, False],
+    }
+
+    dataset_name = "example_dataset"
+    table_name = "example_table_from_data7"
+    table_id = f"{dataset_name}.{table_name}"
+
+    # Using infer_schema=True will infer the schema from the data
+    BigQuery(table_id).create(data, infer_schema=True)
+
+    # Query the table
+    result = BigQuery(table_id).read(to_dataframe=True, limit=10)
+
+    print(result)
+
+
 if __name__ == "__main__":
-    example_external_table()
+    example_table_from_data()
