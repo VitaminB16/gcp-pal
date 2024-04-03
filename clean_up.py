@@ -26,8 +26,16 @@ def delete_test_firestore_collections():
     Deletes all Firestore collections that start with "test_"
     """
     collections = Firestore().ls()
-    collections_to_delete = [c for c in collections if c.startswith("test_")]
-    del_fun = lambda x: Firestore(x).delete() if x.startswith("test_") else None
+    collections_to_delete = [
+        c
+        for c in collections
+        if c.startswith("test_") or c.startswith("temp_") or c.startswith("example_")
+    ]
+    del_fun = lambda x: (
+        Firestore(x).delete()
+        if x.startswith("test_") or x.startswith("temp_") or x.startswith("example_")
+        else None
+    )
     with ThreadPoolExecutor() as executor:
         executor.map(del_fun, collections_to_delete)
 
@@ -37,12 +45,20 @@ def delete_test_storage_buckets():
     Deletes all Storage buckets that start with "test_"
     """
     buckets = Storage().ls()
-    buckets_to_delete = [b for b in buckets if b.startswith("test_")]
+    buckets_to_delete = [
+        b
+        for b in buckets
+        if b.startswith("test_") or b.startswith("temp_") or b.startswith("example_")
+    ]
     del_fun = lambda x: Storage(x).delete()
     with ThreadPoolExecutor() as executor:
         executor.map(del_fun, buckets_to_delete)
     buckets = Storage().ls()
-    buckets_to_delete = [b for b in buckets if b.startswith("test_")]
+    buckets_to_delete = [
+        b
+        for b in buckets
+        if b.startswith("test_") or b.startswith("temp_") or b.startswith("example_")
+    ]
     with ThreadPoolExecutor() as executor:
         executor.map(del_fun, buckets_to_delete)
 
