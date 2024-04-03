@@ -211,6 +211,21 @@ class Firestore:
         log(f"Written to Firestore: {self.path}")
         return True
 
+    def create(self, **kwargs):
+        """
+        Create an empty Firestore document or collection.
+        """
+        ref = self.get_ref()
+        ref_type = self._ref_type(ref)
+        if ref_type == "document":
+            ref.set({})
+        elif ref_type == "collection":
+            ref.add({})
+        else:
+            raise ValueError("Unsupported Firestore reference type.")
+        log(f"{ref_type} created: Firestore/{self.path}")
+        return True
+
     def delete(self):
         """
         Recursively deletes documents and collections from Firestore.
@@ -277,6 +292,20 @@ class Firestore:
             raise ValueError("Unsupported Firestore reference type.")
         log(f"Firestore collections listed.")
         return output
+
+    def exists(self):
+        """
+        Check if a document or collection exists in Firestore.
+        """
+        ref = self.get_ref()
+        ref_type = self._ref_type(ref)
+        if ref_type == "document":
+            exists = ref.get().exists
+        elif ref_type == "collection":
+            exists = bool(list(ref.stream()))
+        else:
+            raise ValueError("Unsupported Firestore reference type.")
+        return exists
 
 
 if __name__ == "__main__":
