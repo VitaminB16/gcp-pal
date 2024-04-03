@@ -94,15 +94,18 @@ class Storage:
             self.fs.invalidate_cache()
         return self.fs.ls(self.path)
 
-    def download(self, local_path):
+    def download(self, local_path=None):
         """
         Download a file from the storage path to a local path.
 
         Args:
         - local_path (str): Local path where the file will be downloaded.
         """
-        output = self.fs.get(self.path, local_path)
-        log(f"Downloaded: {self.path} -> {local_path}")
+        if not local_path:
+            output = self.read()
+        else:
+            output = self.fs.get(self.path, local_path)
+            log(f"Downloaded: {self.path} -> {local_path}")
         return output
 
     def glob(self, query=None):
@@ -308,16 +311,44 @@ class Storage:
         log(f"Moved: {self.path} -> {destination_path}")
         return output
 
-    def upload(self, local_path, recursive=True):
+    def _upload(self, local_path=None, contents=None, recursive=True):
         """
         Upload a file or directory from the local path to the storage path.
 
         Args:
-        - local_path (str): Local path
+        - local_path (str): Local path from which to upload the file or directory.
+        - contents (str): Contents to upload.
         - recursive (bool): Whether to upload the directory recursively.
         """
-        output = self.fs.put(local_path, self.path, recursive=recursive)
-        log(f"Uploaded: {local_path} -> {self.path}")
+        if local_path:
+            try:
+                output = self.fs.put(local_path, self.path, recursive=recursive)
+            except FileNotFoundError as e:
+                self.create_bucket()
+                output = self.fs.put(local_path, self.path, recursive=recursive)
+            log(f"Uploaded: {local_path} -> {self.path}")
+        elif contents:
+            if isinstance(contents, str):
+                mode = "w"
+            else:
+                mode = "wb"
+            output = self.write(contents, mode=mode)
+        return output
+
+    def upload(self, local_path=None, contents=None, recursive=True):
+        """
+        Upload a file or directory from the local path to the storage path.
+
+        Args:
+        - local_path (str): Local path from which to upload the file or directory.
+        - contents (str): Contents to upload.
+        - recursive (bool): Whether to upload the directory recursively.
+        """
+        try:
+            output = self._upload(local_path, contents, recursive)
+        except FileNotFoundError as e:
+            self.create_bucket()
+            output = self._upload(local_path, contents, recursive)
         return output
 
     def put(self, local_path, recursive=True):
@@ -342,7 +373,7 @@ class Storage:
 
     def _suffix_path(self, path=None):
         """
-        Append the path to the base path.
+        Append the path to the base path. Will not append if the path already starts with the fs_prefix.
 
         Args:
         - path (str): Path to append
@@ -353,6 +384,7 @@ class Storage:
         Examples:
         >>> Storage()._suffix_path("file") -> "gs://file"
         >>> Storage("bucket_name")._suffix_path("file") -> "gs://bucket_name/file"
+        >>> Storage("bucket_name/path")._suffix_path("gs://bucket_name") -> "gs://bucket_name/path"
         >>> Storage("bucket_name/path")._suffix_path() -> "gs://bucket_name"
         """
         if path is None:
@@ -365,20 +397,40 @@ class Storage:
             return self.path + path
         return self.path + "/" + path
 
+    def _write(self, data, path=None, mode="w", **kwargs):
+        """
+        Write data to the path.
+
+        Args:
+        - data: Data to write
+        - path (str): Path to which to write the data
+        - mode (str): Mode with which to write the file
+        - kwargs: Additional arguments to pass to the write method
+        """
+        path = self._suffix_path(path)
+        if path.endswith(".parquet") or path.endswith(".parquet/"):
+            from gcp_tools import Parquet
+
+            return Parquet(path).write(data, **kwargs)
+        with self.fs.open(path, mode=mode) as f:
+            f.write(data, **kwargs)
+        log(f"Written: {path}")
+
     def write(self, data, path=None, mode="w", **kwargs):
         """
         Write data to the path.
 
         Args:
         - data: Data to write
-        - path (str): Path to write
+        - path (str): Path to which to write the data
         - mode (str): Mode with which to write the file
         - kwargs: Additional arguments to pass to the write method
         """
-        path = self._suffix_path(path)
-        with self.fs.open(path, mode=mode) as f:
-            f.write(data)
-        log(f"Written: {path}")
+        try:
+            self._write(data, path, mode, **kwargs)
+        except FileNotFoundError as e:
+            self.create_bucket()
+            self._write(data, path, mode, **kwargs)
 
     def read(self, path=None, **kwargs):
         """
@@ -393,6 +445,10 @@ class Storage:
         """
         self.fs.invalidate_cache()
         path = self._suffix_path(path)
+        if path.endswith(".parquet") or path.endswith(".parquet/"):
+            from gcp_tools import Parquet
+
+            return Parquet(path).read(**kwargs)
         with self.fs.open(path, mode="r") as f:
             data = f.read()
         log(f"Read: {path}")

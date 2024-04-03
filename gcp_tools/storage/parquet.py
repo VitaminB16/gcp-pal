@@ -38,8 +38,9 @@ class Parquet:
         if schema is None:
             from gcp_tools.schema import Schema
 
-            schema = Schema(data).infer_schema().pyarrow()
+            schema = Schema(data).pyarrow()
         if partition_cols:
+            partition_cols = force_list(partition_cols)
             if set(partition_cols) == set(data.columns):
                 msg = (
                     f"Partition columns {partition_cols} are the same as data columns."
