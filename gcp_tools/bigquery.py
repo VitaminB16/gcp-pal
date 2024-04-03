@@ -644,7 +644,7 @@ class BigQuery:
         log(f"Dataset deleted: BigQuery/{dataset_id}")
         return True
 
-    def delete(self, errors="raise"):
+    def delete(self, errors="ignore"):
         """
         Deletes a BigQuery dataset or table.
 

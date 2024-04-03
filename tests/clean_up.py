@@ -8,11 +8,13 @@ def delete_test_bigquery_datasets():
     """
     datasets = BigQuery().ls()
     datasets_to_delete = [
-        d for d in datasets if d.startswith("test_") or d.startswith("temp_")
+        d
+        for d in datasets
+        if d.startswith("test_") or d.startswith("temp_") or d.startswith("example_")
     ]
     del_fun = lambda x: (
         BigQuery(dataset=x).delete()
-        if x.startswith("test_") or x.startswith("temp_")
+        if x.startswith("test_") or x.startswith("temp_") or x.startswith("example_")
         else None
     )
     with ThreadPoolExecutor() as executor:
