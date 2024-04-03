@@ -1,5 +1,5 @@
 """
-Example module to demonstrate how to use this library.
+Example functions to demonstrate how to use the BigQuery module for creating a dataset, table, inserting data,
 """
 
 from uuid import uuid4
