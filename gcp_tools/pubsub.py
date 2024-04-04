@@ -1,6 +1,8 @@
 import os
 import json
-from google.cloud import pubsub_v1
+from gcp_tools.utils import try_import
+
+pubsub_v1 = try_import("google.cloud.pubsub_v1", "pubsub")
 
 from gcp_tools.utils import log, get_default_project
 

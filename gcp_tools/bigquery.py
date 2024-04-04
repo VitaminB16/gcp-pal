@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import os
-from google.cloud import bigquery
-from google.auth import default as google_auth_default
-from google.api_core.exceptions import NotFound as NotFoundError
+from gcp_tools.utils import try_import
+bigquery = try_import("google.cloud.bigquery", "bigquery")
+NotFoundError = try_import("google.api_core.exceptions", "bigquery").NotFound
 
 from gcp_tools.utils import log, is_dataframe, get_default_project, orient_dict
 from gcp_tools.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
@@ -199,6 +199,7 @@ class BigQuery:
             job_config = self._parse_query_params(params, job_config=job_config)
         output = self.client.query(sql, job_config=job_config)
         if to_dataframe:
+            try_import("pandas", "BigQuery.query.to_dataframe")
             output = output.to_dataframe().convert_dtypes()
             if schema and is_dataframe(output):
                 pd_schema = Schema(schema).pandas()
@@ -349,7 +350,7 @@ class BigQuery:
         - BigQuery("dataset.table").insert(pd.DataFrame({"a": [1], "b": ["test"]}))
         """
         if is_dataframe(data):
-            from pandas_gbq import to_gbq
+            to_gbq = try_import("pandas_gbq", "BigQuery.insert.dataframe")
 
             return to_gbq(
                 data,
@@ -419,7 +420,7 @@ class BigQuery:
             schema = dict_to_bigquery_fields(schema)
 
         if is_dataframe(data):
-            from pandas_gbq import to_gbq
+            to_gbq = try_import("pandas_gbq", "BigQuery.create_table.dataframe")
 
             if if_exists is None:
                 if_exists = "replace" if exists_ok else "fail"
@@ -603,7 +604,7 @@ class BigQuery:
         if isinstance(data, str):
             # Working with a table and input is a URI.
             return self.create_external_table(data, schema=schema, exists_ok=exists_ok)
-        if isinstance(data, (list, dict)) or is_dataframe(data):
+        if isinstance(data, (list, dict)) or is_dataframe(data) or data is None:
             # Working with a table and input is a DataFrame.
             return self.create_table(data=data, schema=schema, exists_ok=exists_ok)
         else:

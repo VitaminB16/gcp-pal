@@ -1,8 +1,9 @@
 import requests
-import google.auth
-import google.auth.exceptions
-from google.oauth2 import id_token
-from google.auth.transport.requests import Request as AuthRequest
+from gcp_tools.utils import try_import
+google_auth = try_import("google.auth", "requests")
+id_token = try_import("google.oauth2", "requests")
+AuthRequest = try_import("google.auth.transport.requests", "requests")
+
 
 from gcp_tools.utils import log
 
@@ -25,7 +26,7 @@ class Request:
         self.url = url
 
         scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-        self.credentials, self.project = google.auth.default(scopes=scopes)
+        self.credentials, self.project = google_auth.default(scopes=scopes)
         self.project = project or self.project
 
         self.identity_token = self.get_identity_token()
@@ -48,7 +49,7 @@ class Request:
             # Make sure this matches exactly what's expected by the service.
             token = id_token.fetch_id_token(AuthRequest(), self.url)
             return token
-        except google.auth.exceptions.RefreshError as e:
+        except google_auth.exceptions.RefreshError as e:
             log(f"Error refreshing credentials: {e}")
             return None
         except Exception as e:

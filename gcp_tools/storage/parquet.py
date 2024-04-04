@@ -1,7 +1,8 @@
 import os
-import pyarrow as pa
+from gcp_tools.utils import try_import
+pa = try_import("pyarrow", "parquet")
+pq = try_import("pyarrow.parquet", "parquet")
 from typing import List
-import pyarrow.parquet as pq
 from urllib.parse import unquote
 
 
@@ -145,7 +146,7 @@ class Parquet:
                     **kwargs,
                 ).to_pandas()
             except FileNotFoundError:
-                import pandas as pd
+                pd = try_import("pandas")
 
                 df = pd.DataFrame()
         if df.empty and not allow_empty:

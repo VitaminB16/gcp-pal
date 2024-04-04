@@ -1,8 +1,39 @@
 import os
 import logging
+import importlib
 import collections.abc
-from google.cloud import pubsub_v1, logging as gcp_logging
-from google.cloud.logging.handlers.transports import SyncTransport
+
+
+def try_import(module_name, origin_module=None):
+    """
+    Attempt to dynamically import a module. If the import fails, raise an informative ImportError.
+
+    Args:
+    - module_name (str): The name of the module to be imported.
+    - origin_module (str, optional): The module that is attempting to perform the import.
+    """
+    from gcp_tools.config.vars import PYPI_NAMES
+
+    try:
+        return importlib.import_module(module_name)
+    except (ImportError, ModuleNotFoundError):
+        pypi_name = PYPI_NAMES.get(module_name, None)
+        pypi_str = f"(PyPI: '{pypi_name}')" if pypi_name else ""
+        if origin_module:
+            raise ImportError(
+                f"Module '{origin_module}' requires '{module_name}' {pypi_str} to be installed."
+            ) from None
+        else:
+            raise ImportError(f"Missing required module: '{module_name}'") from None
+
+
+pubsub_v1 = try_import("google.cloud.pubsub_v1", "pubsub")
+gcp_logging = try_import("google.cloud.logging", "logging")
+
+# from google.cloud.logging.handlers.transports import SyncTransport
+SyncTransport = try_import(
+    "google.cloud.logging.handlers.transports", "logging"
+).SyncTransport
 
 
 LIST_LIKE_TYPES = (list, tuple, set, frozenset, collections.abc.KeysView)
@@ -266,11 +297,11 @@ def get_default_project():
     Returns:
     - str: The default project.
     """
-    import google.auth
+    google_auth = try_import("google.auth")
 
     project = os.getenv("_GOOGLE_AUTH_DEFAULT_PROJECT", None)
     if project is None:
-        project = google.auth.default()[1]
+        project = google_auth.default()[1]
         os.environ["_GOOGLE_AUTH_DEFAULT_PROJECT"] = project
         print(f"Obtained default project: {project}")
     return project
