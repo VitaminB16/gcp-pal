@@ -11,6 +11,18 @@ python = "^3.10"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.3"
+pyarrow = "^15.0.2"
+pandas = "^2.2.1"
+protobuf3 = "^0.2.1"
+protobuf = "4.21.6"
+google-cloud-firestore = "^2.16.0"
+google-cloud-pubsub = "^2.21.1"
+google-cloud-bigquery = "^3.20.1"
+google-cloud-logging = "^3.10.0"
+google-cloud-core = "^2.4.1"
+google-cloud-storage = "^2.16.0"
+gcsfs = "^2024.3.1"
+pandas-gbq = "^0.22.0"
 
 [build-system]
 requires = ["poetry-core"]

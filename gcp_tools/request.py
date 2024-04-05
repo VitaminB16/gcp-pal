@@ -5,8 +5,8 @@ try_import("google.auth", "Requests")
 try_import("google.oauth2", "Requests")
 try_import("google.auth.transport.requests", "Requests")
 import google.auth as google_auth
+from google.oauth2 import id_token
 from google.auth.transport import requests as AuthRequest
-from google.auth.transport import id_token
 
 from gcp_tools.utils import log
 
