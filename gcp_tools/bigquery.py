@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import os
 from gcp_tools.utils import try_import
-bigquery = try_import("google.cloud.bigquery", "bigquery")
-NotFoundError = try_import("google.api_core.exceptions", "bigquery").NotFound
+
+try_import("google.cloud.bigquery", "BigQuery")
+from google.cloud import bigquery
+
+try_import("google.api_core.exceptions", "BigQuery")
+from google.cloud.exceptions import NotFound as NotFoundError
 
 from gcp_tools.utils import log, is_dataframe, get_default_project, orient_dict
 from gcp_tools.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
@@ -200,6 +204,7 @@ class BigQuery:
         output = self.client.query(sql, job_config=job_config)
         if to_dataframe:
             try_import("pandas", "BigQuery.query.to_dataframe")
+
             output = output.to_dataframe().convert_dtypes()
             if schema and is_dataframe(output):
                 pd_schema = Schema(schema).pandas()
@@ -350,7 +355,8 @@ class BigQuery:
         - BigQuery("dataset.table").insert(pd.DataFrame({"a": [1], "b": ["test"]}))
         """
         if is_dataframe(data):
-            to_gbq = try_import("pandas_gbq", "BigQuery.insert.dataframe")
+            try_import("pandas_gbq", "BigQuery.insert.dataframe")
+            from pandas_gbq import to_gbq
 
             return to_gbq(
                 data,
@@ -420,7 +426,8 @@ class BigQuery:
             schema = dict_to_bigquery_fields(schema)
 
         if is_dataframe(data):
-            to_gbq = try_import("pandas_gbq", "BigQuery.create_table.dataframe")
+            try_import("pandas_gbq", "BigQuery.create_table.dataframe")
+            from pandas_gbq import to_gbq
 
             if if_exists is None:
                 if_exists = "replace" if exists_ok else "fail"

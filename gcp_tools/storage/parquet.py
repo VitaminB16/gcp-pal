@@ -1,7 +1,11 @@
 import os
 from gcp_tools.utils import try_import
-pa = try_import("pyarrow", "parquet")
-pq = try_import("pyarrow.parquet", "parquet")
+
+try_import("pyarrow", "Parquet")
+try_import("pyarrow.parquet", "Parquet")
+import pyarrow as pa
+import pyarrow.parquet as pq
+
 from typing import List
 from urllib.parse import unquote
 
@@ -145,7 +149,8 @@ class Parquet:
                     **kwargs,
                 ).to_pandas()
             except FileNotFoundError:
-                pd = try_import("pandas")
+                try_import("pandas")
+                import pandas as pd
 
                 df = pd.DataFrame()
         if df.empty and not allow_empty:
@@ -211,7 +216,8 @@ def _get_partitions_df(path):
     """
     Get the partitions of the parquet file
     """
-    pd = try_import("pandas", "parquet._get_partitions_df")
+    try_import("pandas", "parquet._get_partitions_df")
+    import pandas as pd
 
     all_partition_paths = _get_all_partition_paths(path)
     all_partitions = [x.split("/") for x in all_partition_paths]

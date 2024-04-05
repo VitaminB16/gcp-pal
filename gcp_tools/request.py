@@ -1,9 +1,12 @@
 import requests
 from gcp_tools.utils import try_import
-google_auth = try_import("google.auth", "requests")
-id_token = try_import("google.oauth2", "requests")
-AuthRequest = try_import("google.auth.transport.requests", "requests")
 
+try_import("google.auth", "Requests")
+try_import("google.oauth2", "Requests")
+try_import("google.auth.transport.requests", "Requests")
+import google.auth as google_auth
+from google.auth.transport import requests as AuthRequest
+from google.auth.transport import id_token
 
 from gcp_tools.utils import log
 
@@ -34,7 +37,7 @@ class Request:
             "Authorization": f"Bearer {self.identity_token}",
             "Content-type": "application/json",
         }
-    
+
     def __repr__(self):
         return f"Request({self.url})"
 

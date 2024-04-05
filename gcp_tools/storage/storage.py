@@ -1,6 +1,8 @@
 import os
 from gcp_tools.utils import try_import
-gcsfs = try_import("gcsfs", "gcsfs")
+
+try_import("gcsfs", "Storage")
+import gcsfs
 
 from gcp_tools.utils import get_default_project, log
 

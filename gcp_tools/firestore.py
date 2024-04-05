@@ -4,7 +4,9 @@ import os
 import json
 import concurrent.futures
 from gcp_tools.utils import try_import
-firestore = try_import("google.cloud.firestore", "firestore")
+
+try_import("google.cloud.firestore", "Firestore")
+from google.cloud import firestore
 
 from gcp_tools.schema import enforce_schema
 from gcp_tools.utils import log, is_dataframe, get_default_project
@@ -162,7 +164,8 @@ class Firestore:
                 apply_schema = True
         if apply_schema:
             if object_type == "<class 'pandas.core.frame.DataFrame'>":
-                DataFrame = try_import("pandas", "DataFrame")
+                try_import("pandas", "DataFrame")
+                from pandas import DataFrame
 
                 output = DataFrame(output)
                 output = output.reset_index(drop=True)

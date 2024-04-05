@@ -27,13 +27,12 @@ def try_import(module_name, origin_module=None):
             raise ImportError(f"Missing required module: '{module_name}'") from None
 
 
-pubsub_v1 = try_import("google.cloud.pubsub_v1", "pubsub")
-gcp_logging = try_import("google.cloud.logging", "logging")
+try_import("google.cloud.logging", "logging")
+from google.cloud import logging as gcp_logging
 
 # from google.cloud.logging.handlers.transports import SyncTransport
-SyncTransport = try_import(
-    "google.cloud.logging.handlers.transports", "logging"
-).SyncTransport
+try_import("google.cloud.logging.handlers.transports", "logging")
+from google.cloud.logging.handlers.transports import SyncTransport
 
 
 LIST_LIKE_TYPES = (list, tuple, set, frozenset, collections.abc.KeysView)
@@ -297,7 +296,8 @@ def get_default_project():
     Returns:
     - str: The default project.
     """
-    google_auth = try_import("google.auth")
+    try_import("google.auth", "get_default_project")
+    import google.auth as google_auth
 
     project = os.getenv("_GOOGLE_AUTH_DEFAULT_PROJECT", None)
     if project is None:
