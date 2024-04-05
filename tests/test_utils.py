@@ -14,47 +14,67 @@ from gcp_tools.utils import (
 
 
 def test_is_series():
-    assert is_series(pd.Series([1, 2, 3])) == True
-    assert is_series([1, 2, 3]) == False
-    assert is_series(1) == False
-    assert is_series("a") == False
-    assert is_series(None) == False
-    assert is_series(True) == False
-    assert is_series(False) == False
+    success = {}
+    success[0] = is_series(pd.Series([1, 2, 3])) == True
+    success[1] = is_series([1, 2, 3]) == False
+    success[2] = is_series(1) == False
+    success[3] = is_series("a") == False
+    success[4] = is_series(None) == False
+    success[5] = is_series(True) == False
+    success[6] = is_series(False) == False
     df = pd.DataFrame({"a": [1, 2, 3]})
-    assert is_series(df["a"]) == True
+    success[7] = is_series(df["a"]) == True
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_is_dataframe():
+    success = {}
     df = pd.DataFrame({"a": [1, 2, 3]})
-    assert is_dataframe([1, 2, 3]) == False
-    assert is_dataframe(1) == False
-    assert is_dataframe("a") == False
-    assert is_dataframe(None) == False
-    assert is_dataframe(True) == False
-    assert is_dataframe(False) == False
-    assert is_dataframe(df["a"]) == False
-    assert is_dataframe(df) == True
+    success[0] = is_dataframe([1, 2, 3]) == False
+    success[1] = is_dataframe(1) == False
+    success[2] = is_dataframe("a") == False
+    success[3] = is_dataframe(None) == False
+    success[4] = is_dataframe(True) == False
+    success[5] = is_dataframe(False) == False
+    success[6] = is_dataframe(df["a"]) == False
+    success[7] = is_dataframe(df) == True
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_force_list():
-    assert force_list([1, 2, 3]) == [1, 2, 3]
-    assert force_list(1) == [1]
-    assert force_list("a") == ["a"]
-    assert force_list(None) == [None]
-    assert force_list(True) == [True]
-    assert force_list(False) == [False]
+    success = {}
+    success[0] = force_list([1, 2, 3]) == [1, 2, 3]
+    success[1] = force_list(1) == [1]
+    success[2] = force_list("a") == ["a"]
+    success[3] = force_list(None) == [None]
+    success[4] = force_list(True) == [True]
+    success[5] = force_list(False) == [False]
     df = pd.DataFrame({"a": [1, 2, 3]})
-    assert force_list(df["a"]) == [df["a"]]
-    assert force_list(df) == [df]
-    assert force_list({"a": [1, 2, 3]}.keys()) == {"a": [1, 2, 3]}.keys()
+    success[6] = force_list(df["a"]) == [df["a"]]
+    success[7] = force_list(df) == [df]
+    success[8] = force_list({"a": [1, 2, 3]}.keys()) == {"a": [1, 2, 3]}.keys()
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_reverse_dict():
+    success = {}
     d = {"a": 1, "b": 2, "c": 3}
-    assert reverse_dict(d) == {1: "a", 2: "b", 3: "c"}
+    success[0] = reverse_dict(d) == {1: "a", 2: "b", 3: "c"}
     d = {}
-    assert reverse_dict(d) == {}
+    success[1] = reverse_dict(d) == {}
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_get_dict_items():

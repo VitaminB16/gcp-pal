@@ -33,6 +33,9 @@ from gcp_tools.schema import (
     ],
 )
 def test_enforce_schema(data):
+
+    success = {}
+
     schema = {
         "a": float,
         "b": lambda x: x.upper(),
@@ -42,9 +45,13 @@ def test_enforce_schema(data):
     output = d
     if isinstance(data, pd.DataFrame):
         output = d.to_dict(orient="list")
-    assert output["a"] == [1.0, 2.0, 3.0]
-    assert output["b"] == ["A", "B", "C"]
-    assert output["c"] == ["one", "two", "three"]
+    success[0] = output["a"] == [1.0, 2.0, 3.0]
+    success[1] = output["b"] == ["A", "B", "C"]
+    success[2] = output["c"] == ["one", "two", "three"]
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_infer_schema():
@@ -89,6 +96,9 @@ def test_infer_schema():
 
 
 def test_schema():
+
+    success = {}
+
     data = {
         "a": [1, 2, 3],
         "b": ["a", "b", "c"],
@@ -100,31 +110,31 @@ def test_schema():
     bigquery_schema = inferred_schema.bigquery()
     str_schema = inferred_schema.str()
     pyarrow_schema = inferred_schema.pyarrow()
-    assert inferred_schema.schema == {
+    success[0] = inferred_schema.schema == {
         "a": "int",
         "b": "str",
         "c": "float",
         "date": "datetime",
     }
-    assert python_schema == {
+    success[1] = python_schema == {
         "a": int,
         "b": str,
         "c": float,
         "date": datetime,
     }
-    assert bigquery_schema == [
+    success[2] = bigquery_schema == [
         bigquery.SchemaField("a", "INTEGER"),
         bigquery.SchemaField("b", "STRING"),
         bigquery.SchemaField("c", "FLOAT"),
         bigquery.SchemaField("date", "DATETIME"),
     ]
-    assert str_schema == {
+    success[3] = str_schema == {
         "a": "int",
         "b": "str",
         "c": "float",
         "date": "datetime",
     }
-    assert pyarrow_schema == pa.schema(
+    success[4] = pyarrow_schema == pa.schema(
         [
             pa.field("a", pa.int64()),
             pa.field("b", pa.string()),
@@ -132,6 +142,10 @@ def test_schema():
             pa.field("date", pa.timestamp("ns")),
         ]
     )
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
 
 
 def test_convert_all_schemas():

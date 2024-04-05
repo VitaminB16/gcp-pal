@@ -51,30 +51,32 @@ def delete_dataset(dataset_id):
 
 # Tests
 def test_BigQuery_init():
+    success = {}
     bq = BigQuery("project.dataset.table")  # Testing
-    assert bq.project == "project"
-    assert bq.dataset == "dataset"
-    assert bq.table == "table"
+    success[0] = bq.project == "project"
+    success[1] = bq.dataset == "dataset"
+    success[2] = bq.table == "table"
     bq = BigQuery("dataset.table", project="project")  # Testing
-    assert bq.project == "project"
-    assert bq.dataset == "dataset"
-    assert bq.table == "table"
+    success[3] = bq.project == "project"
+    success[4] = bq.dataset == "dataset"
+    success[5] = bq.table == "table"
     bq = BigQuery("table", dataset="dataset", project="project")  # Testing
-    assert bq.project == "project"
-    assert bq.dataset == "dataset"
-    assert bq.table == "table"
-    failed_successfully = {}
+    success[6] = bq.project == "project"
+    success[7] = bq.dataset == "dataset"
+    success[8] = bq.table == "table"
     try:
         bq = BigQuery("dataset.tablename1.tablename2", project="project")  # Testing
-        failed_successfully[0] = False
+        success[9] = False
     except ValueError:
-        failed_successfully[0] = True
+        success[9] = True
     try:
         bq = BigQuery("table", project="project")  # Testing
-        failed_successfully[1] = False
+        success[10] = False
     except ValueError:
-        failed_successfully[1] = True
-    failed = [k for k, v in failed_successfully.items() if not v]
+        success[10] = True
+
+    failed = [k for k, v in success.items() if not v]
+    
     assert not failed
 
 

@@ -364,7 +364,6 @@ class Storage:
 
         Args:
         - mode (str): Mode with which to open the file
-        - path (str): Path to open
 
         Returns:
         - file: File object

@@ -6,8 +6,7 @@ from typing import List
 from urllib.parse import unquote
 
 
-from gcp_tools import BigQuery
-from gcp_tools.utils import log, is_dataframe, force_list
+from gcp_tools.utils import is_dataframe, force_list
 
 
 class Parquet:
@@ -212,7 +211,7 @@ def _get_partitions_df(path):
     """
     Get the partitions of the parquet file
     """
-    import pandas as pd
+    pd = try_import("pandas", "parquet._get_partitions_df")
 
     all_partition_paths = _get_all_partition_paths(path)
     all_partitions = [x.split("/") for x in all_partition_paths]
