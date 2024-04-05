@@ -23,6 +23,7 @@ google-cloud-core = "^2.4.1"
 google-cloud-storage = "^2.16.0"
 gcsfs = "^2024.3.1"
 pandas-gbq = "^0.22.0"
+google-cloud-functions = "^1.16.3"
 
 [build-system]
 requires = ["poetry-core"]

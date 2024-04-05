@@ -9,4 +9,5 @@ PYPI_NAMES = {
     "pyarrow": "pyarrow",
     "pandas_gbq": "pandas-gbq",
     "pandas": "pandas",
+    "google.cloud.functions_v1": "google-cloud-functions",
 }
