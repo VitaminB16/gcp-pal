@@ -227,3 +227,48 @@ def test_orient_dict():
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
+
+
+def test_zip_directory():
+    import os
+    import shutil
+    from zipfile import ZipFile
+    from gcp_tools.utils import zip_directory
+
+    success = {}
+    dir_name = "test_dir_123"
+    file_name = "test_dir_456/test_file.txt"
+    file_path = f"{dir_name}/{file_name}"
+
+    os.makedirs(dir_name, exist_ok=True)
+    os.makedirs(f"{dir_name}/test_dir_456", exist_ok=True)
+    with open(file_path, "w") as f:
+        f.write("test")
+
+    zip_name = zip_directory(dir_name)
+    success[0] = zip_name == "test_dir_123.zip"
+    try:
+        success[1] = os.path.exists(zip_name)
+    except Exception:
+        success[1] = False
+
+    try:
+        with ZipFile(zip_name, "r") as z:
+            z.extractall("test_dir_123_extracted")
+        success[2] = os.path.exists(f"test_dir_123_extracted/{file_path}")
+    except Exception:
+        success[2] = False
+
+    try:
+        with open(f"test_dir_123_extracted/{file_path}", "r") as f:
+            success[3] = f.read() == "test"
+    except Exception:
+        success[3] = False
+
+    shutil.rmtree(dir_name)
+    shutil.rmtree("test_dir_123_extracted")
+    os.remove(zip_name)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed

@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 from uuid import uuid4
 from pandas_gbq import read_gbq
@@ -76,7 +77,7 @@ def test_BigQuery_init():
         success[10] = True
 
     failed = [k for k, v in success.items() if not v]
-    
+
     assert not failed
 
 
@@ -652,7 +653,7 @@ def test_create_extable_avro():
 
 def test_create_extable_orc():
     import pandas as pd
-    from gcp_tools import Storage, Parquet
+    from gcp_tools import Storage
     from gcp_tools.schema import Schema
 
     # Test partitioned parquet
