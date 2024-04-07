@@ -140,6 +140,7 @@ class Storage:
         Returns:
         - bool: Whether the file or directory exists.
         """
+        self.fs.invalidate_cache()
         path = self._suffix_path(path)
         output = self.fs.exists(path)
         return output
@@ -182,7 +183,9 @@ class Storage:
         except FileNotFoundError:
             return output
         metadata = object_info.get("metadata", {})
-        if metadata.get("arrow/gcsfs", "") == "directory":
+        if object_info.get("type", "") == "directory":
+            output = False
+        elif metadata.get("arrow/gcsfs", "") == "directory":
             output = False
         elif object_info.get("name", "").endswith("/"):
             output = False
@@ -243,7 +246,7 @@ class Storage:
         - bucket_name (str): Name of the bucket to create.
         """
         if bucket_name or self.is_bucket:
-            return self.create_bucket(bucket_name)
+            return self.create_bucket(bucket_name, exists_ok=exist_ok)
         return self.mkdir(path, exist_ok=exist_ok)
 
     def walk(self):
