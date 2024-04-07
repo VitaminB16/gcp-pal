@@ -15,3 +15,4 @@ _includes/
 output/**.py
 tests_output/*
 *.txt
+*.zip

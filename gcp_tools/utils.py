@@ -305,3 +305,26 @@ def get_default_project():
         os.environ["_GOOGLE_AUTH_DEFAULT_PROJECT"] = project
         print(f"Obtained default project: {project}")
     return project
+
+
+def zip_directory(directory, output_file=None, omit_root=True):
+    """
+    Zip a directory.
+
+    Args:
+    - directory (str): The directory to zip.
+    - output_file (str): The output file.
+    """
+    from zipfile import ZipFile
+
+    if not output_file:
+        output_file = f"{directory}.zip"
+    with ZipFile(output_file, "w") as z:
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if omit_root:
+                    out_name = os.path.relpath(os.path.join(root, file), directory)
+                else:
+                    out_name = os.path.join(root, file)
+                z.write(os.path.join(root, file), out_name)
+    return output_file
