@@ -159,7 +159,9 @@ class Storage:
         except FileNotFoundError:
             return output
         metadata = object_info.get("metadata", {})
-        if metadata.get("arrow/gcsfs", "") == "directory":
+        if object_info.get("type", "") == "directory":
+            output = True
+        elif metadata.get("arrow/gcsfs", "") == "directory":
             output = True
         elif object_info.get("name", "").endswith("/"):
             output = True
@@ -210,7 +212,7 @@ class Storage:
         log(f"Created directories: {path}")
         return output
 
-    def create_bucket(self, bucket_name=None):
+    def create_bucket(self, bucket_name=None, exists_ok=True):
         """
         Create a bucket in the project.
 
@@ -221,7 +223,13 @@ class Storage:
             bucket_name = self.bucket_name
         if not bucket_name:
             raise ValueError("Bucket name is required.")
-        output = self.fs.mkdir(bucket_name)
+        try:
+            output = self.fs.mkdir(bucket_name)
+        except gcsfs.retry.HttpError as e:
+            exists = "Your previous request to create the named bucket succeeded and you already own it."
+            if exists in str(e) and exists_ok:
+                return
+            raise e
         log(f"Created bucket: {bucket_name}")
         return output
 
@@ -456,6 +464,27 @@ class Storage:
         log(f"Read: {path}")
         return data
 
+
+if __name__ == "__main__":
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    import pandas as pd
+
+    success = {}
+    bucket_name = f"test_bucket_vita_1324"
+    Storage(bucket_name).create()
+
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    partition_cols = ["a"]
+    file_name = f"gs://{bucket_name}/file.parquet"
+    table = pa.Table.from_pandas(df)
+    pq.write_to_dataset(
+        table, file_name, partition_cols=partition_cols, basename_template="{i}.parquet"
+    )
+    print(file_name)
+    print(Storage(file_name).isfile())
+    print(Storage(file_name).isfile("a=1"))
+    exit()
 
 if __name__ == "__main__":
     print(Storage("bucket_name").bucket_name == "bucket_name")
