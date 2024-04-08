@@ -6,7 +6,7 @@ try_import("google.oauth2", "Requests")
 try_import("google.auth.transport.requests", "Requests")
 import google.auth as google_auth
 from google.oauth2 import id_token
-from google.auth.transport import requests as AuthRequest
+from google.auth.transport.requests import Request as AuthRequest
 
 from gcp_tools.utils import log
 
@@ -75,8 +75,8 @@ class Request:
 if __name__ == "__main__":
     import os
 
-    cloud_run_url = os.environ.get("CLOUD_RUN_URL")
-    payload = {"key": "value"}
+    cloud_run_url = "https://sample-jfzraqzsma-nw.a.run.app"#os.environ.get("CLOUD_RUN_URL")
+    payload = {"task_name": "events"}
     response = Request(cloud_run_url).post(payload)
     print(response.json())
     print(response.status_code)
