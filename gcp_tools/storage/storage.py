@@ -39,6 +39,7 @@ class Storage:
         self.base_path = self.path[len(self.fs_prefix) :]
         self.file_name = self.base_path[len(self.bucket_name) + 1 :]
         self.file_name = self.file_name if self.file_name != "" else None
+        self.name = self.file_name or self.bucket_name
 
         self.bucket_path = self.fs_prefix + self.bucket_name
         if self.bucket_name == "":
@@ -466,6 +467,19 @@ class Storage:
             data = f.read()
         log(f"Read: {path}")
         return data
+
+    def get(self, path=None, **kwargs):
+        """
+        Gets the object from the path as a reference.
+        """
+        from google.cloud.storage.blob import Blob
+        from google.cloud.storage.bucket import Bucket
+
+        path = self._suffix_path(path)
+        bucket_name = path[len(self.fs_prefix) :].split("/")[0]
+        path = path[len(bucket_name) + 1 :]
+        bucket = Bucket(bucket_name, self.project)
+        return Blob(path, bucket)
 
 
 if __name__ == "__main__":

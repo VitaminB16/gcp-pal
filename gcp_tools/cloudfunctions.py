@@ -3,11 +3,21 @@ import json
 
 from gcp_tools.utils import try_import
 
-try_import("google.cloud.functions_v1", "CloudFunctions")
-import google.cloud.functions_v1 as functions_v1
-from google.cloud.functions_v1.types import CloudFunction
+try_import("google.cloud.functions_v2", "CloudFunctions")
+import google.cloud.functions_v2 as functions_v2
+from google.cloud.functions_v2 import (
+    Function,
+    BuildConfig,
+    ServiceConfig,
+    Source,
+    StorageSource,
+    RepoSource,
+    CreateFunctionRequest,
+    UpdateFunctionRequest,
+)
+from google.protobuf.field_mask_pb2 import FieldMask
 
-from gcp_tools.utils import get_default_project, log
+from gcp_tools.utils import get_default_project, log, get_all_kwargs
 
 
 class CloudFunctions:
@@ -25,7 +35,7 @@ class CloudFunctions:
         if self.project in self._clients:
             self.client = self._clients[self.project]
         else:
-            self.client = functions_v1.CloudFunctionsServiceClient()
+            self.client = functions_v2.FunctionServiceClient()
             self._clients[self.project] = self.client
 
     def __repr__(self):
@@ -42,7 +52,7 @@ class CloudFunctions:
         - (list) List of cloud functions.
         """
         parent = f"projects/{self.project}/locations/{self.location}"
-        request = functions_v1.ListFunctionsRequest(parent=parent)
+        request = functions_v2.ListFunctionsRequest(parent=parent)
         page_result = self.client.list_functions(request)
         if active_only:
             output = [f.name for f in page_result if f.status.name == "ACTIVE"]
@@ -64,7 +74,7 @@ class CloudFunctions:
             function_id = f"{self.parent}/functions/{name}"
         else:
             function_id = self.function_id
-        request = functions_v1.GetFunctionRequest(name=function_id)
+        request = functions_v2.GetFunctionRequest(name=function_id)
         output = self.client.get_function(request)
         return output
 
@@ -94,7 +104,7 @@ class CloudFunctions:
         if data is None:
             data = {}
         payload = json.dumps(data) if isinstance(data, dict) else data
-        request = functions_v1.CallFunctionRequest(name=self.name, data=payload)
+        request = functions_v2.CallFunctionRequest(name=self.name, data=payload)
         print(f"Sending request to cloud function {self.name}...")
         result = self.client.call_function(request)
         return result
@@ -131,7 +141,6 @@ class CloudFunctions:
         - (dict) The response from the cloud function.
         """
         input_args = {
-            "name": self.name,
             "runtime": runtime,
             "entry_point": entry_point,
             "source": source,
@@ -186,6 +195,8 @@ class CloudFunctions:
         https_trigger=None,
         event_trigger=None,
         if_exists="REPLACE",
+        generation=1,
+        wait_to_complete=True,
         **kwargs,
     ):
         """
@@ -199,45 +210,85 @@ class CloudFunctions:
         Returns:
         - (dict) The response from the cloud function.
         """
+
         log(f"Deploying cloud function '{self.name}' from repository {source}...")
+        if source.startswith("gs://"):
+            from gcp_tools import Storage
+
+            obj = Storage(source)
+            bucket_name, file_name = obj.bucket_name, obj.file_name
+            storage_source = StorageSource(bucket=bucket_name, object=file_name)
+            source = Source(storage_source=storage_source)
+        else:
+            source = Source(repository=RepoSource(url=source))
+        all_kwargs = get_all_kwargs(locals())
         function_exists = self.exists()
-        if https_trigger or trigger == "HTTP":
-            https_trigger = functions_v1.HttpsTrigger(url=https_trigger)
-            kwargs["https_trigger"] = https_trigger
-            kwargs.pop("event_trigger", None)
-        elif event_trigger or trigger == "EVENT":
-            event_trigger = functions_v1.EventTrigger(event_type=event_trigger)
-            kwargs["event_trigger"] = event_trigger
-            kwargs.pop("https_trigger", None)
-        cloud_function = CloudFunction(
+        function_kwargs, service_kwargs, build_kwargs = self._split_deploy_kwargs(
+            all_kwargs
+        )
+        kwargs = {k: v for k, v in kwargs.items() if k not in all_kwargs}
+        build_config = BuildConfig(**build_kwargs)
+        service_config = ServiceConfig(**service_kwargs)
+        cloud_function = Function(
             name=self.function_id,
-            entry_point=entry_point,
-            source_archive_url=source,
+            build_config=build_config,
+            service_config=service_config,
+            **function_kwargs,
             **kwargs,
         )
         if function_exists and if_exists == "REPLACE":
             log(f"Updating existing cloud function '{self.name}'...")
-            operation = self.client.update_function(function=cloud_function)
-        else:
-            print(f"Deploying cloud function '{self.name}'...")
-            operation = self.client.create_function(
-                location=self.location_id,
-                function=cloud_function,
+            update_mask = FieldMask(
+                paths=["build_config", "service_config"] + list(kwargs.keys())
             )
-        output = operation.result()
+            request = UpdateFunctionRequest(
+                function=cloud_function, update_mask=update_mask
+            )
+            output = self.client.update_function(request)
+        else:
+            print(f"Creating new cloud function '{self.name}'...")
+            request = CreateFunctionRequest(
+                function=cloud_function, parent=self.parent, function_id=self.name
+            )
+            output = self.client.create_function(request)
+        self._handle_deploy_response(output, wait_to_complete)
+        return output
 
+    def _handle_deploy_response(self, response, wait_to_complete):
+        if wait_to_complete:
+            log("Waiting for the deployment to complete...")
+            response.result(timeout=300)
         # Check that the function was deployed and is active
         function = self.get()
-        print(
-            f"Cloud function '{self.name}' was deployed. Status: {function.status.name}, Version: {function.version_id}. URL: {function.https_trigger.url}"
-        )
-        return output
+        service_config = function.service_config
+        print(f"Cloud function '{self.name}': {function.state.name}.")
+        if wait_to_complete:
+            print(f"Version: {service_config.revision}")
+            print(f"URI: {service_config.uri}")
+
+    def _split_deploy_kwargs(self, kwargs):
+        """
+        Splits the deploy kwargs into function, service and build kwargs.
+
+        Returns:
+        - (dict, dict, dict) The function, service and build kwargs.
+        """
+        function_kwargs = {}
+        service_kwargs = {}
+        build_kwargs = {}
+        for key, value in kwargs.items():
+            if key in Function.__annotations__:
+                function_kwargs[key] = value
+            elif key in ServiceConfig.__annotations__:
+                service_kwargs[key] = value
+            elif key in BuildConfig.__annotations__:
+                build_kwargs[key] = value
+        return function_kwargs, service_kwargs, build_kwargs
 
 
 if __name__ == "__main__":
     CloudFunctions("sample").deploy(
-        "samples/cloud_function", "entry_point", runtime="python310"
+        "samples/cloud_function",
+        entry_point="entry_point",
+        runtime="python310",
     )
-    function = CloudFunctions("sample").get()
-    print("--" * 50)
-    print(function)

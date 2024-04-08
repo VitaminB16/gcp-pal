@@ -328,3 +328,20 @@ def zip_directory(directory, output_file=None, omit_root=True):
                     out_name = os.path.join(root, file)
                 z.write(os.path.join(root, file), out_name)
     return output_file
+
+
+def get_all_kwargs(locals_kwargs):
+    """
+    Get all kwargs from a locals() dictionary.
+
+    Args:
+    - locals_kwargs (dict): The dictionary of local variables (locals() output).
+
+    Returns:
+    - dict: The dictionary of kwargs.
+    """
+    all_kwargs = locals_kwargs.copy()
+    all_kwargs.pop("self")
+    kwargs = all_kwargs.pop("kwargs")
+    all_kwargs = {**all_kwargs, **kwargs}
+    return all_kwargs
