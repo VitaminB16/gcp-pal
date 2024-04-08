@@ -15,6 +15,8 @@ from google.cloud.functions_v2 import (
     CreateFunctionRequest,
     UpdateFunctionRequest,
 )
+
+try_import("google.protobuf.field_mask_pb2", "CloudFunctions")
 from google.protobuf.field_mask_pb2 import FieldMask
 
 from gcp_tools.utils import get_default_project, log, get_all_kwargs
@@ -104,10 +106,12 @@ class CloudFunctions:
         if data is None:
             data = {}
         payload = json.dumps(data) if isinstance(data, dict) else data
-        request = functions_v2.CallFunctionRequest(name=self.name, data=payload)
-        print(f"Sending request to cloud function {self.name}...")
-        result = self.client.call_function(request)
-        return result
+        from gcp_tools import Request
+
+        uri = self.get().service_config.uri
+
+        output = Request(uri).post(payload)
+        return output
 
     def deploy(
         self,
@@ -129,13 +133,12 @@ class CloudFunctions:
             - description (str): The description of the cloud function.
             - timeout (int): The timeout of the cloud function in seconds.
             - available_memory_mb (int): The amount of memory available to the cloud function in MB.
-            - service_account_email (str): The service account email to use for the cloud function.
+            - service_account_email (str): The service account email to use for the cloud function. Defaults to PROJECT@PROJECT.iam.gserviceaccount.com.
             - version_id (str): The version ID of the cloud function.
             - labels (dict): The labels to apply to the cloud function.
             - environment_variables (dict): The environment variables to set for the cloud function.
             - max_instances (int): The maximum number of instances to allow for the cloud function.
             - min_instances (int): The minimum number of instances to allow for the cloud function.
-
 
         Returns:
         - (dict) The response from the cloud function.
@@ -197,6 +200,7 @@ class CloudFunctions:
         if_exists="REPLACE",
         generation=1,
         wait_to_complete=True,
+        service_account_email=None,
         **kwargs,
     ):
         """
@@ -221,6 +225,9 @@ class CloudFunctions:
             source = Source(storage_source=storage_source)
         else:
             source = Source(repository=RepoSource(url=source))
+        if service_account_email is None:
+            default_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
+            service_account_email = default_account
         all_kwargs = get_all_kwargs(locals())
         function_exists = self.exists()
         function_kwargs, service_kwargs, build_kwargs = self._split_deploy_kwargs(
@@ -238,12 +245,7 @@ class CloudFunctions:
         )
         if function_exists and if_exists == "REPLACE":
             log(f"Updating existing cloud function '{self.name}'...")
-            update_mask = FieldMask(
-                paths=["build_config", "service_config"] + list(kwargs.keys())
-            )
-            request = UpdateFunctionRequest(
-                function=cloud_function, update_mask=update_mask
-            )
+            request = UpdateFunctionRequest(function=cloud_function, update_mask=None)
             output = self.client.update_function(request)
         else:
             print(f"Creating new cloud function '{self.name}'...")
@@ -254,10 +256,38 @@ class CloudFunctions:
         self._handle_deploy_response(output, wait_to_complete)
         return output
 
+    def delete(self, wait_to_complete=True):
+        """
+        Deletes a cloud function.
+
+        Args:
+        - wait_to_complete (bool): Whether to wait for the deletion to complete.
+
+        Returns:
+        - (dict) The response from the delete request.
+        """
+        request = functions_v2.DeleteFunctionRequest(name=self.function_id)
+        output = self.client.delete_function(request)
+        if wait_to_complete:
+            output = output.result(timeout=300)
+        print(f"Deleted cloud function: '{self.name}'.")
+        return output
+
     def _handle_deploy_response(self, response, wait_to_complete):
+        """
+        Handles the response from a deploy request.
+
+        Args:
+        - response (dict): The response from the deploy request.
+        - wait_to_complete (bool): Whether to wait for the deployment to complete.
+
+        Returns:
+        - (dict) The response from the deploy request.
+        """
+        output = response
         if wait_to_complete:
             log("Waiting for the deployment to complete...")
-            response.result(timeout=300)
+            output.result(timeout=300)
         # Check that the function was deployed and is active
         function = self.get()
         service_config = function.service_config
@@ -265,6 +295,7 @@ class CloudFunctions:
         if wait_to_complete:
             print(f"Version: {service_config.revision}")
             print(f"URI: {service_config.uri}")
+        return response
 
     def _split_deploy_kwargs(self, kwargs):
         """
@@ -292,3 +323,6 @@ if __name__ == "__main__":
         entry_point="entry_point",
         runtime="python310",
     )
+    output = CloudFunctions("sample").call({"data": 4})
+    print(output.text)
+    exit()
