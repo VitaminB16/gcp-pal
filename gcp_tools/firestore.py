@@ -9,7 +9,7 @@ try_import("google.cloud.firestore", "Firestore")
 from google.cloud import firestore
 
 from gcp_tools.schema import enforce_schema
-from gcp_tools.utils import log, is_dataframe, get_default_project
+from gcp_tools.utils import log, is_dataframe, get_auth_default
 
 
 class Firestore:
@@ -33,7 +33,7 @@ class Firestore:
         - `Firestore("gs://project/bucket/path").write(data)` -> Write to Firestore "bucket/path"
         - `Firestore("gs://project/bucket/path").delete()` -> Delete from Firestore "bucket/path"
         """
-        self.project = project or os.getenv("PROJECT") or get_default_project()
+        self.project = project or os.getenv("PROJECT") or get_auth_default()[1]
         self.path = path
 
         # Only initialize the client once per project
@@ -68,7 +68,7 @@ class Firestore:
         path_elements = self.path.split("/")
         return path_elements
 
-    def get_ref(self, method=None):
+    def get(self, method=None):
         """
         Get a reference to a Firestore document or collection.
 
@@ -76,8 +76,8 @@ class Firestore:
         - Firestore reference (DocumentReference or CollectionReference)
 
         Examples:
-        - Firestore("collection/document").get_ref() -> Reference to document "collection/document"
-        - Firestore("collection").get_ref() -> Reference to collection "collection"
+        - Firestore("collection/document").get() -> Reference to document "collection/document"
+        - Firestore("collection").get() -> Reference to collection "collection"
         """
         path_elements = self._parse_path(method)
         if path_elements is None:
@@ -139,7 +139,7 @@ class Firestore:
         if path_schemas:
             path_schemas = path_schemas.get(self.path, {})
             schema = {**schema, **path_schemas}
-        doc_ref = self.get_ref(method="get")
+        doc_ref = self.get(method="get")
         if self._ref_type(doc_ref) == "collection":
             # If the reference is a collection, return a list of documents
             paths_list = [f"{self.path}/{doc.id}" for doc in doc_ref.stream()]
@@ -187,7 +187,7 @@ class Firestore:
         Examples:
         - Firestore("coll/doc").write(data) -> Write data to Firestore "coll/doc"
         """
-        doc_ref = self.get_ref(method="set")
+        doc_ref = self.get(method="set")
         dtypes, object_type = None, None
         object_type = str(type(data))
         if is_dataframe(data):
@@ -219,7 +219,7 @@ class Firestore:
         """
         Create an empty Firestore document or collection.
         """
-        ref = self.get_ref()
+        ref = self.get()
         ref_type = self._ref_type(ref)
         if ref_type == "document":
             ref.set({})
@@ -234,7 +234,7 @@ class Firestore:
         """
         Recursively deletes documents and collections from Firestore.
         """
-        ref = self.get_ref()
+        ref = self.get()
         ref_type = self._ref_type(ref)
         if ref_type == "document":
             self._delete_document(ref)
@@ -282,7 +282,7 @@ class Firestore:
         """
         if path is not None:
             self.path = self.path + "/" + path
-        ref = self.get_ref()
+        ref = self.get()
         if ref is None:
             output = [col.id for col in self.client.collections()]
             log(f"Firestore collections listed.")
@@ -301,7 +301,7 @@ class Firestore:
         """
         Check if a document or collection exists in Firestore.
         """
-        ref = self.get_ref()
+        ref = self.get()
         ref_type = self._ref_type(ref)
         if ref_type == "document":
             exists = ref.get().exists

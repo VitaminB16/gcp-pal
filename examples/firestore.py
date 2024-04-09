@@ -76,7 +76,7 @@ def example_get_ref():
     Firestore(document_path).write(document_data)
 
     # Get the reference to the document
-    ref = Firestore(document_path).get_ref()
+    ref = Firestore(document_path).get()
     ref.update({"age": 31})
 
     # Read data from Firestore
