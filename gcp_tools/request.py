@@ -23,6 +23,8 @@ class Request:
     - `Request("https://[CLOUD_RUN_URL]").post({"key": "value"})` -> Post request to cloud run service
     """
 
+    _identity_token = None
+
     def __init__(self, url, project=None, service_account=None):
         """
         Args:
@@ -44,6 +46,7 @@ class Request:
             "Authorization": f"Bearer {self.identity_token}",
             "Content-type": "application/json",
         }
+        self.args = {}
 
     def __repr__(self):
         return f"Request({self.url})"
@@ -101,7 +104,9 @@ class Request:
         return None
 
     def post(self, payload=None, **kwargs):
-        response = requests.post(self.url, json=payload, headers=self.headers, **kwargs)
+        arg_name = "data" if isinstance(payload, dict) else "json"
+        self.args = {arg_name: payload, "headers": self.headers, **kwargs}
+        response = requests.post(self.url, **self.args)
         return response
 
     def get(self, **kwargs):
@@ -109,7 +114,9 @@ class Request:
         return response
 
     def put(self, payload=None, **kwargs):
-        response = requests.put(self.url, json=payload, headers=self.headers, **kwargs)
+        arg_name = "data" if isinstance(payload, dict) else "json"
+        self.args = {arg_name: payload, "headers": self.headers, **kwargs}
+        response = requests.put(self.url, **self.args)
         return response
 
 
