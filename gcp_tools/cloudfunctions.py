@@ -19,7 +19,7 @@ from google.cloud.functions_v2 import (
 try_import("google.protobuf.field_mask_pb2", "CloudFunctions")
 from google.protobuf.field_mask_pb2 import FieldMask
 
-from gcp_tools.utils import get_default_project, log, get_all_kwargs
+from gcp_tools.utils import get_auth_default, log, get_all_kwargs
 
 
 class CloudFunctions:
@@ -28,11 +28,15 @@ class CloudFunctions:
 
     def __init__(self, name=None, project=None, location="europe-west2"):
         self.name = name
-        self.project = project or os.environ.get("PROJECT") or get_default_project()
+        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         self.location = location
         self.parent = f"projects/{self.project}/locations/{self.location}"
         self.location_id = self.parent
-        self.function_id = f"{self.parent}/functions/{self.name}"
+        self.function_id = self.name or ""
+        if not self.function_id.startswith(self.parent):
+            self.function_id = f"{self.parent}/functions/{self.name}"
+        if self.name == self.function_id:
+            self.name = self.function_id.split("/")[-1]
 
         if self.project in self._clients:
             self.client = self._clients[self.project]
@@ -43,7 +47,7 @@ class CloudFunctions:
     def __repr__(self):
         return f"CloudFunctions({self.name})"
 
-    def ls(self, active_only=False):
+    def ls(self, active_only=False, full_id=False):
         """
         Lists all cloud functions in the project.
 
@@ -60,6 +64,8 @@ class CloudFunctions:
             output = [f.name for f in page_result if f.status.name == "ACTIVE"]
         else:
             output = [f.name for f in page_result]
+        if not full_id:
+            output = [f.split("/")[-1] for f in output]
         return output
 
     def get(self, name=None):
@@ -93,24 +99,41 @@ class CloudFunctions:
         except Exception as e:
             return False
 
-    def call(self, data=None):
+    def call(
+        self,
+        data={},
+        errors="ignore",
+        to_json=True,
+    ):
         """
         Calls a cloud function.
 
         Args:
-        - data (dict|str): The data to send to the cloud function. If a dict is provided, it will be converted to a JSON string.
+        - data (dict|str): The data to send to the cloud function. If a dict, it will be converted to JSON. Defaults to {}.
+        - errors (str): How to handle errors. Options are "ignore", "raise" or "log". Defaults to "ignore".
+        - to_json (bool): Whether to convert the response to JSON. Defaults to True.
 
         Returns:
         - (dict) The response from the cloud function.
         """
-        if data is None:
-            data = {}
-        payload = json.dumps(data) if isinstance(data, dict) else data
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
         from gcp_tools import Request
 
         uri = self.get().service_config.uri
 
-        output = Request(uri).post(payload)
+        output = Request(uri).post(data)
+        if output.status_code != 200:
+            if errors == "raise":
+                raise Exception(f"Error calling cloud function: {output.text}")
+            elif errors == "log":
+                log(f"Error calling cloud function: {output.text}")
+        if to_json:
+            try:
+                output = output.json()
+            except json.JSONDecodeError:
+                pass
         return output
 
     def deploy(
@@ -256,6 +279,22 @@ class CloudFunctions:
         self._handle_deploy_response(output, wait_to_complete)
         return output
 
+    def state(self):
+        """
+        Returns the state of the cloud function.
+
+        Returns:
+        - (str) The state of the cloud function.
+        """
+        function = self.get()
+        return function.state.name
+
+    def status(self):
+        """
+        Alias for state.
+        """
+        return self.state()
+
     def delete(self, wait_to_complete=True):
         """
         Deletes a cloud function.
@@ -318,11 +357,9 @@ class CloudFunctions:
 
 
 if __name__ == "__main__":
-    CloudFunctions("sample").deploy(
+    CloudFunctions("test_sample1").deploy(
         "samples/cloud_function",
         entry_point="entry_point",
         runtime="python310",
     )
-    output = CloudFunctions("sample").call({"data": 4})
-    print(output.text)
     exit()
