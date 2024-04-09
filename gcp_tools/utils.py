@@ -289,7 +289,7 @@ def orient_dict(d, orientation=""):
     return output
 
 
-def get_default_project():
+def get_auth_default():
     """
     Get the default project from google.auth.default() and store it in an environment variable.
 
@@ -300,11 +300,13 @@ def get_default_project():
     import google.auth as google_auth
 
     project = os.getenv("_GOOGLE_AUTH_DEFAULT_PROJECT", None)
+    credentials = os.getenv("_GOOGLE_AUTH_DEFAULT_CREDENTIALS", None)
     if project is None:
-        project = google_auth.default()[1]
+        credentials, project = google_auth.default()
         os.environ["_GOOGLE_AUTH_DEFAULT_PROJECT"] = project
+        os.environ["_GOOGLE_AUTH_DEFAULT_CREDENTIALS"] = credentials.to_json()
         print(f"Obtained default project: {project}")
-    return project
+    return credentials, project
 
 
 def zip_directory(directory, output_file=None, omit_root=True):

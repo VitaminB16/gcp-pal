@@ -4,7 +4,7 @@ from gcp_tools.utils import try_import
 try_import("gcsfs", "Storage")
 import gcsfs
 
-from gcp_tools.utils import get_default_project, log
+from gcp_tools.utils import get_auth_default, log
 
 
 class Storage:
@@ -21,7 +21,7 @@ class Storage:
         project=None,
         location="europe-west2",
     ):
-        self.project = project or os.environ.get("PROJECT") or get_default_project()
+        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         self.location = location
         self.fs_prefix = "gs://"
 
@@ -472,6 +472,7 @@ class Storage:
         """
         Gets the object from the path as a reference.
         """
+        try_import("google.cloud.storage", "Storage.get")
         from google.cloud.storage.blob import Blob
         from google.cloud.storage.bucket import Bucket
 

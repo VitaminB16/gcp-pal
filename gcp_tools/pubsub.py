@@ -5,7 +5,7 @@ from gcp_tools.utils import try_import
 try_import("google.cloud.pubsub_v1", "PubSub")
 from google.cloud import pubsub_v1
 
-from gcp_tools.utils import log, get_default_project
+from gcp_tools.utils import log, get_auth_default
 
 
 class PubSub:
@@ -26,7 +26,7 @@ class PubSub:
         - project (str): Project ID
         """
         self.topic_id = topic
-        self.project = project or os.environ.get("PROJECT") or get_default_project()
+        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
 
         # Initialize the publisher client only once per project
         if self.project in PubSub._clients:

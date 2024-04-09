@@ -9,7 +9,7 @@ from google.cloud import bigquery
 try_import("google.api_core.exceptions", "BigQuery")
 from google.cloud.exceptions import NotFound as NotFoundError
 
-from gcp_tools.utils import log, is_dataframe, get_default_project, orient_dict
+from gcp_tools.utils import log, is_dataframe, get_auth_default, orient_dict
 from gcp_tools.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
 
 
@@ -146,7 +146,7 @@ class BigQuery:
         self.table = table
         self.dataset = dataset
         self.location = location
-        self.project = project or os.environ.get("PROJECT") or get_default_project()
+        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         if not project:
             try:
                 # E.g. BigQuery(table="project.dataset.table")
