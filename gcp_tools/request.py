@@ -92,7 +92,12 @@ class Request:
             response_json = response.json()
             return response_json.get("token")
         else:
-            log(f"Error fetching identity token: {response.text}")
+            if "iam.serviceAccounts.getOpenIdToken" in response.text:
+                role = "Service Account Token Creator"
+                acc = self.service_account
+                log(f"Error: Ensure the service account {acc} has the '{role}' role.")
+            else:
+                log(f"Error fetching identity token: {response.text}")
         return None
 
     def post(self, payload=None, **kwargs):
@@ -111,7 +116,6 @@ class Request:
 if __name__ == "__main__":
     uri = "https://python-roh-jfzraqzsma-nw.a.run.app"
     payload = {"task_name": "events"}
-    json_payload = json.dumps(payload)
-    response = Request(uri).post(json_payload)
+    response = Request(uri).post(payload)
     print(response.json())
     print(response.status_code)
