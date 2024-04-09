@@ -10,4 +10,6 @@ PYPI_NAMES = {
     "pandas_gbq": "pandas-gbq",
     "pandas": "pandas",
     "google.cloud.functions_v1": "google-cloud-functions",
+    "google.auth": "google-auth",
+    "google.oauth2": "google-auth-oauthlib",
 }
