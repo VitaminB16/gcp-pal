@@ -406,9 +406,12 @@ class BigQuery:
             data = [data]
 
         if not schema:
-            schema = Schema(data).infer_schema().bigquery()
+            schema = Schema(data, is_data=True).bigquery()
 
-        success = self.insert(data, schema=schema)
+        try:
+            success = self.insert(data, schema=schema)
+        except NotFoundError:
+            success = self.create_table(data, schema=schema, exists_ok=True)
         log(f"Data written to {self.table}, schema: {schema}")
         return success
 
@@ -679,7 +682,7 @@ class BigQuery:
         log("BigQuery datasets listed.")
         return dataset_ids
 
-    def list_tables(self):
+    def list_tables(self, dataset=None):
         """
         Lists all tables in a specified dataset.
 
@@ -689,20 +692,21 @@ class BigQuery:
         Returns:
         - List of table IDs within the specified dataset.
         """
-        tables = list(self.client.list_tables(self.dataset))
+        dataset = dataset or self.dataset
+        tables = list(self.client.list_tables(dataset))
         table_ids = [table.table_id for table in tables]
-        log(f"Tables listed for dataset: {self.dataset}")
+        log(f"Tables listed for dataset: {dataset}")
         return table_ids
 
-    def ls(self):
+    def ls(self, dataset=None):
         """
         Lists all datasets in the project, or all tables in a specified dataset.
 
         Returns:
         - List of dataset IDs or table IDs.
         """
-        if self.dataset:
-            return self.list_tables()
+        if self.dataset or dataset:
+            return self.list_tables(dataset=dataset)
         else:
             return self.list_datasets()
 
@@ -796,6 +800,16 @@ class BigQuery:
         table = self.get_table()
         table.schema = schema
         return self.client.update_table(table, ["schema"])
+
+
+if __name__ == "__main__":
+    data = {
+        "name": "John",
+        "age": 30,
+        "city": "New York",
+    }
+    BigQuery("dataset1.table1").write(data)
+    exit()
 
 
 if __name__ == "__main__":
