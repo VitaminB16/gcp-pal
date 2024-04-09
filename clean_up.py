@@ -1,4 +1,4 @@
-from gcp_tools import BigQuery, Firestore, Storage
+from gcp_tools import BigQuery, Firestore, Storage, CloudFunctions
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -63,7 +63,23 @@ def delete_test_storage_buckets():
         executor.map(del_fun, buckets_to_delete)
 
 
+def delete_test_cloud_functions():
+    """
+    Deletes all Cloud Functions that start with "test_"
+    """
+    functions = CloudFunctions().ls()
+    functions_to_delete = [
+        f
+        for f in functions
+        if f.startswith("test_") or f.startswith("temp_") or f.startswith("example_")
+    ]
+    del_fun = lambda x: CloudFunctions(x).delete()
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, functions_to_delete)
+
+
 if __name__ == "__main__":
     delete_test_bigquery_datasets()
     delete_test_firestore_collections()
     delete_test_storage_buckets()
+    delete_test_cloud_functions()
