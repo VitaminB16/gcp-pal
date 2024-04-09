@@ -14,6 +14,7 @@ from google.cloud.functions_v2 import (
     RepoSource,
     CreateFunctionRequest,
     UpdateFunctionRequest,
+    Environment,
 )
 
 try_import("google.protobuf.field_mask_pb2", "CloudFunctions")
@@ -140,8 +141,12 @@ class CloudFunctions:
         self,
         source,
         entry_point,
-        runtime,
+        runtime="python310",
+        generation=2,
+        trigger="HTTP",
         if_exists="REPLACE",
+        wait_to_complete=True,
+        service_account_email=None,
         **kwargs,
     ):
         """
@@ -166,17 +171,11 @@ class CloudFunctions:
         Returns:
         - (dict) The response from the cloud function.
         """
-        input_args = {
-            "runtime": runtime,
-            "entry_point": entry_point,
-            "source": source,
-            "if_exists": if_exists,
-            **kwargs,
-        }
+        input_kwargs = get_all_kwargs(locals())
         if source.startswith("https://") or source.startswith("gs://"):
-            return self.deploy_from_repo(**input_args)
+            return self.deploy_from_repo(**input_kwargs)
         else:
-            return self.deploy_from_zip(**input_args)
+            return self.deploy_from_zip(**input_kwargs)
 
     def deploy_from_zip(
         self,
@@ -218,10 +217,8 @@ class CloudFunctions:
         source,
         entry_point,
         trigger="HTTP",
-        https_trigger=None,
-        event_trigger=None,
         if_exists="REPLACE",
-        generation=1,
+        generation=2,
         wait_to_complete=True,
         service_account_email=None,
         **kwargs,
@@ -251,6 +248,7 @@ class CloudFunctions:
         if service_account_email is None:
             default_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
             service_account_email = default_account
+        environment = Environment(generation)
         all_kwargs = get_all_kwargs(locals())
         function_exists = self.exists()
         function_kwargs, service_kwargs, build_kwargs = self._split_deploy_kwargs(
@@ -361,5 +359,6 @@ if __name__ == "__main__":
         "samples/cloud_function",
         entry_point="entry_point",
         runtime="python310",
+        generation=2,
     )
     exit()
