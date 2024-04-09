@@ -142,7 +142,7 @@ class CloudFunctions:
         source,
         entry_point,
         runtime="python310",
-        generation=2,
+        environment=2,
         trigger="HTTP",
         if_exists="REPLACE",
         wait_to_complete=True,
@@ -156,7 +156,7 @@ class CloudFunctions:
         - source (str): The path to the source code.
         - entry_point (str): The name of the function to execute.
         - runtime (str): The runtime of the cloud function.
-        - generation (int): The generation of the cloud function.
+        - environment (int): The environment (generation) of the cloud function.
         - kwargs (dict): Additional arguments to pass to the cloud function. Available arguments are:
             - description (str): The description of the cloud function.
             - timeout (int): The timeout of the cloud function in seconds.
@@ -181,6 +181,7 @@ class CloudFunctions:
         self,
         source,
         entry_point,
+        source_bucket=None,
         **kwargs,
     ):
         """
@@ -189,6 +190,7 @@ class CloudFunctions:
         Args:
         - source (str): The path to the source code.
         - entry_point (str): The name of the function to execute.
+        - source_bucket (str): The bucket to upload the zip file to. Defaults to PROJECT-cloud-functions.
         - kwargs (dict): Additional arguments to pass to the cloud function.
 
         Returns:
@@ -203,7 +205,7 @@ class CloudFunctions:
         log(f"Creating zip file from {source} and uploading to GCS...")
         zip_path = zip_directory(source)
         # Upload the zip file to GCS
-        bucket_name = f"{self.project}-cloud-functions"
+        bucket_name = source_bucket or f"{self.project}-cloud-functions"
         upload_path = f"{bucket_name}/cloud-functions/{self.name}/{self.name}.zip"
         Storage(upload_path).upload(zip_path)
         # Deploy the cloud function
@@ -218,7 +220,7 @@ class CloudFunctions:
         entry_point,
         trigger="HTTP",
         if_exists="REPLACE",
-        generation=2,
+        environment=2,
         wait_to_complete=True,
         service_account_email=None,
         **kwargs,

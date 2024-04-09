@@ -498,3 +498,80 @@ pyarrow_schema = Schema(df, is_data=True).pyarrow()
 #    ]
 # )
 ```
+
+---
+
+## Cloud Functions Module
+
+The Cloud Functions module in the `gcp-tools` library allows you to deploy and manage Cloud Functions.
+
+### Initializing Cloud Functions
+
+Import the CloudFunctions class from the `gcp_tools` module:
+
+```python
+from gcp_tools import CloudFunctions
+```
+
+### Deploying Cloud Functions
+
+To deploy a Cloud Function, specifty the function's name, the source codebase, the entry point and any other parameters that are to be passed to `BuildConfig`, `ServiceConfig` and `Function` (see [docs](https://cloud.google.com/python/docs/reference/cloudfunctions/latest/google.cloud.functions_v2.types)):
+
+```python
+CloudFunctions("function-name").deploy(
+    source="path/to/function_codebase",
+    entry_point="main",
+    environment=2,
+)
+```
+
+Deploying a Cloud Function from a local source depends on the `gcp_toole.Storage` module. The source codebase is uploaded to a `{PROJECT_ID}-cloud-functions` bucket and is deployed from there. An alternative bucket can be specified via the `source_bucket` parameter:
+
+```python
+CloudFunctions("function-name").deploy(
+    source="path/to/function_codebase",
+    entry_point="main",
+    environment=2,
+    source_bucket="bucket-name",
+)
+```
+
+### Listing Cloud Functions
+
+To list all Cloud Functions within a project, use the `ls` method:
+
+```python
+functions = CloudFunctions().ls()
+print(functions)
+# Output: ['function1', 'function2']
+```
+
+### Deleting Cloud Functions
+
+To delete a Cloud Function, use the `delete` method:
+
+```python
+CloudFunctions("function-name").delete()
+# Output: Cloud Function "function-name" deleted
+```
+
+### Invoking Cloud Functions
+
+To invoke a Cloud Function, use the `invoke` (or `call`) method:
+
+```python
+response = CloudFunctions("function-name").invoke({"key": "value"})
+print(response)
+# Output: {'output_key': 'output_value'}
+```
+
+### Getting Cloud Function details
+
+To get the details of a Cloud Function, use the `get` method:
+
+```python
+details = CloudFunctions("function-name").get()
+print(details)
+# Output: {'name': 'projects/project-id/locations/region/functions/function-name', 
+#          'build_config': {...}, 'service_config': {...}, 'state': {...}, ... }
+```
