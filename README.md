@@ -7,6 +7,8 @@ TODO:
 [x] Storage Module
 [x] Parquet Module
 [x] Schema Module
+[x] Cloud Functions Module
+[ ] Cloud Run Module
 [ ] Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module
 [ ] Logging Module
 [ ] Secret Manager Module
@@ -507,7 +509,7 @@ The Cloud Functions module in the `gcp-tools` library allows you to deploy and m
 
 ### Initializing Cloud Functions
 
-Import the CloudFunctions class from the `gcp_tools` module:
+Import the `CloudFunctions` class from the `gcp_tools` module:
 
 ```python
 from gcp_tools import CloudFunctions

@@ -250,7 +250,7 @@ class CloudFunctions:
         if service_account_email is None:
             default_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
             service_account_email = default_account
-        environment = Environment(generation)
+        environment = Environment(environment)
         all_kwargs = get_all_kwargs(locals())
         function_exists = self.exists()
         function_kwargs, service_kwargs, build_kwargs = self._split_deploy_kwargs(
@@ -361,6 +361,6 @@ if __name__ == "__main__":
         "samples/cloud_function",
         entry_point="entry_point",
         runtime="python310",
-        generation=2,
+        environment=2,
     )
     exit()
