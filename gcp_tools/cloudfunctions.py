@@ -295,21 +295,29 @@ class CloudFunctions:
         """
         return self.state()
 
-    def delete(self, wait_to_complete=True):
+    def delete(self, wait_to_complete=True, errors="ignore"):
         """
         Deletes a cloud function.
 
         Args:
         - wait_to_complete (bool): Whether to wait for the deletion to complete.
+        - errors (str): How to handle errors. Options are "ignore", "raise" or "log". Defaults to "ignore".
 
         Returns:
         - (dict) The response from the delete request.
         """
         request = functions_v2.DeleteFunctionRequest(name=self.function_id)
-        output = self.client.delete_function(request)
-        if wait_to_complete:
-            output = output.result(timeout=300)
-        print(f"Deleted cloud function: '{self.name}'.")
+        try:
+            output = self.client.delete_function(request)
+            if wait_to_complete:
+                output = output.result(timeout=300)
+            print(f"Deleted cloud function: '{self.name}'.")
+        except Exception as e:
+            if errors == "raise":
+                raise e
+            elif errors == "log":
+                log(f"Error deleting cloud function: {e}")
+            output = None
         return output
 
     def _handle_deploy_response(self, response, wait_to_complete):
