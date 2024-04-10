@@ -255,12 +255,12 @@ def test_zip_directory():
     try:
         with ZipFile(zip_name, "r") as z:
             z.extractall("test_dir_123_extracted")
-        success[2] = os.path.exists(f"test_dir_123_extracted/{file_path}")
+        success[2] = os.path.exists(f"test_dir_123_extracted/{file_name}")
     except Exception:
         success[2] = False
 
     try:
-        with open(f"test_dir_123_extracted/{file_path}", "r") as f:
+        with open(f"test_dir_123_extracted/{file_name}", "r") as f:
             success[3] = f.read() == "test"
     except Exception:
         success[3] = False

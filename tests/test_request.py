@@ -25,7 +25,8 @@ def test_request_post(mocker):
     payload = {"key": "value"}
     r = Request("https://example.com")
     r.post(payload)
-    post.assert_called_once_with("https://example.com", headers=r.headers, json=payload)
+    assert post.call_count == 2
+    post.assert_any_call("https://example.com", headers=r.headers, data=payload)
 
 
 def test_request_put(mocker):
@@ -33,4 +34,4 @@ def test_request_put(mocker):
     payload = {"key": "value"}
     r = Request("https://example.com")
     r.put(payload)
-    put.assert_called_once_with("https://example.com", headers=r.headers, json=payload)
+    put.assert_called_once_with("https://example.com", headers=r.headers, data=payload)
