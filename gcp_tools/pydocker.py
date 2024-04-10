@@ -21,13 +21,14 @@ class Docker:
         self.default_dest = f"gcr.io/{self.project}/{self.image_name}:{self.image_tag}"
         self.destination = destination or self.default_dest
 
-    def build(self, context=".", dockerfile="Dockerfile", **kwargs):
+    def build(self, context=".", dockerfile="Dockerfile", verbose=False, **kwargs):
         """
         Build a Docker image from a Dockerfile.
 
         Args:
         - context (str): The path to the build context.
         - dockerfile (str): The path to the Dockerfile.
+        - verbose (bool): Whether to stream the output of the build command.
         - kwargs: Additional arguments to pass to the Docker images build command.
 
         Returns:
@@ -40,23 +41,26 @@ class Docker:
             dockerfile=dockerfile,
             **kwargs,
         )
-        for line in output:
-            log(line)
+        if verbose:
+            for line in output:
+                log(line)
 
-    def push(self, **kwargs):
+    def push(self, verbose=False, **kwargs):
         """
         Push the built image to GCR.
 
         Args:
+        - verbose (bool): Whether to stream the output of the push command.
         - kwargs: Additional arguments to pass to the Docker images push command.
 
         Returns:
         - None
         """
         log(f"Pushing Docker image to {self.destination}...")
-        response = self.client.images.push(
+        stream = True if verbose else False
+        self.client.images.push(
             self.destination,
-            stream=True,
+            stream=stream,
             decode=True,
             **kwargs,
         )
@@ -65,5 +69,5 @@ class Docker:
 # Example usage
 if __name__ == "__main__":
     context = "samples/cloud_run"
-    Docker("my-app").build(context)
-    Docker("my-app").push()
+    Docker("test-app").build(context)
+    Docker("test-app").push()
