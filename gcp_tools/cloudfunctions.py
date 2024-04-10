@@ -39,11 +39,11 @@ class CloudFunctions:
         if self.name == self.function_id:
             self.name = self.function_id.split("/")[-1]
 
-        if self.project in self._clients:
-            self.client = self._clients[self.project]
+        if self.project in CloudFunctions._clients:
+            self.client = CloudFunctions._clients[self.project]
         else:
             self.client = functions_v2.FunctionServiceClient()
-            self._clients[self.project] = self.client
+            CloudFunctions._clients[self.project] = self.client
 
     def __repr__(self):
         return f"CloudFunctions({self.name})"
