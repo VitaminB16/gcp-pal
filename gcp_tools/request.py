@@ -64,10 +64,10 @@ class Request:
             token = id_token.fetch_id_token(auth_req, self.url)
             return token
         except google.auth.exceptions.DefaultCredentialsError:
-            log(f"Fetching credentials via access token.")
+            log(f"Request - Fetching credentials via access token.")
             return self._fetch_identity_access_token(auth_req)
         except google.auth.exceptions.RefreshError as e:
-            log(f"Error refreshing credentials: {e}")
+            log(f"Request - Error refreshing credentials: {e}")
             return None
 
     def _fetch_identity_access_token(self, auth_request):
@@ -98,9 +98,9 @@ class Request:
             if "iam.serviceAccounts.getOpenIdToken" in response.text:
                 role = "Service Account Token Creator"
                 acc = self.service_account
-                log(f"Error: Ensure the service account {acc} has the '{role}' role.")
+                log(f"Request - Error: Ensure the service account {acc} has the '{role}' role.")
             else:
-                log(f"Error fetching identity token: {response.text}")
+                log(f"Request - Error fetching identity token: {response.text}")
         return None
 
     def post(self, payload=None, **kwargs):

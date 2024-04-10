@@ -170,7 +170,7 @@ class Firestore:
                 output = DataFrame(output)
                 output = output.reset_index(drop=True)
             output = enforce_schema(output, schema=schema, dtypes=dtypes)
-        log(f"Read from Firestore: {self.path}")
+        log(f"Firestore - read {self.path}")
         return output
 
     def write(self, data, columns=None):
@@ -212,7 +212,7 @@ class Firestore:
             if object_type is not None:
                 output["metadata"]["object_type"] = object_type
             doc_ref.set(output)
-        log(f"Written to Firestore: {self.path}")
+        log(f"Firestore - written {self.path}")
         return True
 
     def create(self, **kwargs):
@@ -227,7 +227,7 @@ class Firestore:
             ref.add({})
         else:
             raise ValueError("Unsupported Firestore reference type.")
-        log(f"{ref_type} created: Firestore/{self.path}")
+        log(f"Firestore - created {ref_type}: Firestore/{self.path}")
         return True
 
     def delete(self):
@@ -242,7 +242,7 @@ class Firestore:
             self._delete_collection(ref)
         else:
             raise ValueError("Unsupported Firestore reference type.")
-        log(f"{ref_type} deleted: Firestore/{self.path}")
+        log(f"Firestore - deleted {ref_type}: Firestore/{self.path}")
         return True
 
     def _delete_document(self, doc_ref):
@@ -285,7 +285,7 @@ class Firestore:
         ref = self.get()
         if ref is None:
             output = [col.id for col in self.client.collections()]
-            log(f"Firestore collections listed.")
+            log(f"Firestore - collections listed.")
             return output
         ref_type = self._ref_type(ref)
         if ref_type == "document":
@@ -294,7 +294,7 @@ class Firestore:
             output = [doc.id for doc in ref.stream()]
         else:
             raise ValueError("Unsupported Firestore reference type.")
-        log(f"Firestore collections listed.")
+        log(f"Firestore - collections listed.")
         return output
 
     def exists(self):

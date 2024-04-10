@@ -126,10 +126,11 @@ class CloudFunctions:
 
         output = Request(uri).post(data)
         if output.status_code != 200:
+            msg = f"Cloud Function - Error calling '{self.name}': {output.text}"
             if errors == "raise":
-                raise Exception(f"Error calling cloud function: {output.text}")
+                raise Exception(msg)
             elif errors == "log":
-                log(f"Error calling cloud function: {output.text}")
+                log(msg)
         if to_json:
             try:
                 output = output.json()
@@ -202,7 +203,7 @@ class CloudFunctions:
         from gcp_tools import Storage
         from gcp_tools.utils import zip_directory
 
-        log(f"Creating zip file from {source} and uploading to GCS...")
+        log(f"Cloud Function - Creating zip file from {source} and uploading to GCS...")
         zip_path = zip_directory(source)
         # Upload the zip file to GCS
         bucket_name = source_bucket or f"{self.project}-cloud-functions"
@@ -237,7 +238,7 @@ class CloudFunctions:
         - (dict) The response from the cloud function.
         """
 
-        log(f"Deploying cloud function '{self.name}' from repository {source}...")
+        log(f"Cloud Function - Deploying '{self.name}' from repository {source}...")
         if source.startswith("gs://"):
             from gcp_tools import Storage
 
@@ -267,11 +268,11 @@ class CloudFunctions:
             **kwargs,
         )
         if function_exists and if_exists == "REPLACE":
-            log(f"Updating existing cloud function '{self.name}'...")
+            log(f"Cloud Function - Updating '{self.name}'...")
             request = UpdateFunctionRequest(function=cloud_function, update_mask=None)
             output = self.client.update_function(request)
         else:
-            print(f"Creating new cloud function '{self.name}'...")
+            print(f"Cloud Function - Creating '{self.name}'...")
             request = CreateFunctionRequest(
                 function=cloud_function, parent=self.parent, function_id=self.name
             )
@@ -311,12 +312,12 @@ class CloudFunctions:
             output = self.client.delete_function(request)
             if wait_to_complete:
                 output = output.result(timeout=300)
-            print(f"Deleted cloud function: '{self.name}'.")
+            print(f"Cloud Function - Deleted '{self.name}'.")
         except Exception as e:
             if errors == "raise":
                 raise e
             elif errors == "log":
-                log(f"Error deleting cloud function: {e}")
+                log(f"Cloud Function - Error deleting: {e}")
             output = None
         return output
 
@@ -333,12 +334,12 @@ class CloudFunctions:
         """
         output = response
         if wait_to_complete:
-            log("Waiting for the deployment to complete...")
+            log("Cloud Function - Waiting for the deployment to complete...")
             output.result(timeout=300)
         # Check that the function was deployed and is active
         function = self.get()
         service_config = function.service_config
-        print(f"Cloud function '{self.name}': {function.state.name}.")
+        print(f"Cloud Function - '{self.name}': {function.state.name}.")
         if wait_to_complete:
             print(f"Version: {service_config.revision}")
             print(f"URI: {service_config.uri}")

@@ -49,7 +49,7 @@ class PubSub:
             )
             result = publish_future.result()
         except Exception as e:
-            log(f"An error occurred: {e}")
+            log(f"PubSub - An error occurred: {e}")
 
 
 if __name__ == "__main__":

@@ -145,14 +145,14 @@ def get_matching_schema_type(schema):
     matching_values = type_matches.values()
     matching_type = max(type_matches, key=type_matches.get)
     if sum(matching_values) == 0:
-        log("No matching schema type found.")
+        log("Schema - No matching schema type found.")
         return None
     elif sum([x == len(schema) for x in matching_values]) > 1:
-        log("Multiple matching schema types found.")
+        log("Schema - Multiple matching schema types found.")
         return None
     matching_type = max(type_matches, key=type_matches.get)
     if type_matches[matching_type] != len(schema_values):
-        log("Not all schema types matched.")
+        log("Schema - Not all schema types matched.")
         return None
     return matching_type
 
@@ -547,7 +547,7 @@ def enforce_schema(df, schema={}, dtypes={}, errors="raise"):
         try:
             df[col] = enforce_one_schema(df[col], col_schema)
         except Exception as e:
-            log(f"Error enforcing schema {col_schema} on {col}: {e}")
+            log(f"Schema - Error enforcing schema {col_schema} on {col}: {e}")
             if errors == "raise":
                 raise e
     return df

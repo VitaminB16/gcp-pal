@@ -214,12 +214,12 @@ class BigQuery:
             try:
                 output = list(output)
             except Exception as e:
-                log(f"Error converting query results to list: {e}")
+                log(f"BigQuery - Error converting query results to list: {e}")
         sql_print = sql
         if params:
             for key, value in params.items():
                 sql_print = sql_print.replace(f"@{key}", str(value))
-        log(f"Query executed: \n{sql_print}")
+        log(f"BigQuery - Query executed: \n{sql_print}")
         return output
 
     def read_table(
@@ -380,10 +380,10 @@ class BigQuery:
             )
 
         if errors == []:
-            log(f"Data inserted into: {self.table}")
+            log(f"BigQuery - Data inserted into: {self.table}")
             return True
         else:
-            log(f"Errors occurred while inserting data into: {self.table} -- {errors}")
+            log(f"BigQuery - Errors occurred while inserting data into: {self.table} -- {errors}")
             return False
 
     def write(self, data, schema=None):
@@ -399,7 +399,7 @@ class BigQuery:
         """
         if is_dataframe(data):
             self._create_table(data, schema=schema, exists_ok=True, if_exists="append")
-            log(f"DataFrame written to {self.table}, schema: {schema}")
+            log(f"BigQuery - DataFrame written to {self.table}, schema: {schema}")
             return True
 
         if isinstance(data, dict):
@@ -412,7 +412,7 @@ class BigQuery:
             success = self.insert(data, schema=schema)
         except NotFoundError:
             success = self.create_table(data, schema=schema, exists_ok=True)
-        log(f"Data written to {self.table}, schema: {schema}")
+        log(f"BigQuery - Data written to {self.table}, schema: {schema}")
         return success
 
     def _create_table(self, data=None, schema=None, exists_ok=True, if_exists=None):
@@ -442,7 +442,7 @@ class BigQuery:
             )
         table = bigquery.Table(self.table_id, schema=schema)
         table = self.client.create_table(table, exists_ok=exists_ok)
-        log(f"Table created: {self.table_id}")
+        log(f"BigQuery - Table created: {self.table_id}")
 
         if data is not None:
             self.insert(data, schema=schema)
@@ -514,7 +514,7 @@ class BigQuery:
             # Dataset does not exist, so create it and try again
             self.create_dataset()
             self.client.create_table(table)
-        log(f"External table created: {self.table_id}")
+        log(f"BigQuery - External table created: {self.table_id}")
         return True
 
     def create_external_table(self, uri, schema=None, exists_ok=True):
@@ -587,7 +587,7 @@ class BigQuery:
         """
         dataset = bigquery.Dataset(self.dataset_id)
         dataset = self.client.create_dataset(dataset, exists_ok=exists_ok)
-        log(f"Dataset created: {self.dataset_id}")
+        log(f"BigQuery - Dataset created: {self.dataset_id}")
         return True
 
     def create(self, data=None, schema=None, exists_ok=True, infer_schema=False):
@@ -630,11 +630,11 @@ class BigQuery:
         try:
             self.client.delete_table(self.table_id)
         except Exception as e:
-            log(f"Error deleting table: {e}")
+            log(f"BigQuery - Error deleting table: {e}")
             if errors == "raise":
                 raise e
             return False
-        log(f"Table deleted: BigQuery/{self.table_id}")
+        log(f"BigQuery - Table deleted: BigQuery/{self.table_id}")
         return True
 
     def delete_dataset(self, errors="raise"):
@@ -648,11 +648,11 @@ class BigQuery:
         try:
             self.client.delete_dataset(dataset_id, delete_contents=True)
         except Exception as e:
-            log(f"Error deleting dataset: {e}")
+            log(f"BigQuery - Error deleting dataset: {e}")
             if errors == "raise":
                 raise e
             return False
-        log(f"Dataset deleted: BigQuery/{dataset_id}")
+        log(f"BigQuery - Dataset deleted: BigQuery/{dataset_id}")
         return True
 
     def delete(self, errors="ignore"):
@@ -679,7 +679,7 @@ class BigQuery:
         """
         datasets = list(self.client.list_datasets())
         dataset_ids = [dataset.dataset_id for dataset in datasets]
-        log("BigQuery datasets listed.")
+        log("BigQuery - datasets listed.")
         return dataset_ids
 
     def list_tables(self, dataset=None):
@@ -695,7 +695,7 @@ class BigQuery:
         dataset = dataset or self.dataset
         tables = list(self.client.list_tables(dataset))
         table_ids = [table.table_id for table in tables]
-        log(f"Tables listed for dataset: {dataset}")
+        log(f"BigQuery - Tables listed for dataset: {dataset}")
         return table_ids
 
     def ls(self, dataset=None):
@@ -743,7 +743,7 @@ class BigQuery:
         - True if successful.
         """
         success = self.client.create_snapshot(snapshot_name, self.table_id)
-        log(f"Snapshot created: {snapshot_name}")
+        log(f"BigQuery - Snapshot created: {snapshot_name}")
         return success
 
     def get_table(self):
