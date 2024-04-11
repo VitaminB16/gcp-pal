@@ -1,4 +1,8 @@
 import os
+
+from gcp_tools.utils import try_import
+
+try_import("docker", "Docker")
 import docker
 
 from gcp_tools.utils import get_auth_default, log
@@ -51,6 +55,7 @@ class Docker:
                 log(f"Docker - Image '{self.name}' built successfully.")
                 return
         log(f"Docker - Image '{self.name}' failed to build.")
+        return
 
     def push(self, verbose=False, **kwargs):
         """
@@ -61,7 +66,7 @@ class Docker:
         - kwargs: Additional arguments to pass to the Docker images push command.
 
         Returns:
-        - None
+        - (str) The destination of the pushed image (or None if an error occurred)
         """
         log(f"Docker - Pushing image to {self.destination}...")
         stream = True if verbose else False
@@ -77,6 +82,7 @@ class Docker:
                 log(f"Docker - Error: {line}")
                 return
         log(f"Docker - Pushed '{self.name}' -> {self.destination}.")
+        return self.destination
 
     def build_and_push(
         self, path=".", dockerfile="Dockerfile", verbose=False, **kwargs
@@ -91,10 +97,11 @@ class Docker:
         - kwargs: Additional arguments to pass to the Docker images build and push commands.
 
         Returns:
-        - None
+        - (str) The destination of the pushed image (or None if an error occurred)
         """
         self.build(path=path, dockerfile=dockerfile, verbose=verbose, **kwargs)
-        self.push(verbose=verbose, **kwargs)
+        output = self.push(verbose=verbose, **kwargs)
+        return output
 
 
 # Example usage
