@@ -8,6 +8,7 @@ TODO:
 [x] Parquet Module
 [x] Schema Module
 [x] Cloud Functions Module
+[x] Docker Module
 [ ] Cloud Run Module
 [ ] Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module
 [ ] Logging Module
