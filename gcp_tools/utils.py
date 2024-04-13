@@ -347,3 +347,20 @@ def get_all_kwargs(locals_kwargs):
     kwargs = all_kwargs.pop("kwargs")
     all_kwargs = {**all_kwargs, **kwargs}
     return all_kwargs
+
+
+def load_yaml(file_path):
+    """
+    Load a YAML file.
+
+    Args:
+    - file_path (str): The path to the file.
+
+    Returns:
+    - dict: The contents of the file.
+    """
+    try_import("yaml", "load_yaml")
+    import yaml
+
+    with open(file_path, "r") as f:
+        return yaml.safe_load(f)

@@ -4,9 +4,19 @@ from gcp_tools.utils import try_import
 
 try_import("google.cloud.run_v2", "CloudRun")
 from google.cloud import run_v2
+from google.cloud.run_v2 import Service, TrafficTarget, Condition, Job
+from google.cloud.run_v2.types import (
+    EnvVar,
+    ResourceRequirements,
+    UpdateServiceRequest,
+    UpdateJobRequest,
+    CreateServiceRequest,
+    CreateJobRequest,
+)
+from google.protobuf import field_mask_pb2
 
 from gcp_tools.pydocker import Docker
-from gcp_tools.utils import get_auth_default
+from gcp_tools.utils import get_auth_default, log
 
 
 class CloudRun:
@@ -20,6 +30,7 @@ class CloudRun:
         self.parent = f"projects/{self.project}/locations/{self.location}"
         self.name = name
         self.full_name = f"{self.parent}/services/{self.name}"
+        self.image_url = None
 
         if self.project in CloudRun._client:
             self.client = CloudRun._client[self.project]
@@ -83,8 +94,24 @@ class CloudRun:
         - (Service) or (Job): The service or job object.
         """
         if job:
-            return self.jobs_client.get(name=self.full_name)
-        return self.client.get(name=self.full_name)
+            return self.jobs_client.get_job(name=self.full_name)
+        return self.client.get_service(name=self.full_name)
+
+    def exists(self, job=False):
+        """
+        Check if a service or job exists.
+
+        Args:
+        - job (bool): Check if a job exists instead of a service. Default is False.
+
+        Returns:
+        - (bool): True if the service or job exists, False otherwise.
+        """
+        try:
+            self.get(job=job)
+            return True
+        except:
+            return False
 
     def build_and_push_docker_image(
         self, path=".", image_tag="latest", dockerfile="Dockerfile"
@@ -100,19 +127,133 @@ class CloudRun:
         Returns:
         - (str): The GCR location of the image (e.g. 'gcr.io/my-project/my-image:latest')
         """
-        docker = Docker(image_name=self.name, project=self.project, image_tag=image_tag)
+        docker = Docker(name=self.name, project=self.project, tag=image_tag)
         gcr_location = docker.build_and_push(path=path, dockerfile=dockerfile)
+        self.image_url = gcr_location
         if gcr_location is None:
             raise ValueError("Failed to build and push Docker image.")
         return gcr_location
 
-    def deploy_service(self):
-        pass
+    def deploy_service(
+        self,
+        image_url=None,
+        env_vars_file=None,
+        memory="512Mi",
+        min_instances=0,
+        max_instances=0,
+        container_kwargs={},
+        service_kwargs={},
+        wait_to_complete=True,
+    ):
+        """
+        Deploy a Cloud Run service using a Docker image.
+        Args:
+        - env_vars_file (str): YAML file path for environment variables.
+        - memory (str): Amount of memory to allocate to each service instance.
+        - min_instances (int): Minimum number of instances.
+        - max_instances (int): Maximum number of instances. Set to 0 for auto-scaling.
+        - container_kwargs (dict): Additional container configuration.
+        - service_kwargs (dict): Additional service configuration.
+        """
+        image_url = image_url or self.image_url
+        service = Service(
+            template={
+                "containers": [
+                    {
+                        "image": image_url,
+                        "env": self._parse_env_vars(env_vars_file),
+                        "resources": ResourceRequirements(limits={"memory": memory}),
+                        **container_kwargs,
+                    }
+                ],
+                "scaling": {
+                    "min_instance_count": min_instances,
+                    "max_instance_count": max_instances,
+                },
+            },
+            **service_kwargs,
+        )
+        mask = field_mask_pb2.FieldMask(paths=None)
+        service_exists = self.exists()
+        if not service_exists:
+            log(f"Cloud Run - Creating service '{self.name}'...")
+            args = {"parent": self.parent, "service": service, "service_id": self.name}
+            request = CreateServiceRequest(**args)
+            response = self.client.create_service(request=request)
+        else:
+            log(f"Cloud Run - Updating service '{self.name}'...")
+            # Add 'name' to service.template.containers
+            service.name = self.full_name
+            request = UpdateServiceRequest(service=service)
+            response = self.client.update_service(request=request)
+        if wait_to_complete:
+            log(f"Cloud Run - Waiting for service '{self.name}' to complete...")
+            response.result(timeout=300)
+        return response
 
-    def deploy_job(self):
-        pass
+    def deploy_job(
+        self,
+        image_url=None,
+        env_vars_file=None,
+        memory="256Mi",
+        container_kwargs={},
+        job_kwargs={},
+    ):
+        """
+        Deploy a Cloud Run job using a Docker image.
+        Args:
+        - env_vars_file (str): YAML file path for environment variables.
+        - memory (str): Amount of memory to allocate to the job.
+        - container_kwargs (dict): Additional container configuration.
+        - job_kwargs (dict): Additional job configuration.
+        """
+        image_url = image_url or self.image_url
+        job = Job(
+            name=self.full_name,
+            template={
+                "containers": [
+                    {
+                        "image": image_url,
+                        "env": self._parse_env_vars(env_vars_file),
+                        "resources": ResourceRequirements(limits={"memory": memory}),
+                        **container_kwargs,
+                    }
+                ]
+            },
+            **job_kwargs,
+        )
+        response = self.jobs_client.create_job(parent=self.parent, job=job)
+        return response
+
+    def _parse_env_vars(self, yaml_file):
+        """
+        Parse YAML file to extract environment variables as a list of EnvVar objects.
+        """
+        from gcp_tools.utils import load_yaml
+
+        if yaml_file is None:
+            return []
+        data = load_yaml(yaml_file)
+        return [EnvVar(name=k, value=str(v)) for k, v in data.items()]
+
+    def deploy(self, path=".", job=False, image_tag="latest", dockerfile="Dockerfile"):
+        if (
+            path.startswith("gs:")
+            or path.startswith("http")
+            or path.startswith("gcr.io/")
+        ):
+            log(f"Cloud Run - Deploying {path} directly.")
+            image_url = path
+        else:
+            log(f"Cloud Run - Building and pushing Docker image from {path}.")
+            image_url = self.build_and_push_docker_image(
+                path=path, image_tag=image_tag, dockerfile=dockerfile
+            )
+        if job:
+            return self.deploy_job(image_url)
+        else:
+            return self.deploy_service(image_url)
 
 
 if __name__ == "__main__":
-    print(CloudRun().ls())
-    print(CloudRun().ls(jobs=True))
+    CloudRun("test-app").deploy(path="gcr.io/vitaminb16/test-app:latest")
