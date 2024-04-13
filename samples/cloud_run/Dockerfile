@@ -5,6 +5,8 @@ RUN apt-get update
 # Allows docker to cache installed dependencies between builds
 WORKDIR /tmp
 
+ENV HOST 0.0.0.0
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

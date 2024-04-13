@@ -16,4 +16,5 @@ PYPI_NAMES = {
     "pandas": "pandas",
     "pandas_gbq": "pandas-gbq",
     "docker": "docker",
+    "yaml": "pyyaml",
 }
