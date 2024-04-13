@@ -30,4 +30,8 @@ def flask_entry_point():
 
 
 if __name__ == "__main__":
-    app.run(port=8080)
+    import os
+
+    port = int(os.environ.get("PORT", 8080))
+    host = os.environ.get("HOST", "0.0.0.0")
+    app.run(host=host, port=port)

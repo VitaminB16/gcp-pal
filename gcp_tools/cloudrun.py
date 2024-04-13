@@ -156,12 +156,16 @@ class CloudRun:
         - service_kwargs (dict): Additional service configuration.
         """
         image_url = image_url or self.image_url
+        # gcloud run deploy seems to set HOST=0.0.0.0 by default?
+        default_env_vars = {"HOST": "0.0.0.0"}
         service = Service(
             template={
                 "containers": [
                     {
                         "image": image_url,
-                        "env": self._parse_env_vars(env_vars_file),
+                        "env": self._parse_env_vars(
+                            env_vars_file, default=default_env_vars
+                        ),
                         "resources": ResourceRequirements(limits={"memory": memory}),
                         **container_kwargs,
                     }
@@ -225,7 +229,7 @@ class CloudRun:
         response = self.jobs_client.create_job(parent=self.parent, job=job)
         return response
 
-    def _parse_env_vars(self, yaml_file):
+    def _parse_env_vars(self, yaml_file, default={}):
         """
         Parse YAML file to extract environment variables as a list of EnvVar objects.
         """
@@ -234,9 +238,30 @@ class CloudRun:
         if yaml_file is None:
             return []
         data = load_yaml(yaml_file)
+        data = {**default, **data}
         return [EnvVar(name=k, value=str(v)) for k, v in data.items()]
 
-    def deploy(self, path=".", job=False, image_tag="latest", dockerfile="Dockerfile"):
+    def deploy(
+        self,
+        path=".",
+        job=False,
+        image_tag="latest",
+        dockerfile="Dockerfile",
+        **kwargs,
+    ):
+        """
+        Deploy a Cloud Run service or job.
+
+        Args:
+        - path (str): The path to the build context or the image URL.
+        - job (bool): Deploy a job instead of a service. Default is False.
+        - image_tag (str): The tag to apply to the image.
+        - dockerfile (str): The path to the Dockerfile from the context.
+        - kwargs: Additional arguments to pass to the deploy_service or deploy_job method.
+
+        Returns:
+        - (Service) or (Job): The service or job object.
+        """
         if (
             path.startswith("gs:")
             or path.startswith("http")
@@ -250,10 +275,13 @@ class CloudRun:
                 path=path, image_tag=image_tag, dockerfile=dockerfile
             )
         if job:
-            return self.deploy_job(image_url)
+            return self.deploy_job(image_url, **kwargs)
         else:
-            return self.deploy_service(image_url)
+            return self.deploy_service(image_url, **kwargs)
 
 
 if __name__ == "__main__":
-    CloudRun("test-app").deploy(path="gcr.io/vitaminb16/test-app:latest")
+    CloudRun("test-app").deploy(
+        path="gcr.io/vitaminb16/test-app:latest",
+        env_vars_file="samples/cloud_run/env.yaml",
+    )
