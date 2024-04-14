@@ -328,8 +328,23 @@ class CloudRun:
         else:
             return self.deploy_service(image_url, **kwargs)
 
+    def delete(self, job=False):
+        """
+        Delete a service or job.
+
+        Args:
+        - job (bool): Delete a job instead of a service. Default is False.
+        """
+        if job:
+            self.jobs_client.delete_job(name=self.full_name)
+            log(f"Cloud Run - Deleted job '{self.name}'.")
+        else:
+            self.client.delete_service(name=self.full_name)
+            log(f"Cloud Run - Deleted service '{self.name}'.")
+
 
 if __name__ == "__main__":
     CloudRun("test-app").deploy(path="samples/cloud_run")
     output = CloudRun("test-app").call(data={"data": 16})
     print(output)
+    CloudRun("test-app").delete()
