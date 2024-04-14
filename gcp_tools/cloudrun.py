@@ -1,4 +1,7 @@
 import os
+import json
+import random
+from uuid import uuid4
 
 from gcp_tools.utils import try_import
 
@@ -177,7 +180,6 @@ class CloudRun:
             },
             **service_kwargs,
         )
-        mask = field_mask_pb2.FieldMask(paths=None)
         service_exists = self.exists()
         if not service_exists:
             log(f"Cloud Run - Creating service '{self.name}'...")
@@ -199,7 +201,7 @@ class CloudRun:
         self,
         image_url=None,
         env_vars_file=None,
-        memory="256Mi",
+        memory="512Mi",
         container_kwargs={},
         job_kwargs={},
     ):
@@ -229,6 +231,50 @@ class CloudRun:
         response = self.jobs_client.create_job(parent=self.parent, job=job)
         return response
 
+    def call(
+        self,
+        data={},
+        errors="ignore",
+        to_json=True,
+    ):
+        """
+        Calls a cloud function.
+
+        Args:
+        - data (dict|str): The data to send to the cloud function. If a dict, it will be converted to JSON. Defaults to {}.
+        - errors (str): How to handle errors. Options are "ignore", "raise" or "log". Defaults to "ignore".
+        - to_json (bool): Whether to convert the response to JSON. Defaults to True.
+
+        Returns:
+        - (dict) The response from the cloud function.
+        """
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
+        from gcp_tools import Request
+
+        uri = self.get().uri
+
+        output = Request(uri).post(data)
+        if output.status_code != 200:
+            msg = f"Cloud Function - Error calling '{self.name}': {output.text}"
+            if errors == "raise":
+                raise Exception(msg)
+            elif errors == "log":
+                log(msg)
+        if to_json:
+            try:
+                output = output.json()
+            except json.JSONDecodeError:
+                pass
+        return output
+
+    def invoke(self, **kwargs):
+        """
+        Alias for call method.
+        """
+        return self.call(**kwargs)
+
     def _parse_env_vars(self, yaml_file, default={}):
         """
         Parse YAML file to extract environment variables as a list of EnvVar objects.
@@ -245,7 +291,7 @@ class CloudRun:
         self,
         path=".",
         job=False,
-        image_tag="latest",
+        image_tag="random",
         dockerfile="Dockerfile",
         **kwargs,
     ):
@@ -255,13 +301,16 @@ class CloudRun:
         Args:
         - path (str): The path to the build context or the image URL.
         - job (bool): Deploy a job instead of a service. Default is False.
-        - image_tag (str): The tag to apply to the image.
+        - image_tag (str): The tag to apply to the image. Default is 'random', which will generate a unique tag.
         - dockerfile (str): The path to the Dockerfile from the context.
         - kwargs: Additional arguments to pass to the deploy_service or deploy_job method.
 
         Returns:
         - (Service) or (Job): The service or job object.
         """
+        if image_tag == "random":
+            random_tag = random.getrandbits(64)
+            image_tag = f"{random_tag:x}"
         if (
             path.startswith("gs:")
             or path.startswith("http")
@@ -281,7 +330,6 @@ class CloudRun:
 
 
 if __name__ == "__main__":
-    CloudRun("test-app").deploy(
-        path="gcr.io/vitaminb16/test-app:latest",
-        env_vars_file="samples/cloud_run/env.yaml",
-    )
+    CloudRun("test-app").deploy(path="samples/cloud_run")
+    output = CloudRun("test-app").call(data={"data": 16})
+    print(output)

@@ -138,6 +138,12 @@ class CloudFunctions:
                 pass
         return output
 
+    def invoke(self, **kwargs):
+        """
+        Alias for call.
+        """
+        return self.call(**kwargs)
+
     def deploy(
         self,
         source,
