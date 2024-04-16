@@ -1,4 +1,7 @@
 import os
+import json
+import random
+from uuid import uuid4
 
 from gcp_tools.utils import try_import
 
@@ -24,12 +27,14 @@ class CloudRun:
     _client = {}
     _jobs_client = {}
 
-    def __init__(self, name=None, project=None, location="europe-west2"):
+    def __init__(self, name=None, project=None, location="europe-west2", job=False):
+        self.job = job
+        self.type = "job" if job else "service"
         self.project = project or os.getenv("PROJECT") or get_auth_default()[1]
         self.location = location
         self.parent = f"projects/{self.project}/locations/{self.location}"
         self.name = name
-        self.full_name = f"{self.parent}/services/{self.name}"
+        self.full_name = f"{self.parent}/{self.type}s/{self.name}"
         self.image_url = None
 
         if self.project in CloudRun._client:
@@ -67,48 +72,58 @@ class CloudRun:
             output = [f.split("/")[-1] for f in output]
         return output
 
-    def ls(self, active_only=False, full_id=False, jobs=False):
+    def ls(self, active_only=False, full_id=False):
         """
         List all services or jobs in the project.
 
         Args:
         - active_only (bool): Only list active services or jobs. Default is False.
         - full_id (bool): Return full resource IDs, e.g. 'projects/my-project/locations/europe-west2/services/my-service'. Default is False.
-        - jobs (bool): List jobs instead of services. Default is False.
 
         Returns:
         - (list): A list of service or job names.
         """
-        if jobs:
+        if self.job:
             return self.ls_jobs(active_only=active_only, full_id=full_id)
         return self.ls_services(active_only=active_only, full_id=full_id)
 
-    def get(self, job=False):
+    def get(self):
         """
         Get a service or job by name.
-
-        Args:
-        - job (bool): Get a job instead of a service. Default is False.
 
         Returns:
         - (Service) or (Job): The service or job object.
         """
-        if job:
+        if self.job:
             return self.jobs_client.get_job(name=self.full_name)
         return self.client.get_service(name=self.full_name)
 
-    def exists(self, job=False):
+    def status(self):
+        """
+        Get the status of a service or job.
+
+        Returns:
+        - (str): The status of the service or job.
+        """
+        if self.job:
+            status = self.get().terminal_condition.type_
+            output = "Active" if status == "Ready" else "Inactive"
+            log(f"Cloud Run - Job '{self.name}' is {output}.")
+        else:
+            status = self.get().traffic[0].percent > 0
+            output = "Active" if status else "Inactive"
+            log(f"Cloud Run - Service '{self.name}' is {output}.")
+        return output
+
+    def exists(self):
         """
         Check if a service or job exists.
-
-        Args:
-        - job (bool): Check if a job exists instead of a service. Default is False.
 
         Returns:
         - (bool): True if the service or job exists, False otherwise.
         """
         try:
-            self.get(job=job)
+            self.get()
             return True
         except:
             return False
@@ -156,12 +171,16 @@ class CloudRun:
         - service_kwargs (dict): Additional service configuration.
         """
         image_url = image_url or self.image_url
+        # gcloud run deploy seems to set HOST=0.0.0.0 by default?
+        default_env_vars = {"HOST": "0.0.0.0"}
         service = Service(
             template={
                 "containers": [
                     {
                         "image": image_url,
-                        "env": self._parse_env_vars(env_vars_file),
+                        "env": self._parse_env_vars(
+                            env_vars_file, default=default_env_vars
+                        ),
                         "resources": ResourceRequirements(limits={"memory": memory}),
                         **container_kwargs,
                     }
@@ -173,7 +192,6 @@ class CloudRun:
             },
             **service_kwargs,
         )
-        mask = field_mask_pb2.FieldMask(paths=None)
         service_exists = self.exists()
         if not service_exists:
             log(f"Cloud Run - Creating service '{self.name}'...")
@@ -195,7 +213,7 @@ class CloudRun:
         self,
         image_url=None,
         env_vars_file=None,
-        memory="256Mi",
+        memory="512Mi",
         container_kwargs={},
         job_kwargs={},
     ):
@@ -225,7 +243,51 @@ class CloudRun:
         response = self.jobs_client.create_job(parent=self.parent, job=job)
         return response
 
-    def _parse_env_vars(self, yaml_file):
+    def call(
+        self,
+        data={},
+        errors="ignore",
+        to_json=True,
+    ):
+        """
+        Calls a cloud function.
+
+        Args:
+        - data (dict|str): The data to send to the cloud function. If a dict, it will be converted to JSON. Defaults to {}.
+        - errors (str): How to handle errors. Options are "ignore", "raise" or "log". Defaults to "ignore".
+        - to_json (bool): Whether to convert the response to JSON. Defaults to True.
+
+        Returns:
+        - (dict) The response from the cloud function.
+        """
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
+        from gcp_tools import Request
+
+        uri = self.get().uri
+
+        output = Request(uri).post(data)
+        if output.status_code != 200:
+            msg = f"Cloud Function - Error calling '{self.name}': {output.text}"
+            if errors == "raise":
+                raise Exception(msg)
+            elif errors == "log":
+                log(msg)
+        if to_json:
+            try:
+                output = output.json()
+            except json.JSONDecodeError:
+                pass
+        return output
+
+    def invoke(self, **kwargs):
+        """
+        Alias for call method.
+        """
+        return self.call(**kwargs)
+
+    def _parse_env_vars(self, yaml_file, default={}):
         """
         Parse YAML file to extract environment variables as a list of EnvVar objects.
         """
@@ -234,9 +296,31 @@ class CloudRun:
         if yaml_file is None:
             return []
         data = load_yaml(yaml_file)
+        data = {**default, **data}
         return [EnvVar(name=k, value=str(v)) for k, v in data.items()]
 
-    def deploy(self, path=".", job=False, image_tag="latest", dockerfile="Dockerfile"):
+    def deploy(
+        self,
+        path=".",
+        image_tag="random",
+        dockerfile="Dockerfile",
+        **kwargs,
+    ):
+        """
+        Deploy a Cloud Run service or job.
+
+        Args:
+        - path (str): The path to the build context or the image URL.
+        - image_tag (str): The tag to apply to the image. Default is 'random', which will generate a unique tag.
+        - dockerfile (str): The path to the Dockerfile from the context.
+        - kwargs: Additional arguments to pass to the deploy_service or deploy_job method.
+
+        Returns:
+        - (Service) or (Job): The service or job object.
+        """
+        if image_tag == "random":
+            random_tag = random.getrandbits(64)
+            image_tag = f"{random_tag:x}"
         if (
             path.startswith("gs:")
             or path.startswith("http")
@@ -249,11 +333,28 @@ class CloudRun:
             image_url = self.build_and_push_docker_image(
                 path=path, image_tag=image_tag, dockerfile=dockerfile
             )
-        if job:
-            return self.deploy_job(image_url)
+        if self.job:
+            return self.deploy_job(image_url, **kwargs)
         else:
-            return self.deploy_service(image_url)
+            return self.deploy_service(image_url, **kwargs)
+
+    def delete(self):
+        """
+        Delete a service or job.
+
+        Returns:
+        - None
+        """
+        if self.job:
+            self.jobs_client.delete_job(name=self.full_name)
+            log(f"Cloud Run - Deleted job '{self.name}'.")
+        else:
+            self.client.delete_service(name=self.full_name)
+            log(f"Cloud Run - Deleted service '{self.name}'.")
 
 
 if __name__ == "__main__":
-    CloudRun("test-app").deploy(path="gcr.io/vitaminb16/test-app:latest")
+    CloudRun("test-app").deploy(path="samples/cloud_run")
+    output = CloudRun("test-app").call(data={"data": 16})
+    print(output)
+    CloudRun("test-app").delete()

@@ -38,7 +38,7 @@ class Docker:
         Returns:
         - None
         """
-        log(f"Docker - Building image {self.destination} from {dockerfile}...")
+        log(f"Docker - Building image '{self.name}:{self.tag}' from {dockerfile}...")
         _, output = self.client.images.build(
             path=path,
             tag=self.destination,
@@ -52,26 +52,28 @@ class Docker:
         for line in output:
             stream = line.get("stream")
             if stream is not None and "Successfully built" in stream:
-                log(f"Docker - Image '{self.name}' built successfully.")
+                log(f"Docker - Image '{self.name}:{self.tag}' built successfully.")
                 return
-        log(f"Docker - Image '{self.name}' failed to build.")
+        log(f"Docker - Image '{self.name}:{self.tag}' failed to build.")
         return
 
-    def push(self, verbose=False, **kwargs):
+    def push(self, verbose=False, destination=None, **kwargs):
         """
         Push the built image to GCR.
 
         Args:
         - verbose (bool): Whether to stream the output of the push command.
+        - destination (str): The destination of the pushed image. Defaults to gcr.io/{project}/{name}:{tag}.
         - kwargs: Additional arguments to pass to the Docker images push command.
 
         Returns:
         - (str) The destination of the pushed image (or None if an error occurred)
         """
-        log(f"Docker - Pushing image to {self.destination}...")
+        destination = destination or self.destination
+        log(f"Docker - Pushing image to {destination}...")
         stream = True if verbose else False
         output = self.client.images.push(
-            self.destination,
+            destination,
             stream=stream,
             decode=True,
             **kwargs,
@@ -81,8 +83,8 @@ class Docker:
             if "error" in line:
                 log(f"Docker - Error: {line}")
                 return
-        log(f"Docker - Pushed '{self.name}' -> {self.destination}.")
-        return self.destination
+        log(f"Docker - Pushed '{self.name}' -> {destination}.")
+        return destination
 
     def build_and_push(
         self, path=".", dockerfile="Dockerfile", verbose=False, **kwargs
