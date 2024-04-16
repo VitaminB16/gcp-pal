@@ -27,12 +27,14 @@ class CloudRun:
     _client = {}
     _jobs_client = {}
 
-    def __init__(self, name=None, project=None, location="europe-west2"):
+    def __init__(self, name=None, project=None, location="europe-west2", job=False):
+        self.job = job
+        self.type = "job" if job else "service"
         self.project = project or os.getenv("PROJECT") or get_auth_default()[1]
         self.location = location
         self.parent = f"projects/{self.project}/locations/{self.location}"
         self.name = name
-        self.full_name = f"{self.parent}/services/{self.name}"
+        self.full_name = f"{self.parent}/{self.type}s/{self.name}"
         self.image_url = None
 
         if self.project in CloudRun._client:
@@ -70,48 +72,58 @@ class CloudRun:
             output = [f.split("/")[-1] for f in output]
         return output
 
-    def ls(self, active_only=False, full_id=False, jobs=False):
+    def ls(self, active_only=False, full_id=False):
         """
         List all services or jobs in the project.
 
         Args:
         - active_only (bool): Only list active services or jobs. Default is False.
         - full_id (bool): Return full resource IDs, e.g. 'projects/my-project/locations/europe-west2/services/my-service'. Default is False.
-        - jobs (bool): List jobs instead of services. Default is False.
 
         Returns:
         - (list): A list of service or job names.
         """
-        if jobs:
+        if self.job:
             return self.ls_jobs(active_only=active_only, full_id=full_id)
         return self.ls_services(active_only=active_only, full_id=full_id)
 
-    def get(self, job=False):
+    def get(self):
         """
         Get a service or job by name.
-
-        Args:
-        - job (bool): Get a job instead of a service. Default is False.
 
         Returns:
         - (Service) or (Job): The service or job object.
         """
-        if job:
+        if self.job:
             return self.jobs_client.get_job(name=self.full_name)
         return self.client.get_service(name=self.full_name)
 
-    def exists(self, job=False):
+    def status(self):
+        """
+        Get the status of a service or job.
+
+        Returns:
+        - (str): The status of the service or job.
+        """
+        if self.job:
+            status = self.get().terminal_condition.type_
+            output = "Active" if status == "Ready" else "Inactive"
+            log(f"Cloud Run - Job '{self.name}' is {output}.")
+        else:
+            status = self.get().traffic[0].percent > 0
+            output = "Active" if status else "Inactive"
+            log(f"Cloud Run - Service '{self.name}' is {output}.")
+        return output
+
+    def exists(self):
         """
         Check if a service or job exists.
-
-        Args:
-        - job (bool): Check if a job exists instead of a service. Default is False.
 
         Returns:
         - (bool): True if the service or job exists, False otherwise.
         """
         try:
-            self.get(job=job)
+            self.get()
             return True
         except:
             return False
@@ -290,7 +302,6 @@ class CloudRun:
     def deploy(
         self,
         path=".",
-        job=False,
         image_tag="random",
         dockerfile="Dockerfile",
         **kwargs,
@@ -300,7 +311,6 @@ class CloudRun:
 
         Args:
         - path (str): The path to the build context or the image URL.
-        - job (bool): Deploy a job instead of a service. Default is False.
         - image_tag (str): The tag to apply to the image. Default is 'random', which will generate a unique tag.
         - dockerfile (str): The path to the Dockerfile from the context.
         - kwargs: Additional arguments to pass to the deploy_service or deploy_job method.
@@ -323,19 +333,19 @@ class CloudRun:
             image_url = self.build_and_push_docker_image(
                 path=path, image_tag=image_tag, dockerfile=dockerfile
             )
-        if job:
+        if self.job:
             return self.deploy_job(image_url, **kwargs)
         else:
             return self.deploy_service(image_url, **kwargs)
 
-    def delete(self, job=False):
+    def delete(self):
         """
         Delete a service or job.
 
-        Args:
-        - job (bool): Delete a job instead of a service. Default is False.
+        Returns:
+        - None
         """
-        if job:
+        if self.job:
             self.jobs_client.delete_job(name=self.full_name)
             log(f"Cloud Run - Deleted job '{self.name}'.")
         else:
