@@ -9,11 +9,11 @@ TODO:
 [x] Schema Module
 [x] Cloud Functions Module
 [x] Docker Module
-[ ] Cloud Run Module
-[ ] Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module
-[ ] Logging Module
+[x] Cloud Run Module
+[x] Logging Module
 [ ] Secret Manager Module
 [ ] Deploy to PyPi
+[ ] ~Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module~
 ...
 -->
 
@@ -716,3 +716,60 @@ print(job_status)
 # Output: Active
 ```
 
+---
+
+## Logging Module
+
+The Logging module in the `gcp-tools` library allows you to access and manage logs from Google Cloud Logging.
+
+### Initializing Logging
+
+Import the Logging class from the `gcp_tools` module:
+
+```python
+from gcp_tools import Logging
+```
+
+### Listing logs
+
+To list all logs within a project, use the `ls` method:
+
+```python
+logs = Logging().ls(limit=2)
+for log in logs:
+    print(log)
+# Output: LogEntry - [2024-04-16 17:30:04.308 UTC] {Message payload}
+```
+
+Where each entry is a `LogEntry` object with the following attributes: `project`, `log_name`, `resource`, `severity`, `message`, `timestamp`, `time_zone`, `timestamp_str`.
+
+The `message` attribute is the main payload of the log entry.
+
+### Filtering logs
+
+To filter logs based on a query, use the `filter` method:
+
+```python
+logs = Logging().ls(filter="severity=ERROR")
+# Output: [LogEntry - [2024-04-16 17:30:04.308 UTC] {Message payload}, ...]
+```
+
+Some common filters are also supported natively: `severity` (str), `time_start` (str), `time_end` (str), `time_range` (int: hours). For example, the following are equivalent:
+
+```python
+# Time now: 2024-04-16 17:30:04.308 UTC
+logs = Logging().ls(filter="severity=ERROR AND time_start=2024-04-16T16:30:04.308Z AND time_end=2024-04-16T17:30:04.308Z")
+logs = Logging().ls(severity="ERROR", time_start="2024-04-16T16:30:04.308Z", time_end="2024-04-16T17:30:04.308Z")
+logs = Logging().ls(severity="ERROR", time_range=1)
+```
+
+### Streaming logs
+
+To stream logs in real-time, use the `stream` method:
+
+```python
+Logging().stream()
+# LogEntry - [2024-04-16 17:30:04.308 UTC] {Message payload}
+# LogEntry - [2024-04-16 17:30:05.308 UTC] {Message payload}
+# ...
+```
