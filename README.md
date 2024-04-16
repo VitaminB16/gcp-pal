@@ -578,3 +578,141 @@ print(details)
 # Output: {'name': 'projects/project-id/locations/region/functions/function-name', 
 #          'build_config': {...}, 'service_config': {...}, 'state': {...}, ... }
 ```
+
+---
+
+## Docker Module
+
+The Docker module in the `gcp-tools` library allows you to build and push Docker images to Google Container Registry.
+
+### Initializing Docker
+
+Import the Docker class from the `gcp_tools` module:
+
+```python
+from gcp_tools import Docker
+```
+
+### Building Docker images
+
+```python
+Docker("image-name").build(path="path/to/context", dockerfile="Dockerfile")
+# Output: Docker image "image-name:latest" built based on "path/to/context" codebase and "path/to/context/Dockerfile".
+```
+
+The default `tag` is `"latest"` but can be specified via the `tag` parameter:
+
+```python
+Docker("image-name", tag="5fbd72c").build(path="path/to/context", dockerfile="Dockerfile")
+# Output: Docker image "image-name:5fbd72c" built based on "path/to/context" codebase and "path/to/context/Dockerfile".
+```
+
+### Pushing Docker images
+
+```python
+Docker("image-name").push()
+# Output: Docker image "image-name" pushed to Google Container Registry.
+```
+
+The default destination is `"gcr.io/{PROJECT_ID}/{IMAGE_NAME}:{TAG}"` but can be specified via the `destination` parameter:
+
+```python
+Docker("image-name").push(destination="gcr.io/my-project/image-name:5fbd72c")
+# Output: Docker image "image-name" pushed to "gcr.io/my-project/image-name:5fbd72c".
+```
+
+---
+
+## Cloud Run Module
+
+The Cloud Run module in the `gcp-tools` library allows you to deploy and manage Cloud Run services.
+
+### Initializing Cloud Run
+
+Import the `CloudRun` class from the `gcp_tools` module:
+
+```python
+from gcp_tools import CloudRun
+```
+
+### Deploying Cloud Run services
+
+```python
+CloudRun("test-app").deploy(path="samples/cloud_run")
+# Output: 
+# - Docker image "test-app" built based on "samples/cloud_run" codebase and "samples/cloud_run/Dockerfile".
+# - Docker image "test-app" pushed to Google Container Registry as "gcr.io/{PROJECT_ID}/test-app:random_tag".
+# - Cloud Run service "test-app" deployed from "gcr.io/{PROJECT_ID}/test-app:random_tag".
+```
+
+The default tag is a random string but can be specified via the `image_tag` parameter:
+
+```python
+CloudRun("test-app").deploy(path="samples/cloud_run", image_tag="5fbd72c")
+# Output: Cloud Run service deployed
+```
+
+### Listing Cloud Run services
+
+To list all Cloud Run services within a project, use the `ls` method:
+
+```python
+services = CloudRun().ls()
+print(services)
+# Output: ['service1', 'service2']
+```
+
+To list the job, set the `job` parameter to `True`:
+
+```python
+jobs = CloudRun(job=True).ls()
+print(jobs)
+# Output: ['job1', 'job2']
+```
+
+### Deleting Cloud Run services
+
+To delete a Cloud Run service, use the `delete` method:
+
+```python
+CloudRun("service-name").delete()
+# Output: Cloud Run service "service-name" deleted
+```
+
+Similarly to delete a job, set the `job` parameter to `True`:
+
+```python
+CloudRun("job-name", job=True).delete()
+```
+
+### Invoking Cloud Run services
+
+To invoke a Cloud Run service, use the `invoke`/`call` method:
+
+```python
+response = CloudRun("service-name").invoke({"key": "value"})
+print(response)
+# Output: {'output_key': 'output_value'}
+```
+
+### Getting Cloud Run service details
+
+To get the details of a Cloud Run service, use the `get` method:
+
+```python
+details = CloudRun("service-name").get()
+print(details)
+# Output: ...
+```
+
+To get the status of a Cloud Run service, use the `status`/`state` method:
+
+```python
+service_status = CloudRun("service-name").status()
+print(service_status)
+# Output: Active
+job_status = CloudRun("job-name", job=True).status()
+print(job_status)
+# Output: Active
+```
+
