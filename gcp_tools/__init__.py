@@ -7,3 +7,4 @@ from gcp_tools.storage import Storage, Parquet
 from gcp_tools.schema import Schema
 from gcp_tools.cloudfunctions import CloudFunctions
 from gcp_tools.cloudrun import CloudRun
+from gcp_tools.pylogging import Logging
