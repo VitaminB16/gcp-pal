@@ -23,6 +23,7 @@ class LogEntry:
             timestamp.isoformat(sep=" ", timespec="milliseconds").split("+")[0]
             + f" {self.time_zone}"
         )
+        self.message_str = self._parse_message()
 
     def to_dict(self):
         return {
@@ -33,6 +34,7 @@ class LogEntry:
             "message": self.message,
             "timestamp": self.timestamp,
             "timestamp_str": self.timestamp_str,
+            "message_str": self.message_str,
         }
 
     def to_api_repr(self):
@@ -44,13 +46,19 @@ class LogEntry:
             "message": self.message,
             "timestamp": self.timestamp,
             "timestamp_str": self.timestamp_str,
+            "message_str": self.message_str,
         }
 
+    def _parse_message(self):
+        if isinstance(self.message, dict) and "message" in self.message:
+            return self.message["message"]
+        return self.message
+
     def __str__(self):
-        return f"LogEntry - [{self.timestamp_str}] {self.message}"
+        return f"LogEntry - [{self.timestamp_str}] {self.message_str}"
 
     def __repr__(self):
-        return f"LogEntry - [{self.timestamp_str}] {self.message}"
+        return f"LogEntry - [{self.timestamp_str}] {self.message_str}"
 
 
 class Logging:
@@ -69,7 +77,7 @@ class Logging:
 
     def ls(
         self,
-        filter=None,
+        query=None,
         severity=None,
         limit=None,
         time_start=None,
@@ -81,7 +89,7 @@ class Logging:
         List all logs in a project
 
         Args:
-        - filter (str): Filter results
+        - query (str): Query for filtering results
         - severity (str): Severity level
         - limit (int): Number of logs to return
         - time_start (datetime.datetime): Start time for logs
@@ -95,10 +103,10 @@ class Logging:
         if time_range:
             time_end = datetime.datetime.now(datetime.timezone.utc)
             time_start = time_end - datetime.timedelta(hours=time_range)
-        filter = self._generate_filter(filter, severity, time_start, time_end)
-        log(f"Logging - Filter: {filter}")
+        query = self._generate_query(query, severity, time_start, time_end)
+        log(f"Logging - Filter: {query}")
         logs = self.client.list_entries(
-            filter_=filter, max_results=limit, order_by=order_by
+            filter_=query, max_results=limit, order_by=order_by
         )
         output = []
         for log_entry in logs:
@@ -114,12 +122,12 @@ class Logging:
             )
         return output
 
-    def stream(self, filter=None, severity=None, time_start=None, interval=5):
+    def stream(self, query=None, severity=None, time_start=None, interval=5):
         """
         Stream logs in a project in real-time by polling the log entries.
 
         Args:
-        - filter (str): Filter results. Default is None.
+        - query (str): Query for filtering the logs. Default is None.
         - severity (str): Severity level. Default is None.
         - time_start (datetime.datetime): Start time for logs. Default is now.
         - interval (int): Polling interval in seconds. Default is 5 seconds.
@@ -131,18 +139,23 @@ class Logging:
             time_start = datetime.datetime.now(datetime.timezone.utc)
 
         last_end_time = time_start
+        time_zone = last_end_time.tzinfo
+        time_start_str = last_end_time.isoformat(sep=" ").replace(
+            "+00:00", f" {time_zone}"
+        )
+        log(f"Logging - Start Time: {time_start_str}. Streaming...")
 
         while True:
             current_time = datetime.datetime.now(datetime.timezone.utc)
             # Buffer to account for GCP log latency
-            log_latency = datetime.timedelta(seconds=5)
+            log_latency = datetime.timedelta(seconds=10)
             time_end = current_time - log_latency
             if time_end <= last_end_time:
                 time.sleep(interval)  # Wait until window is positive
                 continue
 
-            log_filter = self._generate_filter(
-                filter, severity, last_end_time.isoformat(), time_end.isoformat()
+            log_filter = self._generate_query(
+                query, severity, last_end_time.isoformat(), time_end.isoformat()
             )
             logs = self.client.list_entries(filter_=log_filter)
 
@@ -160,11 +173,11 @@ class Logging:
             last_end_time = time_end  # Shift the time window
             time.sleep(interval)
 
-    def _generate_filter(
-        self, filter=None, severity=None, time_start=None, time_end=None
+    def _generate_query(
+        self, query=None, severity=None, time_start=None, time_end=None
     ):
-        if filter:
-            self.filters.append(filter)
+        if query:
+            self.filters.append(query)
         if severity:
             filter_str = f"severity={severity}"
             self.filters.append(filter_str)
@@ -178,12 +191,10 @@ class Logging:
                 time_end = time_end.isoformat()
             filter_str = f'timestamp<="{time_end}"'
             self.filters.append(filter_str)
-        filter = " AND ".join(self.filters)
+        query = " AND ".join(self.filters)
         self.filters = []  # Reset filters
-        return filter
+        return query
 
 
 if __name__ == "__main__":
-    logs = Logging().ls(time_range=1, limit=10)
-    for log_entry in logs:
-        print(log_entry)
+    Logging().stream()

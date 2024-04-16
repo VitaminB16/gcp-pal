@@ -16,7 +16,6 @@ from google.cloud.run_v2.types import (
     CreateServiceRequest,
     CreateJobRequest,
 )
-from google.protobuf import field_mask_pb2
 
 from gcp_tools.pydocker import Docker
 from gcp_tools.utils import get_auth_default, log
