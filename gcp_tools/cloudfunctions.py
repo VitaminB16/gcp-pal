@@ -17,9 +17,6 @@ from google.cloud.functions_v2 import (
     Environment,
 )
 
-try_import("google.protobuf.field_mask_pb2", "CloudFunctions")
-from google.protobuf.field_mask_pb2 import FieldMask
-
 from gcp_tools.utils import get_auth_default, log, get_all_kwargs
 
 
