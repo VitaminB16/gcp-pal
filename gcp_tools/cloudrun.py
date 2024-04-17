@@ -6,6 +6,7 @@ from uuid import uuid4
 from gcp_tools.utils import try_import
 
 try_import("google.cloud.run_v2", "CloudRun")
+try_import("google.api_core.exceptions", "CloudRun")
 from google.cloud import run_v2
 from google.cloud.run_v2 import Service, TrafficTarget, Condition, Job
 from google.cloud.run_v2.types import (
@@ -16,6 +17,7 @@ from google.cloud.run_v2.types import (
     CreateServiceRequest,
     CreateJobRequest,
 )
+import google.api_core.exceptions
 
 from gcp_tools.pydocker import Docker
 from gcp_tools.utils import get_auth_default, log
@@ -102,7 +104,7 @@ class CloudRun:
         Get the status of a service or job.
 
         Returns:
-        - (str): The status of the service or job.
+        - (str): The status of the service or job. Either 'Active' or 'Inactive'.
         """
         if self.job:
             status = self.get().terminal_condition.type_
@@ -113,6 +115,12 @@ class CloudRun:
             output = "Active" if status else "Inactive"
             log(f"Cloud Run - Service '{self.name}' is {output}.")
         return output
+
+    def state(self):
+        """
+        Alias for `status`.
+        """
+        return self.status()
 
     def exists(self):
         """
@@ -164,11 +172,14 @@ class CloudRun:
         Args:
         - env_vars_file (str): YAML file path for environment variables.
         - memory (str): Amount of memory to allocate to each service instance.
+                        Also accepts integer vaues in MB. Default is '512Mi'.
         - min_instances (int): Minimum number of instances.
         - max_instances (int): Maximum number of instances. Set to 0 for auto-scaling.
         - container_kwargs (dict): Additional container configuration.
         - service_kwargs (dict): Additional service configuration.
         """
+        if isinstance(memory, int):
+            memory = f"{memory}Mi"
         image_url = image_url or self.image_url
         # gcloud run deploy seems to set HOST=0.0.0.0 by default?
         default_env_vars = {"HOST": "0.0.0.0"}
@@ -337,19 +348,51 @@ class CloudRun:
         else:
             return self.deploy_service(image_url, **kwargs)
 
-    def delete(self):
+    def create(
+        self,
+        path=".",
+        image_tag="random",
+        dockerfile="Dockerfile",
+        **kwargs,
+    ):
+        """
+        (Alias of `deploy`) Deploy a Cloud Run service or job.
+
+        Args:
+        - path (str): The path to the build context or the image URL.
+        - image_tag (str): The tag to apply to the image. Default is 'random', which will generate a unique tag.
+        - dockerfile (str): The path to the Dockerfile from the context.
+        - kwargs: Additional arguments to pass to the deploy_service or deploy_job method.
+
+        Returns:
+        - (Service) or (Job): The service or job object.
+        """
+        return self.deploy(path, image_tag, dockerfile, **kwargs)
+
+    def delete(self, wait_to_complete=True, errors="ignore"):
         """
         Delete a service or job.
 
         Returns:
         - None
         """
-        if self.job:
-            self.jobs_client.delete_job(name=self.full_name)
-            log(f"Cloud Run - Deleted job '{self.name}'.")
-        else:
-            self.client.delete_service(name=self.full_name)
-            log(f"Cloud Run - Deleted service '{self.name}'.")
+        try:
+            if self.job:
+                result = self.jobs_client.delete_job(name=self.full_name)
+                if wait_to_complete:
+                    result.result()
+                log(f"Cloud Run - Deleted job '{self.name}'.")
+            else:
+                result = self.client.delete_service(name=self.full_name)
+                if wait_to_complete:
+                    result.result()
+                log(f"Cloud Run - Deleted service '{self.name}'.")
+        except google.api_core.exceptions.NotFound:
+            if errors == "ignore":
+                log(f"Cloud Run - Service '{self.name}' not found to delete.")
+                return None
+            else:
+                raise
 
 
 if __name__ == "__main__":
