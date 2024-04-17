@@ -11,7 +11,7 @@ TODO:
 [x] Docker Module
 [x] Cloud Run Module
 [x] Logging Module
-[ ] Secret Manager Module
+[x] Secret Manager Module
 [ ] Deploy to PyPi
 [ ] ~Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module~
 ...
@@ -772,4 +772,68 @@ Logging().stream()
 # LogEntry - [2024-04-16 17:30:04.308 UTC] {Message payload}
 # LogEntry - [2024-04-16 17:30:05.308 UTC] {Message payload}
 # ...
+```
+
+---
+
+## Secret Manager Module
+
+The Secret Manager module in the `gcp-tools` library allows you to access and manage secrets from Google Cloud Secret Manager.
+
+### Initializing Secret Manager
+
+Import the SecretManager class from the `gcp_tools` module:
+
+```python
+from gcp_tools import SecretManager
+```
+
+### Creating secrets
+
+To create a secret, specify the secret's name and value:
+
+```python
+SecretManager("secret1").create("value1", labels={"env": "dev"})
+# Output: Secret 'secret1' created
+```
+
+
+### Listing secrets
+
+To list all secrets within a project, use the `ls` method:
+
+```python
+secrets = SecretManager().ls()
+print(secrets)
+# Output: ['secret1', 'secret2']
+```
+
+The `ls` method also supports filtering secrets based on `filter` or `label` parameters:
+
+```python
+secrets = SecretManager().ls(filter="name:secret1")
+print(secrets)
+# Output: ['secret1']
+secrets = SecretManager().ls(label="env:*")
+print(secrets)
+# Output: ['secret1', 'secret2']
+```
+
+### Accessing secrets
+
+To access the value of a secret, use the `value` method:
+
+```python
+value = SecretManager("secret1").value()
+print(value)
+# Output: 'value1'
+```
+
+### Deleting secrets
+
+To delete a secret, use the `delete` method:
+
+```python
+SecretManager("secret1").delete()
+# Output: Secret 'secret1' deleted
 ```
