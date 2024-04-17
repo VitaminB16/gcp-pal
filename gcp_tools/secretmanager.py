@@ -42,7 +42,7 @@ class SecretManager:
         Returns:
         - List[google.cloud.secretmanager.Secret]: List of secrets.
         """
-        filter = filter or f"labels.{label}" if label else None
+        filter = filter or (f"labels.{label}" if label else None)
         request = {"parent": self.parent}
         if filter:
             request["filter"] = filter
@@ -67,6 +67,22 @@ class SecretManager:
         if not name.startswith("projects/"):
             name = f"{self.parent}/secrets/{name}"
         return self.client.get_secret(name=name)
+
+    def exists(self, name=None):
+        """
+        Check if a secret exists.
+
+        Args:
+        - name (str): Name of the secret.
+
+        Returns:
+        - bool: True if secret exists, False otherwise.
+        """
+        try:
+            self.get(name=name)
+            return True
+        except google.api_core.exceptions.NotFound:
+            return False
 
     def create(self, value=None, labels=None, replication=None, if_exists="update"):
         """
@@ -125,14 +141,21 @@ class SecretManager:
             log(f"Secret Manager - Added new version to secret {self.name}.")
         return self.full_name
 
-    def delete(self):
+    def delete(self, errors="ignore"):
         """
         Delete a secret.
 
         Returns:
         - None
         """
-        output = self.client.delete_secret(name=self.full_name)
+        try:
+            output = self.client.delete_secret(name=self.full_name)
+        except google.api_core.exceptions.NotFound:
+            if errors == "ignore":
+                log(f"Secret Manager - Secret {self.name} not found to delete.")
+                return None
+            else:
+                raise
         log(f"Secret Manager - Deleted secret {self.name}.")
         return output
 
@@ -160,7 +183,7 @@ class SecretManager:
 
 if __name__ == "__main__":
     SecretManager("test_secret2").create("test_value2", labels={"env": "dev"})
-    sm = SecretManager().ls(label="env:*")
+    sm = SecretManager().ls(label="env:dev")
     secret_name = sm[0]
     value = SecretManager(secret_name).value()
     print(value)
