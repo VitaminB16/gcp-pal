@@ -956,6 +956,24 @@ proto-plus = ">=1.22.3,<2.0.0dev"
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 
 [[package]]
+name = "google-cloud-secret-manager"
+version = "2.19.0"
+description = "Google Cloud Secret Manager API client library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-secret-manager-2.19.0.tar.gz", hash = "sha256:bb918435835a14eb94785f4d4d9087bdcf1b6de306432d7edaa7d62e7f780c30"},
+    {file = "google_cloud_secret_manager-2.19.0-py2.py3-none-any.whl", hash = "sha256:7dd9ad9ab3e70f9a7fbac432938b702ba23bce1207e9bda86463b6d6b1f5cdbb"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.1,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0dev"
+grpc-google-iam-v1 = ">=0.12.4,<1.0.0dev"
+proto-plus = ">=1.22.3,<2.0.0dev"
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
 name = "google-cloud-storage"
 version = "2.16.0"
 description = "Google Cloud Storage API client library"
@@ -2489,4 +2507,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "cd2a9fb0e1dd45c85195a425aec61b58e38b0f50fd701624f88b490b8b0cf513"
+content-hash = "bccb11e7c8a921d5d9bad928b75873940a4d36cb79ca9c7ac4a0af6b240b81bc"
