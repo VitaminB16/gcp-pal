@@ -17,11 +17,17 @@ def delete_test_bigquery_datasets():
     datasets_to_delete = [
         d
         for d in datasets
-        if d.startswith("test_") or d.startswith("temp_") or d.startswith("example_")
+        if d.startswith("test_")
+        or d.startswith("test-")
+        or d.startswith("temp_")
+        or d.startswith("example_")
     ]
     del_fun = lambda x: (
         BigQuery(dataset=x).delete()
-        if x.startswith("test_") or x.startswith("temp_") or x.startswith("example_")
+        if x.startswith("test_")
+        or x.startswith("test-")
+        or x.startswith("temp_")
+        or x.startswith("example_")
         else None
     )
     with ThreadPoolExecutor() as executor:
@@ -36,11 +42,17 @@ def delete_test_firestore_collections():
     collections_to_delete = [
         c
         for c in collections
-        if c.startswith("test_") or c.startswith("temp_") or c.startswith("example_")
+        if c.startswith("test_")
+        or c.startswith("test-")
+        or c.startswith("temp_")
+        or c.startswith("example_")
     ]
     del_fun = lambda x: (
         Firestore(x).delete()
-        if x.startswith("test_") or x.startswith("temp_") or x.startswith("example_")
+        if x.startswith("test_")
+        or x.startswith("test-")
+        or x.startswith("temp_")
+        or x.startswith("example_")
         else None
     )
     with ThreadPoolExecutor() as executor:
@@ -64,7 +76,10 @@ def delete_test_storage_buckets():
     buckets_to_delete = [
         b
         for b in buckets
-        if b.startswith("test_") or b.startswith("temp_") or b.startswith("example_")
+        if b.startswith("test_")
+        or b.startswith("test-")
+        or b.startswith("temp_")
+        or b.startswith("example_")
     ]
     with ThreadPoolExecutor() as executor:
         executor.map(del_fun, buckets_to_delete)
@@ -78,7 +93,10 @@ def delete_test_cloud_functions():
     functions_to_delete = [
         f
         for f in functions
-        if f.startswith("test_") or f.startswith("temp_") or f.startswith("example_")
+        if f.startswith("test_")
+        or f.startswith("test-")
+        or f.startswith("temp_")
+        or f.startswith("example_")
     ]
     del_fun = lambda x: CloudFunctions(x).delete()
     with ThreadPoolExecutor() as executor:
@@ -93,7 +111,10 @@ def delete_test_cloud_run_services():
     services_to_delete = [
         s
         for s in services
-        if s.startswith("test_") or s.startswith("temp_") or s.startswith("example_")
+        if s.startswith("test_")
+        or s.startswith("test-")
+        or s.startswith("temp_")
+        or s.startswith("example_")
     ]
     del_fun = lambda x: CloudRun(x).delete()
     with ThreadPoolExecutor() as executor:
@@ -108,7 +129,10 @@ def delete_test_secret_manager_secrets():
     secrets_to_delete = [
         s
         for s in secrets
-        if s.startswith("test_") or s.startswith("temp_") or s.startswith("example_")
+        if s.startswith("test_")
+        or s.startswith("test-")
+        or s.startswith("temp_")
+        or s.startswith("example_")
     ]
     del_fun = lambda x: SecretManager(x).delete()
     with ThreadPoolExecutor() as executor:
