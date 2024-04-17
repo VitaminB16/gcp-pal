@@ -1,4 +1,11 @@
-from gcp_tools import BigQuery, Firestore, Storage, CloudFunctions
+from gcp_tools import (
+    BigQuery,
+    Firestore,
+    Storage,
+    CloudFunctions,
+    CloudRun,
+    SecretManager,
+)
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -78,8 +85,40 @@ def delete_test_cloud_functions():
         executor.map(del_fun, functions_to_delete)
 
 
+def delete_test_cloud_run_services():
+    """
+    Deletes all Cloud Run services that start with "test_"
+    """
+    services = CloudRun().ls()
+    services_to_delete = [
+        s
+        for s in services
+        if s.startswith("test_") or s.startswith("temp_") or s.startswith("example_")
+    ]
+    del_fun = lambda x: CloudRun(x).delete()
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, services_to_delete)
+
+
+def delete_test_secret_manager_secrets():
+    """
+    Deletes all Secret Manager secrets that start with "test_"
+    """
+    secrets = SecretManager().ls()
+    secrets_to_delete = [
+        s
+        for s in secrets
+        if s.startswith("test_") or s.startswith("temp_") or s.startswith("example_")
+    ]
+    del_fun = lambda x: SecretManager(x).delete()
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, secrets_to_delete)
+
+
 if __name__ == "__main__":
     delete_test_bigquery_datasets()
     delete_test_firestore_collections()
     delete_test_storage_buckets()
     delete_test_cloud_functions()
+    delete_test_cloud_run_services()
+    delete_test_secret_manager_secrets()

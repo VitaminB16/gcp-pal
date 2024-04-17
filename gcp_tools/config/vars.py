@@ -9,6 +9,7 @@ PYPI_NAMES = {
     "google.cloud.firestore": "google-cloud-firestore",
     "google.cloud.functions_v1": "google-cloud-functions",
     "google.cloud.functions_v2": "google-cloud-functions",
+    "google.cloud.secretmanager": "google-cloud-secret-manager",
     "google.cloud.run_v1": "google-cloud-run",
     "google.cloud.run_v2": "google-cloud-run",
     "gcsfs": "gcsfs",
