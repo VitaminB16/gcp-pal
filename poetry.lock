@@ -956,6 +956,23 @@ proto-plus = ">=1.22.3,<2.0.0dev"
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
 
 [[package]]
+name = "google-cloud-scheduler"
+version = "2.13.3"
+description = "Google Cloud Scheduler API client library"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "google-cloud-scheduler-2.13.3.tar.gz", hash = "sha256:6c88dcf60e159237a6d785655bf7810264ad70d94a873f38d9b13bd5c436ad80"},
+    {file = "google_cloud_scheduler-2.13.3-py2.py3-none-any.whl", hash = "sha256:d83197f802c4bff7076b91652df3c0d5e766e4d925b5b895a09f0b0a43aea39f"},
+]
+
+[package.dependencies]
+google-api-core = {version = ">=1.34.1,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
+google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0dev"
+proto-plus = ">=1.22.3,<2.0.0dev"
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+
+[[package]]
 name = "google-cloud-secret-manager"
 version = "2.19.0"
 description = "Google Cloud Secret Manager API client library"
@@ -2507,4 +2524,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "bccb11e7c8a921d5d9bad928b75873940a4d36cb79ca9c7ac4a0af6b240b81bc"
+content-hash = "67d3051a9396fb23bcac6518666ea96210e9ffb621e3b06fd75721a2dc2b3071"

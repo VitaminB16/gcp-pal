@@ -12,8 +12,8 @@ TODO:
 [x] Cloud Run Module
 [x] Logging Module
 [x] Secret Manager Module
-[ ] Deploy to PyPi
-[ ] ~Combine Storage, Parquet, BigQuery and Firestore for a universal Storage module~
+[x] Cloud Scheduler Module
+[ ] Deploy to PyPI
 ...
 -->
 
@@ -837,3 +837,101 @@ To delete a secret, use the `delete` method:
 SecretManager("secret1").delete()
 # Output: Secret 'secret1' deleted
 ```
+
+---
+
+## Cloud Scheduler Module
+
+The Cloud Scheduler module in the `gcp-tools` library allows you to create and manage Cloud Scheduler jobs.
+
+### Initializing Cloud Scheduler
+
+Import the CloudScheduler class from the `gcp_tools` module:
+
+```python
+from gcp_tools import CloudScheduler
+```
+
+### Creating Cloud Scheduler jobs
+
+To create a Cloud Scheduler job, specify the job's name in the constructor, and use the `create` method to set the schedule and target:
+
+```python
+CloudScheduler("job-name").create(
+    schedule="* * * * *",
+    time_zone="UTC",
+    target="https://example.com/api",
+    payload={"key": "value"},
+)
+# Output: Cloud Scheduler job "job-name" created with HTTP target "https://example.com/api"
+```
+
+If the `target` is not an HTTP endpoint, it will be treated as a PubSub topic:
+
+```python
+CloudScheduler("job-name").create(
+    schedule="* * * * *",
+    time_zone="UTC",
+    target="pubsub-topic-name",
+    payload={"key": "value"},
+)
+# Output: Cloud Scheduler job "job-name" created with PubSub target "pubsub-topic-name"
+```
+
+Additionally, `service_account` can be specified to add the OAuth and OIDC tokens to the request:
+
+```python
+CloudScheduler("job-name").create(
+    schedule="* * * * *",
+    time_zone="UTC",
+    target="https://example.com/api",
+    payload={"key": "value"},
+    service_account="PROJECT@PROJECT.iam.gserviceaccount.com",
+)
+# Output: Cloud Scheduler job "job-name" created with HTTP target "https://example.com/api" and OAuth+OIDC tokens
+```
+
+### Listing Cloud Scheduler jobs
+
+To list all Cloud Scheduler jobs within a project, use the `ls` method:
+
+```python
+jobs = CloudScheduler().ls()
+print(jobs)
+# Output: ['job1', 'job2']
+```
+
+### Deleting Cloud Scheduler jobs
+
+To delete a Cloud Scheduler job, use the `delete` method:
+
+```python
+CloudScheduler("job-name").delete()
+# Output: Cloud Scheduler job "job-name" deleted
+```
+
+### Managing Cloud Scheduler jobs
+
+To pause or resume a Cloud Scheduler job, use the `pause` or `resume` methods:
+
+```python
+CloudScheduler("job-name").pause()
+# Output: Cloud Scheduler job "job-name" paused
+CloudScheduler("job-name").resume()
+# Output: Cloud Scheduler job "job-name" resumed
+```
+
+To run a Cloud Scheduler job immediately, use the `run` method:
+
+```python
+CloudScheduler("job-name").run()
+# Output: Cloud Scheduler job "job-name" run
+```
+
+If the job is paused, it will be resumed before running. To prevent this, set the `force` parameter to `False`:
+
+```python
+CloudScheduler("job-name").run(force=False)
+# Output: Cloud Scheduler job "job-name" not run if it is paused
+```
+
