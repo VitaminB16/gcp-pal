@@ -9,3 +9,4 @@ from gcp_tools.cloudfunctions import CloudFunctions
 from gcp_tools.cloudrun import CloudRun
 from gcp_tools.pylogging import Logging
 from gcp_tools.secretmanager import SecretManager
+from gcp_tools.cloudscheduler import CloudScheduler
