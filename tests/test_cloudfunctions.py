@@ -9,7 +9,7 @@ def test_cloudfunctions_gen1():
     cloud_fun.delete(errors="ignore")  # Make sure it is not present
     success[0] = not cloud_fun.exists()
     response = cloud_fun.deploy(
-        source="samples/cloud_function",
+        path="samples/cloud_function",
         entry_point="entry_point",
         runtime="python310",
         environment=1,
@@ -42,7 +42,7 @@ def test_cloudfunctions_gen2():
     cloud_fun.delete(errors="ignore")  # Make sure it is not present
     success[0] = not cloud_fun.exists()
     response = cloud_fun.deploy(
-        source="samples/cloud_function",
+        path="samples/cloud_function",
         entry_point="entry_point",
         runtime="python310",
     )

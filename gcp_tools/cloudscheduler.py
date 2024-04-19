@@ -89,8 +89,8 @@ class CloudScheduler:
     def create(
         self,
         schedule,
-        time_zone,
         target,
+        time_zone="UTC",
         payload={},
         description=None,
         service_account=None,
@@ -100,9 +100,9 @@ class CloudScheduler:
 
         Args:
         - schedule (str): Schedule in cron format.
-        - time_zone (str): Time zone.
-        - payload (str): Payload to send to the job.
         - target (str): Target of the job. Can be a URL (HTTP trigger) or a Pub/Sub topic.
+        - payload (str): Payload to send to the job.
+        - time_zone (str): Time zone. Default is "UTC".
         - description (str): Description of the job.
         - service_account (str): Service account email. If "DEFAULT", uses the default service account PROJECT@PROJECT.iam.gserviceaccount.com.
 
