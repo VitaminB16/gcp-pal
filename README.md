@@ -13,6 +13,7 @@ TODO:
 [x] Logging Module
 [x] Secret Manager Module
 [x] Cloud Scheduler Module
+[x] Add examples
 [ ] Deploy to PyPI
 ...
 -->
@@ -522,7 +523,7 @@ To deploy a Cloud Function, specifty the function's name, the source codebase, t
 
 ```python
 CloudFunctions("function-name").deploy(
-    source="path/to/function_codebase",
+    path="path/to/function_codebase",
     entry_point="main",
     environment=2,
 )
@@ -532,7 +533,7 @@ Deploying a Cloud Function from a local source depends on the `gcp_toole.Storage
 
 ```python
 CloudFunctions("function-name").deploy(
-    source="path/to/function_codebase",
+    path="path/to/function_codebase",
     entry_point="main",
     environment=2,
     source_bucket="bucket-name",

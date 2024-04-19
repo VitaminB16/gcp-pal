@@ -145,7 +145,7 @@ class CloudFunctions:
 
     def deploy(
         self,
-        source,
+        path,
         entry_point,
         runtime="python310",
         environment=2,
@@ -159,7 +159,7 @@ class CloudFunctions:
         Deploys a cloud function.
 
         Args:
-        - source (str): The path to the source code.
+        - path (str): The path to the source code.
         - entry_point (str): The name of the function to execute.
         - runtime (str): The runtime of the cloud function.
         - environment (int): The environment (generation) of the cloud function.
@@ -178,14 +178,14 @@ class CloudFunctions:
         - (dict) The response from the cloud function.
         """
         input_kwargs = get_all_kwargs(locals())
-        if source.startswith("https://") or source.startswith("gs://"):
+        if path.startswith("https://") or path.startswith("gs://"):
             return self.deploy_from_repo(**input_kwargs)
         else:
             return self.deploy_from_zip(**input_kwargs)
 
     def deploy_from_zip(
         self,
-        source,
+        path,
         entry_point,
         source_bucket=None,
         **kwargs,
@@ -194,7 +194,7 @@ class CloudFunctions:
         Deploys a cloud function from a zip file.
 
         Args:
-        - source (str): The path to the source code.
+        - path (str): The path to the source code.
         - entry_point (str): The name of the function to execute.
         - source_bucket (str): The bucket to upload the zip file to. Defaults to PROJECT-cloud-functions.
         - kwargs (dict): Additional arguments to pass to the cloud function.
@@ -202,14 +202,14 @@ class CloudFunctions:
         Returns:
         - (dict) The response from the cloud function.
         """
-        if not os.path.exists(source):
-            raise FileNotFoundError(f"Local file not found: {source}")
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Local file not found: {path}")
 
         from gcp_tools import Storage
         from gcp_tools.utils import zip_directory
 
-        log(f"Cloud Function - Creating zip file from {source} and uploading to GCS...")
-        zip_path = zip_directory(source)
+        log(f"Cloud Function - Creating zip file from {path} and uploading to GCS...")
+        zip_path = zip_directory(path)
         # Upload the zip file to GCS
         bucket_name = source_bucket or f"{self.project}-cloud-functions"
         upload_path = f"{bucket_name}/cloud-functions/{self.name}/{self.name}.zip"
@@ -222,7 +222,7 @@ class CloudFunctions:
 
     def deploy_from_repo(
         self,
-        source,
+        path,
         entry_point,
         trigger="HTTP",
         if_exists="REPLACE",
@@ -235,7 +235,7 @@ class CloudFunctions:
         Deploys a cloud function from a repository.
 
         Args:
-        - source (str): The path to the source code.
+        - path (str): The path to the source code.
         - entry_point (str): The name of the function to execute.
         - kwargs (dict): Additional arguments to pass to the cloud function.
 
@@ -243,16 +243,16 @@ class CloudFunctions:
         - (dict) The response from the cloud function.
         """
 
-        log(f"Cloud Function - Deploying '{self.name}' from repository {source}...")
-        if source.startswith("gs://"):
+        log(f"Cloud Function - Deploying '{self.name}' from repository {path}...")
+        if path.startswith("gs://"):
             from gcp_tools import Storage
 
-            obj = Storage(source)
+            obj = Storage(path)
             bucket_name, file_name = obj.bucket_name, obj.file_name
             storage_source = StorageSource(bucket=bucket_name, object=file_name)
             source = Source(storage_source=storage_source)
         else:
-            source = Source(repository=RepoSource(url=source))
+            source = Source(repository=RepoSource(url=path))
         if service_account_email is None:
             default_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
             service_account_email = default_account
@@ -372,7 +372,7 @@ class CloudFunctions:
 
 if __name__ == "__main__":
     CloudFunctions("test_sample1").deploy(
-        "samples/cloud_function",
+        path="samples/cloud_function",
         entry_point="entry_point",
         runtime="python310",
         environment=2,
