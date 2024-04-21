@@ -1,0 +1,1 @@
+from gcp_pal.config.vars import PYPI_NAMES

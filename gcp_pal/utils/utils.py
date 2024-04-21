@@ -1,10 +1,12 @@
 import os
-import logging
 import importlib
 import collections.abc
 
 
-def try_import(module_name, origin_module=None):
+LIST_LIKE_TYPES = (list, tuple, set, frozenset, collections.abc.KeysView)
+
+
+def try_import(module_name, origin_module=None, errors="raise"):
     """
     Attempt to dynamically import a module. If the import fails, raise an informative ImportError.
 
@@ -12,7 +14,7 @@ def try_import(module_name, origin_module=None):
     - module_name (str): The name of the module to be imported.
     - origin_module (str, optional): The module that is attempting to perform the import.
     """
-    from gcp_pal.config.vars import PYPI_NAMES
+    from gcp_pal.config import PYPI_NAMES
 
     try:
         return importlib.import_module(module_name)
@@ -20,29 +22,14 @@ def try_import(module_name, origin_module=None):
         pypi_name = PYPI_NAMES.get(module_name, None)
         pypi_str = f"(PyPI: '{pypi_name}')" if pypi_name else ""
         if origin_module:
-            raise ImportError(
-                f"Module '{origin_module}' requires '{module_name}' {pypi_str} to be installed."
-            ) from None
+            err = f"Module '{origin_module}' requires '{module_name}' {pypi_str} to be installed."
         else:
-            raise ImportError(f"Missing required module: '{module_name}'") from None
-
-
-try_import("google.cloud.logging", "logging")
-from google.cloud import logging as gcp_logging
-
-# from google.cloud.logging.handlers.transports import SyncTransport
-try_import("google.cloud.logging.handlers.transports", "logging")
-from google.cloud.logging.handlers.transports import SyncTransport
-
-
-LIST_LIKE_TYPES = (list, tuple, set, frozenset, collections.abc.KeysView)
-
-if os.getenv("PLATFORM", "GCP") in ["GCP", "local"]:
-    client = gcp_logging.Client()
-    handler = gcp_logging.handlers.CloudLoggingHandler(
-        client, name="gcp_pal", transport=SyncTransport
-    )
-    client.setup_logging()
+            err = f"Missing required module: '{module_name}'"
+        if errors == "raise":
+            raise ImportError(err) from None
+        elif errors == "warn":
+            print("Warning:", err)
+        return None
 
 
 def force_list(x):
@@ -210,39 +197,6 @@ def is_python_schema(obj):
     elif isinstance(obj, list):
         return all([is_python_schema(x) for x in obj])
     return str(type(obj)) == "<class 'type'>"
-
-
-def log(*args, **kwargs):
-    """
-    Function for logging to Google Cloud Logs. Logs a message as usual, and logs a dictionary of data as jsonPayload.
-
-    Args:
-        *args (list): list of elements to "print" to google cloud logs.
-        **kwargs (dict): dictionary of elements to "print" to google cloud logs.
-
-    Examples:
-    >>> log("Hello, world!")
-    message: "Hello, world!"
-    >>> log("Hello, world!", {"a": 1, "b": 2})
-    message: "Hello, world!"
-    payload: {"a": 1, "b": 2}
-    """
-    # Use these environment variables as payload to log to Google Cloud Logs
-    env_keys = ["PLATFORM"]
-    env_data = {key: os.getenv(key, None) for key in env_keys}
-    log_data = {k: v for k, v in env_data.items() if v is not None}
-
-    # If any arguments are a dictionary, add it to the log_data so it can be queried in Google Cloud Logs
-    for arg in args:
-        if isinstance(arg, dict):
-            log_data.update(arg)
-        log_data["message"] = " ".join([str(a) for a in args])
-
-    if os.getenv("PLATFORM", "Local") in ["GCP"]:
-        logging.info(log_data)
-    else:
-        # If running locally, use a normal print
-        print(log_data["message"], **kwargs)
 
 
 def reverse_dict(d):

@@ -11,7 +11,7 @@ import google.auth.exceptions
 from google.oauth2 import id_token
 from google.auth.transport.requests import Request as AuthRequest
 
-from gcp_pal.utils import log
+from gcp_pal.utils.log import log
 
 
 class Request:
@@ -98,7 +98,9 @@ class Request:
             if "iam.serviceAccounts.getOpenIdToken" in response.text:
                 role = "Service Account Token Creator"
                 acc = self.service_account
-                log(f"Request - Error: Ensure the service account {acc} has the '{role}' role.")
+                log(
+                    f"Request - Error: Ensure the service account {acc} has the '{role}' role."
+                )
             else:
                 log(f"Request - Error fetching identity token: {response.text}")
         return None
