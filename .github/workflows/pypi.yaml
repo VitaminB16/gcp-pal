@@ -6,6 +6,10 @@ on:
 
 jobs:
   pypi:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     name: Publish to PyPI
     runs-on: ubuntu-latest
 
