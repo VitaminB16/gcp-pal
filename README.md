@@ -14,7 +14,8 @@ TODO:
 [x] Secret Manager Module
 [x] Cloud Scheduler Module
 [x] Add examples
-[ ] Deploy to PyPI
+[x] Publish to PyPI
+[ ] Tests
 ...
 -->
 

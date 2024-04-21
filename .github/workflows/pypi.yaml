@@ -12,6 +12,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Authenticate GCP using workload identity
+      uses: google-github-actions/auth@v0.4.0
+      with:
+        workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -19,6 +25,12 @@ jobs:
 
     - name: Install poetry
       run: python3 -m pip install poetry --user
+
+    - name: Install dependencies
+      run: python3 -m poetry install
+
+    - name: Run tests
+      run: ./runtests.sh
 
     - name: Build distribution
       run: python3 -m poetry build
