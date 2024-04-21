@@ -34,8 +34,17 @@ jobs:
         poetry config virtualenvs.create false --local
         poetry install
 
+    - name: Set up Docker for testing
+      uses: docker-practice/actions-setup-docker@master
+      timeout-minutes: 12
+
     - name: Run tests
-      run: ./runtests.sh
+      run: |
+        ./runtests.sh | tee output.txt
+        if grep -q "= FAILURES =" output.txt; then
+          echo "Tests failed"
+          exit 1
+        fi
 
     - name: Build distribution
       run: python3 -m poetry build
