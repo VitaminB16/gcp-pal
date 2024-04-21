@@ -1,12 +1,16 @@
-from gcp_pal.bigquery import BigQuery
-from gcp_pal.firestore import Firestore
-from gcp_pal.request import Request
-from gcp_pal.pubsub import PubSub
+from gcp_pal.utils import LazyLoader
 
-from gcp_pal.storage import Storage, Parquet
-from gcp_pal.schema import Schema
-from gcp_pal.cloudfunctions import CloudFunctions
-from gcp_pal.cloudrun import CloudRun
-from gcp_pal.pylogging import Logging
-from gcp_pal.secretmanager import SecretManager
-from gcp_pal.cloudscheduler import CloudScheduler
+
+# Define lazy-loaded modules and classes
+BigQuery = LazyLoader("gcp_pal.bigquery", "BigQuery")
+CloudFunctions = LazyLoader("gcp_pal.cloudfunctions", "CloudFunctions")
+CloudRun = LazyLoader("gcp_pal.cloudrun", "CloudRun")
+CloudScheduler = LazyLoader("gcp_pal.cloudscheduler", "CloudScheduler")
+Firestore = LazyLoader("gcp_pal.firestore", "Firestore")
+PubSub = LazyLoader("gcp_pal.pubsub", "PubSub")
+Logging = LazyLoader("gcp_pal.pylogging", "Logging")
+Request = LazyLoader("gcp_pal.request", "Request")
+Schema = LazyLoader("gcp_pal.schema", "Schema")
+Storage = LazyLoader("gcp_pal.storage", "Storage")
+Parquet = LazyLoader("gcp_pal.storage", "Parquet")
+SecretManager = LazyLoader("gcp_pal.secretmanager", "SecretManager")
