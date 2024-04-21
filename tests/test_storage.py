@@ -1,7 +1,7 @@
 import os
 import gcsfs
 from uuid import uuid4
-from gcp_tools import Storage
+from gcp_pal import Storage
 
 
 # Utilities which do not depend on Storage class

@@ -2,12 +2,12 @@ import os
 import time
 import datetime
 
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("google.cloud.logging", "Logging")
 from google.cloud import logging
 
-from gcp_tools.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log
 
 
 class LogEntry:

@@ -1,4 +1,4 @@
-from gcp_tools import CloudFunctions
+from gcp_pal import CloudFunctions
 
 
 def test_cloudfunctions_gen1():

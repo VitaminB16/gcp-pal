@@ -1,6 +1,6 @@
 import pytest
 
-from gcp_tools.request import Request
+from gcp_pal.request import Request
 
 
 @pytest.fixture

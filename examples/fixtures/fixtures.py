@@ -1,5 +1,5 @@
 def write_external_csv_file(data, bucket_name, file_name):
-    from gcp_tools import Storage
+    from gcp_pal import Storage
 
     data = {
         "name": ["Alice", "Bob", "Charlie"],

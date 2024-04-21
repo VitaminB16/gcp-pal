@@ -5,7 +5,7 @@ deployment and invocation of Google Cloud Run services.
 
 
 def example_cloud_run():
-    from gcp_tools import CloudRun
+    from gcp_pal import CloudRun
 
     service_name = f"example-service-123"
     codebase_path = "samples/cloud_run"

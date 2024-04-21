@@ -4,7 +4,7 @@ Example function to demonstrate how to use the Storage module for Google Cloud S
 
 
 def example_bucket_operations():
-    from gcp_tools import Storage
+    from gcp_pal import Storage
     from uuid import uuid4
 
     bucket_name = f"example_bucket_{uuid4()}"
@@ -25,7 +25,7 @@ def example_bucket_operations():
 
 
 def example_upload_download():
-    from gcp_tools import Storage
+    from gcp_pal import Storage
     from uuid import uuid4
 
     bucket_name = f"example_bucket_{uuid4()}"
@@ -53,7 +53,7 @@ def example_upload_download():
 def example_parquet_read_write():
     import pandas as pd
     from uuid import uuid4
-    from gcp_tools import Storage
+    from gcp_pal import Storage
 
     bucket_name = f"example_bucket_{uuid4()}"
     file_name = "example.parquet"

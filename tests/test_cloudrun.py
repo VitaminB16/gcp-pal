@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from gcp_tools import CloudRun
+from gcp_pal import CloudRun
 
 
 def test_cloudrun():

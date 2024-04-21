@@ -5,7 +5,7 @@ deployment and invocation of Google Cloud Functions.
 
 
 def example_cloud_functions():
-    from gcp_tools import CloudFunctions
+    from gcp_pal import CloudFunctions
 
     function_name = f"example-function-123"
     codebase_path = "samples/cloud_function"

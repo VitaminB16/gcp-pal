@@ -1,14 +1,14 @@
 import os
 import json
 
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("google.cloud.secretmanager", "SecretManager")
 try_import("google.api_core.exceptions", "SecretManager")
 from google.cloud import secretmanager
 import google.api_core.exceptions
 
-from gcp_tools.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log
 
 
 class SecretManager:

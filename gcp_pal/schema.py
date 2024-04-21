@@ -1,5 +1,5 @@
 from datetime import datetime, date, time
-from gcp_tools.utils import (
+from gcp_pal.utils import (
     force_list,
     is_series,
     is_dataframe,

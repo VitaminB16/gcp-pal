@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "gcp-tools"
+name = "gcp-pal"
 version = "0.1.0"
 description = ""
 authors = ["VitaminB16 <artemiy.nosov@gmail.com>"]

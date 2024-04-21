@@ -12,7 +12,7 @@ def try_import(module_name, origin_module=None):
     - module_name (str): The name of the module to be imported.
     - origin_module (str, optional): The module that is attempting to perform the import.
     """
-    from gcp_tools.config.vars import PYPI_NAMES
+    from gcp_pal.config.vars import PYPI_NAMES
 
     try:
         return importlib.import_module(module_name)
@@ -40,7 +40,7 @@ LIST_LIKE_TYPES = (list, tuple, set, frozenset, collections.abc.KeysView)
 if os.getenv("PLATFORM", "GCP") in ["GCP", "local"]:
     client = gcp_logging.Client()
     handler = gcp_logging.handlers.CloudLoggingHandler(
-        client, name="gcp_tools", transport=SyncTransport
+        client, name="gcp_pal", transport=SyncTransport
     )
     client.setup_logging()
 

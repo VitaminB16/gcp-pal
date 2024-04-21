@@ -5,7 +5,7 @@ creating and managing Scheduler jobs.
 
 
 def example_scheduler():
-    from gcp_tools import CloudScheduler
+    from gcp_pal import CloudScheduler
 
     job_name = f"example-job-123"
     schedule = "*/2 * * * *"  # Run every 2 minutes

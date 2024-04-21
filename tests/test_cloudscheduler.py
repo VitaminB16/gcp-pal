@@ -1,7 +1,7 @@
 from uuid import uuid4
 import time
 
-from gcp_tools import CloudScheduler
+from gcp_pal import CloudScheduler
 
 
 def test_cloud_scheduler():

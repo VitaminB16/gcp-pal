@@ -1,10 +1,10 @@
 import os
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("gcsfs", "Storage")
 import gcsfs
 
-from gcp_tools.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log
 
 
 class Storage:
@@ -423,7 +423,7 @@ class Storage:
         """
         path = self._suffix_path(path)
         if path.endswith(".parquet") or path.endswith(".parquet/"):
-            from gcp_tools import Parquet
+            from gcp_pal import Parquet
 
             return Parquet(path).write(data, **kwargs)
         with self.fs.open(path, mode=mode) as f:
@@ -460,7 +460,7 @@ class Storage:
         self.fs.invalidate_cache()
         path = self._suffix_path(path)
         if path.endswith(".parquet") or path.endswith(".parquet/"):
-            from gcp_tools import Parquet
+            from gcp_pal import Parquet
 
             return Parquet(path).read(**kwargs)
         with self.fs.open(path, mode="r") as f:

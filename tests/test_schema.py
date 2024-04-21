@@ -4,7 +4,7 @@ import pyarrow as pa
 from datetime import datetime
 from google.cloud import bigquery
 
-from gcp_tools.schema import (
+from gcp_pal.schema import (
     enforce_schema,
     infer_schema,
     Schema,

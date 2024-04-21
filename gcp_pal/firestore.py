@@ -3,13 +3,13 @@ from __future__ import annotations
 import os
 import json
 import concurrent.futures
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("google.cloud.firestore", "Firestore")
 from google.cloud import firestore
 
-from gcp_tools.schema import enforce_schema
-from gcp_tools.utils import log, is_dataframe, get_auth_default
+from gcp_pal.schema import enforce_schema
+from gcp_pal.utils import log, is_dataframe, get_auth_default
 
 
 class Firestore:

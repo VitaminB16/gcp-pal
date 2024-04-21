@@ -4,7 +4,7 @@ Example module to demonstrate how the Firestore module can be used for Google Cl
 
 
 def example_perations():
-    from gcp_tools import Firestore
+    from gcp_pal import Firestore
     from uuid import uuid4
 
     collection_name = f"example_collection_{uuid4()}"
@@ -25,7 +25,7 @@ def example_perations():
 
 
 def example_read_write():
-    from gcp_tools import Firestore
+    from gcp_pal import Firestore
     from uuid import uuid4
 
     collection_name = f"example_collection_{uuid4()}"
@@ -44,7 +44,7 @@ def example_read_write():
 
 
 def example_read_write_df():
-    from gcp_tools import Firestore
+    from gcp_pal import Firestore
     from uuid import uuid4
     import pandas as pd
 
@@ -64,7 +64,7 @@ def example_read_write_df():
 
 
 def example_get_ref():
-    from gcp_tools import Firestore
+    from gcp_pal import Firestore
     from uuid import uuid4
 
     collection_name = f"example_collection_{uuid4()}"

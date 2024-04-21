@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from gcp_tools import SecretManager
+from gcp_pal import SecretManager
 
 
 def test_secret_manager():

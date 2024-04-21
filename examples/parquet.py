@@ -4,7 +4,7 @@ Example module to demonstrate how to use the Parquet module for Google Cloud Sto
 
 
 def example_parquet_read_write():
-    from gcp_tools import Storage, Parquet
+    from gcp_pal import Storage, Parquet
     from uuid import uuid4
     import pandas as pd
 
