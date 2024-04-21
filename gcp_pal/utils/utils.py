@@ -307,7 +307,10 @@ def get_auth_default():
     if project is None:
         credentials, project = google_auth.default()
         os.environ["_GOOGLE_AUTH_DEFAULT_PROJECT"] = project
-        os.environ["_GOOGLE_AUTH_DEFAULT_CREDENTIALS"] = credentials.to_json()
+        try:
+            os.environ["_GOOGLE_AUTH_DEFAULT_CREDENTIALS"] = credentials.to_json()
+        except AttributeError:
+            pass
         print(f"Obtained default project: {project}")
     return credentials, project
 
