@@ -98,7 +98,9 @@ class Request:
             if "iam.serviceAccounts.getOpenIdToken" in response.text:
                 role = "Service Account Token Creator"
                 acc = self.service_account
-                log(f"Request - Error: Ensure the service account {acc} has the '{role}' role.")
+                log(
+                    f"Request - Error: Ensure the service account {acc} has the '{role}' role."
+                )
             else:
                 log(f"Request - Error fetching identity token: {response.text}")
         return None

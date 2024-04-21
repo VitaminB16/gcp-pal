@@ -9,7 +9,7 @@ try_import("google.cloud.firestore", "Firestore")
 from google.cloud import firestore
 
 from gcp_pal.schema import enforce_schema
-from gcp_pal.utils import log, is_dataframe, get_auth_default
+from gcp_pal.utils import is_dataframe, get_auth_default, log
 
 
 class Firestore:

@@ -16,3 +16,5 @@ output/**.py
 tests_output/*
 *.txt
 *.zip
+*.tar.gz
+*.whl

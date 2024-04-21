@@ -9,7 +9,7 @@ from google.cloud import bigquery
 try_import("google.api_core.exceptions", "BigQuery")
 from google.cloud.exceptions import NotFound as NotFoundError
 
-from gcp_pal.utils import log, is_dataframe, get_auth_default, orient_dict
+from gcp_pal.utils import is_dataframe, get_auth_default, orient_dict, log
 from gcp_pal.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
 
 
@@ -383,7 +383,9 @@ class BigQuery:
             log(f"BigQuery - Data inserted into: {self.table}")
             return True
         else:
-            log(f"BigQuery - Errors occurred while inserting data into: {self.table} -- {errors}")
+            log(
+                f"BigQuery - Errors occurred while inserting data into: {self.table} -- {errors}"
+            )
             return False
 
     def write(self, data, schema=None):

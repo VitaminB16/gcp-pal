@@ -4,8 +4,6 @@ import datetime
 
 from gcp_pal.utils import try_import
 
-try_import("google.cloud.logging", "Logging")
-from google.cloud import logging
 
 from gcp_pal.utils import get_auth_default, log
 
@@ -72,6 +70,9 @@ class Logging:
         if self.project in Logging._client:
             self.client = Logging._client[self.project]
         else:
+            try_import("google.cloud.logging", "Logging")
+            from google.cloud import logging
+
             self.client = logging.Client(project=self.project)
             Logging._client[self.project] = self.client
 
