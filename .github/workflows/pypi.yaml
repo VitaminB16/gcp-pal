@@ -34,10 +34,6 @@ jobs:
         poetry config virtualenvs.create false --local
         poetry install
 
-    - name: Set up Docker for testing
-      uses: docker-practice/actions-setup-docker@master
-      timeout-minutes: 12
-
     - name: Run tests
       run: |
         ./runtests.sh | tee output.txt
