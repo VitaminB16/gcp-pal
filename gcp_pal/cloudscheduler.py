@@ -16,8 +16,7 @@ from google.cloud.scheduler_v1.types import (
     OidcToken,
 )
 
-from gcp_pal.utils import get_auth_default
-from gcp_pal.utils.log import log
+from gcp_pal.utils import get_auth_default, log
 
 
 class CloudScheduler:

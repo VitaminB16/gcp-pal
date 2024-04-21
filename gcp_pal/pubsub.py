@@ -5,8 +5,7 @@ from gcp_pal.utils import try_import
 try_import("google.cloud.pubsub_v1", "PubSub")
 from google.cloud import pubsub_v1
 
-from gcp_pal.utils.log import log
-from gcp_pal.utils import get_auth_default
+from gcp_pal.utils import get_auth_default, log
 
 
 class PubSub:

@@ -9,8 +9,7 @@ from google.cloud import bigquery
 try_import("google.api_core.exceptions", "BigQuery")
 from google.cloud.exceptions import NotFound as NotFoundError
 
-from gcp_pal.utils.log import log
-from gcp_pal.utils import is_dataframe, get_auth_default, orient_dict
+from gcp_pal.utils import is_dataframe, get_auth_default, orient_dict, log
 from gcp_pal.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
 
 

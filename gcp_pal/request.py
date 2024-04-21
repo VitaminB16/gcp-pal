@@ -11,7 +11,7 @@ import google.auth.exceptions
 from google.oauth2 import id_token
 from google.auth.transport.requests import Request as AuthRequest
 
-from gcp_pal.utils.log import log
+from gcp_pal.utils import log
 
 
 class Request:
