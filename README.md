@@ -15,7 +15,7 @@ TODO:
 [x] Cloud Scheduler Module
 [x] Add examples
 [x] Publish to PyPI
-[ ] Tests
+[x] Tests
 ...
 -->
 
