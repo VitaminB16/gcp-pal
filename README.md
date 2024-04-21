@@ -18,9 +18,9 @@ TODO:
 ...
 -->
 
-# GCP Tools Library
+# GCP Pal Library
 
-The `gcp-tools` library provides a set of utilities for interacting with Google Cloud Platform (GCP) services, streamlining the process of implementing GCP functionalities within your Python applications.
+The `gcp-pal` library provides a set of utilities for interacting with Google Cloud Platform (GCP) services, streamlining the process of implementing GCP functionalities within your Python applications.
 
 The utilities are designed to work with the `google-cloud` Python libraries, providing a more user-friendly and intuitive interface for common tasks.
 
@@ -28,7 +28,7 @@ The utilities are designed to work with the `google-cloud` Python libraries, pro
 
 ## Configuration
 
-Before you can start using the `gcp-tools` library with Firestore or any other GCP services, make sure you either have set up your GCP credentials properly or have the necessary permissions to access the services you want to use:
+Before you can start using the `gcp-pal` library with Firestore or any other GCP services, make sure you either have set up your GCP credentials properly or have the necessary permissions to access the services you want to use:
 
 ```bash
 gcloud auth application-default login
@@ -44,14 +44,14 @@ gcloud config set project PROJECT_ID
 
 ## Firestore Module
 
-The Firestore module in the `gcp-tools` library allows you to perform read and write operations on Firestore documents and collections.
+The Firestore module in the `gcp-pal` library allows you to perform read and write operations on Firestore documents and collections.
 
 ### Initializing Firestore
 
-First, import the Firestore class from the `gcp_tools` module:
+First, import the Firestore class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import Firestore
+from gcp_pal import Firestore
 ```
 
 ### Writing Data to Firestore
@@ -130,14 +130,14 @@ print(docs)
 
 ## PubSub Module
 
-The PubSub module in the `gcp-tools` library allows you to publish and subscribe to PubSub topics.
+The PubSub module in the `gcp-pal` library allows you to publish and subscribe to PubSub topics.
 
 ### Initializing PubSub
 
-First, import the PubSub class from the `gcp_tools` module:
+First, import the PubSub class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import PubSub
+from gcp_pal import PubSub
 ```
 
 ### Publishing Messages to a Topic
@@ -154,14 +154,14 @@ PubSub(topic).publish(message)
 
 ## Request Module
 
-The Request module in the `gcp-tools` library allows you to make authorized HTTP requests.
+The Request module in the `gcp-pal` library allows you to make authorized HTTP requests.
 
 ### Initializing Request
 
-Import the Request class from the `gcp_tools` module:
+Import the Request class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import Request
+from gcp_pal import Request
 ```
 
 ### Making Authorized Get/Post/Put Requests
@@ -186,14 +186,14 @@ print(put_response)
 
 ## BigQuery Module
 
-The BigQuery module in the `gcp-tools` library allows you to perform read and write operations on BigQuery datasets and tables.
+The BigQuery module in the `gcp-pal` library allows you to perform read and write operations on BigQuery datasets and tables.
 
 ### Initializing BigQuery
 
-Import the BigQuery class from the `gcp_tools` module:
+Import the BigQuery class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import BigQuery
+from gcp_pal import BigQuery
 ```
 
 ### Listing objects
@@ -297,14 +297,14 @@ The allowed file formats are CSV, JSON, Avro, Parquet (single and partitioned), 
 
 ## Storage Module
 
-The Storage module in the `gcp-tools` library allows you to perform read and write operations on Google Cloud Storage buckets and objects.
+The Storage module in the `gcp-pal` library allows you to perform read and write operations on Google Cloud Storage buckets and objects.
 
 ### Initializing Storage
 
-Import the Storage class from the `gcp_tools` module:
+Import the Storage class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import Storage
+from gcp_pal import Storage
 ```
 
 ### Listing objects
@@ -360,14 +360,14 @@ Storage("bucket/uploaded_file.txt").download("downloaded_file.txt")
 
 ## Parquet Module
 
-The Parquet module in the `gcp-tools` library allows you to read and write Parquet files in Google Cloud Storage.
+The Parquet module in the `gcp-pal` library allows you to read and write Parquet files in Google Cloud Storage.
 
 ### Initializing Parquet
 
-Import the Parquet class from the `gcp_tools` module:
+Import the Parquet class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import Parquet
+from gcp_pal import Parquet
 ```
 
 ### Reading Parquet files
@@ -408,10 +408,10 @@ The Schema module allows one to translate schemas between different formats, suc
 
 ### Initializing Schema
 
-Import the Schema class from the `gcp-tools.schema` module:
+Import the `Schema` class from the `gcp_pal` module:
 
 ```python
-from gcp_tools.schema import Schema
+from gcp_pal.schema import Schema
 ```
 
 ### Translating schemas
@@ -507,14 +507,14 @@ pyarrow_schema = Schema(df, is_data=True).pyarrow()
 
 ## Cloud Functions Module
 
-The Cloud Functions module in the `gcp-tools` library allows you to deploy and manage Cloud Functions.
+The Cloud Functions module in the `gcp-pal` library allows you to deploy and manage Cloud Functions.
 
 ### Initializing Cloud Functions
 
-Import the `CloudFunctions` class from the `gcp_tools` module:
+Import the `CloudFunctions` class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import CloudFunctions
+from gcp_pal import CloudFunctions
 ```
 
 ### Deploying Cloud Functions
@@ -584,14 +584,14 @@ print(details)
 
 ## Docker Module
 
-The Docker module in the `gcp-tools` library allows you to build and push Docker images to Google Container Registry.
+The Docker module in the `gcp-pal` library allows you to build and push Docker images to Google Container Registry.
 
 ### Initializing Docker
 
-Import the Docker class from the `gcp_tools` module:
+Import the Docker class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import Docker
+from gcp_pal import Docker
 ```
 
 ### Building Docker images
@@ -626,14 +626,14 @@ Docker("image-name").push(destination="gcr.io/my-project/image-name:5fbd72c")
 
 ## Cloud Run Module
 
-The Cloud Run module in the `gcp-tools` library allows you to deploy and manage Cloud Run services.
+The Cloud Run module in the `gcp-pal` library allows you to deploy and manage Cloud Run services.
 
 ### Initializing Cloud Run
 
-Import the `CloudRun` class from the `gcp_tools` module:
+Import the `CloudRun` class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import CloudRun
+from gcp_pal import CloudRun
 ```
 
 ### Deploying Cloud Run services
@@ -721,14 +721,14 @@ print(job_status)
 
 ## Logging Module
 
-The Logging module in the `gcp-tools` library allows you to access and manage logs from Google Cloud Logging.
+The Logging module in the `gcp-pal` library allows you to access and manage logs from Google Cloud Logging.
 
 ### Initializing Logging
 
-Import the Logging class from the `gcp_tools` module:
+Import the Logging class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import Logging
+from gcp_pal import Logging
 ```
 
 ### Listing logs
@@ -779,14 +779,14 @@ Logging().stream()
 
 ## Secret Manager Module
 
-The Secret Manager module in the `gcp-tools` library allows you to access and manage secrets from Google Cloud Secret Manager.
+The Secret Manager module in the `gcp-pal` library allows you to access and manage secrets from Google Cloud Secret Manager.
 
 ### Initializing Secret Manager
 
-Import the SecretManager class from the `gcp_tools` module:
+Import the SecretManager class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import SecretManager
+from gcp_pal import SecretManager
 ```
 
 ### Creating secrets
@@ -843,14 +843,14 @@ SecretManager("secret1").delete()
 
 ## Cloud Scheduler Module
 
-The Cloud Scheduler module in the `gcp-tools` library allows you to create and manage Cloud Scheduler jobs.
+The Cloud Scheduler module in the `gcp-pal` library allows you to create and manage Cloud Scheduler jobs.
 
 ### Initializing Cloud Scheduler
 
-Import the CloudScheduler class from the `gcp_tools` module:
+Import the CloudScheduler class from the `gcp_pal` module:
 
 ```python
-from gcp_tools import CloudScheduler
+from gcp_pal import CloudScheduler
 ```
 
 ### Creating Cloud Scheduler jobs

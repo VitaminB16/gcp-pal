@@ -1,7 +1,7 @@
 import os
 import json
 
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("google.cloud.scheduler_v1", "CloudScheduler")
 try_import("google.api_core.exceptions", "CloudScheduler")
@@ -16,7 +16,7 @@ from google.cloud.scheduler_v1.types import (
     OidcToken,
 )
 
-from gcp_tools.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log
 
 
 class CloudScheduler:

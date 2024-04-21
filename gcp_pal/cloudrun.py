@@ -3,7 +3,7 @@ import json
 import random
 from uuid import uuid4
 
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("google.cloud.run_v2", "CloudRun")
 try_import("google.api_core.exceptions", "CloudRun")
@@ -19,8 +19,8 @@ from google.cloud.run_v2.types import (
 )
 import google.api_core.exceptions
 
-from gcp_tools.pydocker import Docker
-from gcp_tools.utils import get_auth_default, log
+from gcp_pal.pydocker import Docker
+from gcp_pal.utils import get_auth_default, log
 
 
 class CloudRun:
@@ -275,7 +275,7 @@ class CloudRun:
         if isinstance(data, dict):
             data = json.dumps(data)
 
-        from gcp_tools import Request
+        from gcp_pal import Request
 
         uri = self.get().uri
 
@@ -303,7 +303,7 @@ class CloudRun:
         """
         Parse YAML file to extract environment variables as a list of EnvVar objects.
         """
-        from gcp_tools.utils import load_yaml
+        from gcp_pal.utils import load_yaml
 
         if yaml_file is None:
             return []

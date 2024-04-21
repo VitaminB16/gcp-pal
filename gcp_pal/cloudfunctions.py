@@ -1,7 +1,7 @@
 import os
 import json
 
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("google.cloud.functions_v2", "CloudFunctions")
 import google.cloud.functions_v2 as functions_v2
@@ -17,7 +17,7 @@ from google.cloud.functions_v2 import (
     Environment,
 )
 
-from gcp_tools.utils import get_auth_default, log, get_all_kwargs
+from gcp_pal.utils import get_auth_default, log, get_all_kwargs
 
 
 class CloudFunctions:
@@ -119,7 +119,7 @@ class CloudFunctions:
         if isinstance(data, dict):
             data = json.dumps(data)
 
-        from gcp_tools import Request
+        from gcp_pal import Request
 
         uri = self.get().service_config.uri
 
@@ -205,8 +205,8 @@ class CloudFunctions:
         if not os.path.exists(path):
             raise FileNotFoundError(f"Local file not found: {path}")
 
-        from gcp_tools import Storage
-        from gcp_tools.utils import zip_directory
+        from gcp_pal import Storage
+        from gcp_pal.utils import zip_directory
 
         log(f"Cloud Function - Creating zip file from {path} and uploading to GCS...")
         zip_path = zip_directory(path)
@@ -245,7 +245,7 @@ class CloudFunctions:
 
         log(f"Cloud Function - Deploying '{self.name}' from repository {path}...")
         if path.startswith("gs://"):
-            from gcp_tools import Storage
+            from gcp_pal import Storage
 
             obj = Storage(path)
             bucket_name, file_name = obj.bucket_name, obj.file_name

@@ -3,7 +3,7 @@ import pandas as pd
 from uuid import uuid4
 from google.cloud import firestore
 
-from gcp_tools.firestore import Firestore
+from gcp_pal.firestore import Firestore
 
 
 def dicts_equal(d1, d2):

@@ -4,7 +4,7 @@ Example module to demonstrate how the Schema module is used in this library
 
 
 def example_translate():
-    from gcp_tools import Schema
+    from gcp_pal import Schema
 
     schema = {"a": "int", "b": "string", "c": "float"}
     str_schema = Schema(schema).str()
@@ -20,7 +20,7 @@ def example_translate():
 
 
 def example_from_data():
-    from gcp_tools import Schema
+    from gcp_pal import Schema
 
     data = {
         "a": [1, 2, 3],
@@ -40,7 +40,7 @@ def example_from_data():
     print(f"Python schema: {python_schema}")
 
     # Application: Create empty BigQuery table with schema
-    from gcp_tools import BigQuery
+    from gcp_pal import BigQuery
 
     table_id = "example_dataset.example_table"
     BigQuery(table_id).create(schema=bigquery_schema)

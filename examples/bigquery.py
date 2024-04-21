@@ -10,7 +10,7 @@ def example_table():
     Example function to demonstrate how to use the BigQuery module for creating a dataset,
         table, inserting data, querying the table, and deleting the table and dataset.
     """
-    from gcp_tools import BigQuery, Schema
+    from gcp_pal import BigQuery, Schema
     from datetime import datetime
 
     # List all datasets in the project
@@ -91,7 +91,7 @@ def example_table():
 
 
 def example_external_table():
-    from gcp_tools import BigQuery, Schema
+    from gcp_pal import BigQuery, Schema
     from examples.fixtures import write_external_csv_file
 
     data = {
@@ -124,7 +124,7 @@ def example_table_from_data():
     """
     Example function to demonstrate how to use the BigQuery module for creating a table directly from data.
     """
-    from gcp_tools import BigQuery
+    from gcp_pal import BigQuery
 
     data = {
         "name": ["Alice", "Bob", "Charlie"],

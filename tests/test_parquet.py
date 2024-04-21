@@ -3,7 +3,7 @@ import pyarrow.parquet as pq
 import pandas as pd
 from uuid import uuid4
 
-from gcp_tools import Parquet, Storage
+from gcp_pal import Parquet, Storage
 
 
 def test_write_single():
@@ -75,7 +75,7 @@ def test_read_single():
 
 
 def test_read_partitioned():
-    from gcp_tools.schema import Schema
+    from gcp_pal.schema import Schema
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
@@ -102,7 +102,7 @@ def test_read_partitioned():
 
 
 def test_read_partitions_only():
-    from gcp_tools.schema import Schema
+    from gcp_pal.schema import Schema
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})

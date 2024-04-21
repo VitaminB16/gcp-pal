@@ -1,5 +1,5 @@
 import os
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("pyarrow", "Parquet")
 try_import("pyarrow.parquet", "Parquet")
@@ -10,7 +10,7 @@ from typing import List
 from urllib.parse import unquote
 
 
-from gcp_tools.utils import is_dataframe, force_list
+from gcp_pal.utils import is_dataframe, force_list
 
 
 class Parquet:
@@ -40,7 +40,7 @@ class Parquet:
         - kwargs: Additional arguments to pass to `pyarrow` or `pandas`.
         """
         if schema is None:
-            from gcp_tools.schema import Schema
+            from gcp_pal.schema import Schema
 
             schema = Schema(data).pyarrow()
         if partition_cols:
@@ -130,14 +130,14 @@ class Parquet:
         - read_partitions_only: If true, it will read the data from partition names only using `glob`.
         """
         if read_partitions_only:
-            from gcp_tools.schema import Schema
+            from gcp_pal.schema import Schema
 
             df = _get_partitions_df(self.path)
             schema = Schema(schema).pandas()
             df = df.astype(schema)
         else:
             if isinstance(schema, dict):
-                from gcp_tools.schema import Schema
+                from gcp_pal.schema import Schema
 
                 schema = Schema(schema).pyarrow()
             try:
@@ -231,7 +231,7 @@ def _get_all_partition_paths(path):
     """
     Get the partitions of the parquet file
     """
-    from gcp_tools import Storage
+    from gcp_pal import Storage
 
     partition_cols = _get_partition_cols(path)
     glob_query = os.path.join(path, *["*"] * len(partition_cols))
@@ -243,7 +243,7 @@ def _get_partition_cols(path):
     """
     Get the partitions of the parquet file without reading the files
     """
-    from gcp_tools import Storage
+    from gcp_pal import Storage
 
     glob_query = os.path.join(path, "*")
     all_paths = Storage().glob(glob_query)
@@ -257,8 +257,8 @@ def _get_partition_cols(path):
 
 if __name__ == "__main__":
     import pandas as pd
-    from gcp_tools import Storage
-    from gcp_tools.schema import Schema
+    from gcp_pal import Storage
+    from gcp_pal.schema import Schema
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})

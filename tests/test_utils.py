@@ -1,5 +1,5 @@
 import pandas as pd
-from gcp_tools.utils import (
+from gcp_pal.utils import (
     is_series,
     force_list,
     is_dataframe,
@@ -233,7 +233,7 @@ def test_zip_directory():
     import os
     import shutil
     from zipfile import ZipFile
-    from gcp_tools.utils import zip_directory
+    from gcp_pal.utils import zip_directory
 
     success = {}
     dir_name = "test_dir_123"

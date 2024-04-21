@@ -1,4 +1,4 @@
-from gcp_tools import (
+from gcp_pal import (
     BigQuery,
     Firestore,
     Storage,

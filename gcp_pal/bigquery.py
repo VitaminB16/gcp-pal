@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("google.cloud.bigquery", "BigQuery")
 from google.cloud import bigquery
@@ -9,8 +9,8 @@ from google.cloud import bigquery
 try_import("google.api_core.exceptions", "BigQuery")
 from google.cloud.exceptions import NotFound as NotFoundError
 
-from gcp_tools.utils import log, is_dataframe, get_auth_default, orient_dict
-from gcp_tools.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
+from gcp_pal.utils import log, is_dataframe, get_auth_default, orient_dict
+from gcp_pal.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
 
 
 class SQLBuilder:
@@ -554,15 +554,15 @@ class BigQuery:
         if not uri.startswith("gs://"):
             uri = f"gs://{uri}"
 
-        from gcp_tools.storage import Storage
+        from gcp_pal.storage import Storage
 
         if uri.endswith(".parquet"):
             source_format = "PARQUET"
             # Check is the file is partitioned
-            from gcp_tools.storage import Storage
+            from gcp_pal.storage import Storage
 
             if Storage(uri).isdir():
-                from gcp_tools.storage.parquet import _get_partition_cols
+                from gcp_pal.storage.parquet import _get_partition_cols
 
                 extra_metadata["partition_columns"] = _get_partition_cols(uri)
                 if uri.endswith("/"):
@@ -814,7 +814,7 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
     import pandas as pd
-    from gcp_tools import Storage
+    from gcp_pal import Storage
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
@@ -851,7 +851,7 @@ if __name__ == "__main__":
 if __name__ == "__main__":
     import pandas as pd
     from uuid import uuid4
-    from gcp_tools.storage import Storage, Parquet
+    from gcp_pal.storage import Storage, Parquet
 
     success = {}
     data = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})

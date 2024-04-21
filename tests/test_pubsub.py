@@ -1,6 +1,6 @@
 import pytest
 
-from gcp_tools.pubsub import PubSub
+from gcp_pal.pubsub import PubSub
 
 
 @pytest.fixture

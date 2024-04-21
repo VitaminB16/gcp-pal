@@ -1,11 +1,11 @@
 import os
 import json
-from gcp_tools.utils import try_import
+from gcp_pal.utils import try_import
 
 try_import("google.cloud.pubsub_v1", "PubSub")
 from google.cloud import pubsub_v1
 
-from gcp_tools.utils import log, get_auth_default
+from gcp_pal.utils import log, get_auth_default
 
 
 class PubSub:

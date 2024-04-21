@@ -4,7 +4,7 @@ from uuid import uuid4
 from pandas_gbq import read_gbq
 from google.cloud import bigquery
 
-from gcp_tools import BigQuery
+from gcp_pal import BigQuery
 
 
 # Basic utils
@@ -195,7 +195,7 @@ def test_all_BQ():
 
 
 def test_sql_builder():
-    from gcp_tools.bigquery import SQLBuilder
+    from gcp_pal.bigquery import SQLBuilder
 
     success = {}
 
@@ -387,7 +387,7 @@ def test_write():
 def test_infer_uri():
     import pyarrow as pa
     import pyarrow.parquet as pq
-    from gcp_tools import Storage
+    from gcp_pal import Storage
 
     success = {}
 
@@ -447,8 +447,8 @@ def test_exists():
 
 def test_create_extable_partitioned_parquet():
     import pandas as pd
-    from gcp_tools import Storage, Parquet
-    from gcp_tools.schema import Schema
+    from gcp_pal import Storage, Parquet
+    from gcp_pal.schema import Schema
 
     # Test partitioned parquet
 
@@ -485,8 +485,8 @@ def test_create_extable_partitioned_parquet():
 
 def test_create_extable_single_parquet():
     import pandas as pd
-    from gcp_tools import Storage, Parquet
-    from gcp_tools.schema import Schema
+    from gcp_pal import Storage, Parquet
+    from gcp_pal.schema import Schema
 
     # Test partitioned parquet
 
@@ -524,8 +524,8 @@ def test_create_extable_single_parquet():
 
 def test_create_extable_csv():
     import pandas as pd
-    from gcp_tools import Storage, Parquet
-    from gcp_tools.schema import Schema
+    from gcp_pal import Storage, Parquet
+    from gcp_pal.schema import Schema
 
     # Test partitioned parquet
 
@@ -563,8 +563,8 @@ def test_create_extable_csv():
 
 def test_create_extable_json():
     import pandas as pd
-    from gcp_tools import Storage, Parquet
-    from gcp_tools.schema import Schema
+    from gcp_pal import Storage, Parquet
+    from gcp_pal.schema import Schema
 
     # Test partitioned parquet
 
@@ -602,8 +602,8 @@ def test_create_extable_json():
 
 def test_create_extable_avro():
     import pandas as pd
-    from gcp_tools import Storage, Parquet
-    from gcp_tools.schema import Schema
+    from gcp_pal import Storage, Parquet
+    from gcp_pal.schema import Schema
     from fastavro import writer, parse_schema
 
     # Test partitioned parquet
@@ -653,8 +653,8 @@ def test_create_extable_avro():
 
 def test_create_extable_orc():
     import pandas as pd
-    from gcp_tools import Storage
-    from gcp_tools.schema import Schema
+    from gcp_pal import Storage
+    from gcp_pal.schema import Schema
 
     # Test partitioned parquet
 
