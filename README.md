@@ -27,6 +27,18 @@ The utilities are designed to work with the `google-cloud` Python libraries, pro
 
 ---
 
+## Installation
+
+The package is available on PyPI as `gcp-pal`. To install with `pip`:
+
+```bash
+pip install gcp-pal
+```
+
+The library has no dependencies other than Python >3.10. Module-specific dependencies will be shown at module initialisation or when attempting to use certain features.
+
+---
+
 ## Configuration
 
 Before you can start using the `gcp-pal` library with Firestore or any other GCP services, make sure you either have set up your GCP credentials properly or have the necessary permissions to access the services you want to use:
