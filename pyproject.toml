@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gcp-pal"
-version = "1.0.1"
+version = "1.0.2"
 description = ""
 authors = ["VitaminB16 <artemiy.nosov@gmail.com>"]
 readme = "README.md"
@@ -33,6 +33,7 @@ pyyaml = "^6.0.1"
 google-cloud-secret-manager = "^2.19.0"
 google-cloud-scheduler = "^2.13.3"
 google-cloud-logging = "^3.10.0"
+google-cloud-resource-manager = "^1.12.3"
 
 [build-system]
 requires = ["poetry-core"]
