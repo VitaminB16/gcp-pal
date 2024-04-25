@@ -11,6 +11,7 @@ PYPI_NAMES = {
     "google.cloud.functions_v2": "google-cloud-functions",
     "google.cloud.scheduler_v1": "google-cloud-scheduler",
     "google.cloud.secretmanager": "google-cloud-secret-manager",
+    "google.cloud.resource_manager": "google-cloud-resource-manager",
     "google.cloud.run_v1": "google-cloud-run",
     "google.cloud.run_v2": "google-cloud-run",
     "gcsfs": "gcsfs",

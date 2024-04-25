@@ -39,7 +39,7 @@ if err is not None:
     from google.cloud import logging as gcp_logging
     from google.cloud.logging.handlers.transports import SyncTransport
 
-    if os.getenv("PLATFORM", "GCP") in ["GCP", "local"]:
+    if os.getenv("PLATFORM", "") in ["GCP", "local"]:
         client = gcp_logging.Client()
         handler = gcp_logging.handlers.CloudLoggingHandler(
             client, name="gcp_pal", transport=SyncTransport
@@ -292,7 +292,7 @@ def orient_dict(d, orientation=""):
     return output
 
 
-def get_auth_default():
+def get_auth_default(errors="raise"):
     """
     Get the default project from google.auth.default() and store it in an environment variable.
 
@@ -304,14 +304,28 @@ def get_auth_default():
 
     project = os.getenv("_GOOGLE_AUTH_DEFAULT_PROJECT", None)
     credentials = os.getenv("_GOOGLE_AUTH_DEFAULT_CREDENTIALS", None)
-    if project is None:
-        credentials, project = google_auth.default()
-        os.environ["_GOOGLE_AUTH_DEFAULT_PROJECT"] = project
+    if project is not None:
         try:
-            os.environ["_GOOGLE_AUTH_DEFAULT_CREDENTIALS"] = credentials.to_json()
+            credentials = google_auth.credentials.Credentials.from_json(credentials)
         except AttributeError:
             pass
-        print(f"Obtained default project: {project}")
+        return credentials, project
+
+    credentials, project = google_auth.default()
+    if project is None:
+        err = "No default project found. Please set the PROJECT environment variable."
+        if errors == "raise":
+            raise ValueError(err)
+        else:
+            print("Warning:", err)
+        return credentials, project
+
+    os.environ["_GOOGLE_AUTH_DEFAULT_PROJECT"] = project
+    try:
+        os.environ["_GOOGLE_AUTH_DEFAULT_CREDENTIALS"] = credentials.to_json()
+    except AttributeError:
+        pass
+    print(f"Obtained default project: {project}")
     return credentials, project
 
 
