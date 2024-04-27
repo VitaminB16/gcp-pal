@@ -14,7 +14,9 @@ class Project:
 
     def __init__(self, project_id: str = None, folder: str = None):
         self.project_id = (
-            project_id or os.environ.get("PROJECT") or get_auth_default()[1]
+            project_id
+            or os.environ.get("PROJECT")
+            or get_auth_default(errors="ignore")[1]
         )
         self.folder = folder
         self.parent = f"folders/{self.folder}" if self.folder else None
