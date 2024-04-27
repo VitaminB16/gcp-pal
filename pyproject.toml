@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gcp-pal"
-version = "1.0.3"
+version = "1.0.4"
 description = ""
 authors = ["VitaminB16 <artemiy.nosov@gmail.com>"]
 readme = "README.md"
