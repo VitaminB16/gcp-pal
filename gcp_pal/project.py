@@ -14,7 +14,9 @@ class Project:
 
     def __init__(self, project_id: str = None, folder: str = None):
         self.project_id = (
-            project_id or os.environ.get("PROJECT") or get_auth_default()[1]
+            project_id
+            or os.environ.get("PROJECT")
+            or get_auth_default(errors="ignore")[1]
         )
         self.folder = folder
         self.parent = f"folders/{self.folder}" if self.folder else None
@@ -44,13 +46,23 @@ class Project:
 
     def delete(self):
         """
-        Deletes a project.
+        Deletes a project. It will be marked for deletion, and will be deleted after 30 days.
 
         Returns:
         - None
         """
         self.client.delete_project(name=self.name)
         log(f"Project - Deleted project '{self.project_id}'.")
+
+    def undelete(self):
+        """
+        Restores a project which has been marked for deletion.
+
+        Returns:
+        - None
+        """
+        self.client.undelete_project(name=self.name)
+        log(f"Project - Restored project '{self.project_id}'.")
 
     def ls(self, active_only: bool = True):
         """
@@ -69,6 +81,28 @@ class Project:
         project_ids = [x.project_id for x in projects]
         return project_ids
 
+    def get(self):
+        """
+        Retrieves the project identified by the specified project ID.
+
+        Returns:
+        - google.cloud.resourcemanager_v3.types.Project
+        """
+        project = self.client.get_project(name=self.name)
+        return project
+
+    def number(self):
+        """
+        Retrieves the project number.
+
+        Returns:
+        - (str) Project number (e.g. '123456789012')
+        """
+        got = self.get()
+        output = got.name.split("/")[-1]
+        return output
+
 
 if __name__ == "__main__":
-    print(Project().ls(active_only=True))
+    # print(Project().ls(active_only=True))
+    print(Project("vitaminb16").get())

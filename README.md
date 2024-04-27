@@ -16,6 +16,7 @@ TODO:
 [x] Add examples
 [x] Publish to PyPI
 [x] Tests
+[x] Project Module
 ...
 -->
 
@@ -957,3 +958,70 @@ CloudScheduler("job-name").run(force=False)
 # Output: Cloud Scheduler job "job-name" not run if it is paused
 ```
 
+
+---
+
+## Project Module
+
+The Project module in the `gcp-pal` library allows you to access and manage Google Cloud projects.
+
+### Initializing Project
+
+Import the Project class from the `gcp_pal` module:
+
+```python
+from gcp_pal import Project
+```
+
+### Listing projects
+
+To list all projects available to the authenticated user, use the `ls` method:
+
+```python
+projects = Project().ls()
+print(projects)
+# Output: ['project1', 'project2']
+```
+
+### Creating projects
+
+To create a new project, use the `create` method:
+
+```python
+Project("new-project").create()
+# Output: Project "new-project" created
+```
+
+### Deleting projects
+
+To delete a project, use the `delete` method:
+
+```python
+Project("project-name").delete()
+# Output: Project "project-name" deleted
+```
+
+Google Cloud will delete the project after 30 days. During this time, to undelete a project, use the `undelete` method:
+
+```python
+Project("project-name").undelete()
+# Output: Project "project-name" undeleted
+```
+
+### Getting project details
+
+To get the details of a project, use the `get` method:
+
+```python
+details = Project("project-name").get()
+print(details)
+# Output: {'name': 'projects/project-id', 'project_id': 'project-id', ...}
+```
+
+To obtain the project number use the `number` method:
+
+```python
+project_number = Project("project-name").number()
+print(project_number)
+# Output: "1234567890"
+```

@@ -292,9 +292,12 @@ def orient_dict(d, orientation=""):
     return output
 
 
-def get_auth_default(errors="raise"):
+def get_auth_default(allow_none=False, errors="raise"):
     """
     Get the default project from google.auth.default() and store it in an environment variable.
+
+    Args:
+    - errors (str): The error handling method. Can be "raise" or "warn".
 
     Returns:
     - str: The default project.
