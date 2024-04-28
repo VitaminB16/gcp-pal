@@ -106,6 +106,8 @@ class Logging:
             time_start = time_end - datetime.timedelta(hours=time_range)
         query = self._generate_query(query, severity, time_start, time_end)
         log(f"Logging - Filter: {query}")
+        if limit is None and query is None:
+            limit = 100
         logs = self.client.list_entries(
             filter_=query, max_results=limit, order_by=order_by
         )
@@ -194,6 +196,7 @@ class Logging:
             self.filters.append(filter_str)
         query = " AND ".join(self.filters)
         self.filters = []  # Reset filters
+        query = None if query == "" else query
         return query
 
 
