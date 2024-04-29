@@ -27,8 +27,8 @@ The `gcp-pal` library provides a set of utilities for interacting with Google Cl
 
 The utilities are designed to work with the `google-cloud` Python libraries, providing a more user-friendly and intuitive interface for common tasks.
 
-Source code: **https://github.com/VitaminB16/gcp-pal**
-PyPI: **https://pypi.org/project/gcp-pal/**
+- Source code: **https://github.com/VitaminB16/gcp-pal**
+- PyPI: **https://pypi.org/project/gcp-pal/**
 
 ---
 
