@@ -5,7 +5,7 @@ try_import("google.cloud.dataplex_v1", "Dataplex")
 from google.cloud.dataplex_v1 import DataplexServiceClient
 from google.cloud.dataplex_v1.types import Lake, Zone, Asset
 
-from gcp_pal.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log, get_all_kwargs
 
 
 class Dataplex:
@@ -77,7 +77,9 @@ class Dataplex:
         Returns:
         - (str): The type of the object.
         """
-        if self.lake and not self.zone and not self.asset:
+        if not self.lake and not self.zone and not self.asset:
+            return "project"
+        elif self.lake and not self.zone and not self.asset:
             return "lake"
         elif self.lake and self.zone and not self.asset:
             return "zone"
@@ -176,6 +178,7 @@ class Dataplex:
         labels: dict = None,
         metadata: dict = {},
         metastore_service: str = None,
+        **kwargs,
     ):
         """
         Creates a lake resource.
@@ -217,6 +220,7 @@ class Dataplex:
         description: str = None,
         labels: dict = None,
         metadata: dict = {},
+        **kwargs,
     ):
         """
         Creates a zone resource in the lake.
@@ -267,6 +271,7 @@ class Dataplex:
         description: str = None,
         labels: dict = None,
         metadata: dict = {},
+        **kwargs,
     ):
         """
         Creates an asset resource in the zone in the lake.
@@ -314,17 +319,197 @@ class Dataplex:
         log(f"Dataplex - Asset '{self.asset_id}' created.")
         return result
 
+    def create_parents(self, **kwargs):
+        """
+        Checks that the parent resources exist. If not, they will be created.
+
+        Returns:
+        - (bool): True if the operation was successful.
+        """
+        # We do not want to pass the redundant kwargs to the create methods of
+        # the parent resources.
+        redundant_kwargs = ["description", "display_name", "labels", "metadata"]
+        kwargs = {k: v for k, v in kwargs.items() if k not in redundant_kwargs}
+        if self.type == "lake":
+            return True
+        elif self.type == "zone":
+            parent_lake = Dataplex(
+                lake=self.lake,
+                project=self.project,
+                location=self.location,
+            )
+            if not parent_lake.exists():
+                log(f"Dataplex - Parent lake '{self.lake}' does not exist.")
+                parent_lake.create_lake(**kwargs)
+        elif self.type == "asset":
+            parent_lake = Dataplex(
+                lake=self.lake,
+                project=self.project,
+                location=self.location,
+            )
+            if not parent_lake.exists():
+                log(f"Dataplex - Parent lake '{self.lake}' does not exist.")
+                parent_lake.create_lake(**kwargs)
+            parent_zone = Dataplex(
+                lake=self.lake,
+                zone=self.zone,
+                project=self.project,
+                location=self.location,
+            )
+            if not parent_zone.exists():
+                log(f"Dataplex - Parent zone '{self.zone}' does not exist.")
+                parent_zone.create_zone(**kwargs)
+        return True
+
+    def create(
+        self,
+        asset_source: str,
+        asset_type: str,
+        zone_type: str = None,
+        location_type: str = None,
+        display_name: str = None,
+        description: str = None,
+        labels: dict = None,
+        metadata: dict = {},
+        **kwargs,
+    ):
+        """
+        Creates the resource. If the lake doesn't exist, it will be created first. Then the zone and the assets will be created.
+
+        Args:
+        - asset_source (str): The source of the asset. Either a bucket name or a dataset name.
+        - asset_type (str): The type of the asset. Either `"storage"` or `"bigquery"`.
+        - zone_type (str): The type of the zone. Either `"raw"` or `"curated"`.
+        - location_type (str): The location type of the zone. Either `"single-region"` or `"multi-region"`.
+        - display_name (str): User-friendly display name of the resource. If not provided, it will be based on the resource_id.
+        - description (str): The description of the resource.
+        - labels (dict): The labels of the resource.
+        - metadata (dict): The metadata of the resource.
+        """
+        all_kwargs = get_all_kwargs(locals())
+        self.create_parents(**all_kwargs)
+        if self.type == "lake":
+            return self.create_lake(
+                display_name=display_name,
+                description=description,
+                labels=labels,
+                metadata=metadata,
+            )
+        elif self.type == "zone":
+            return self.create_zone(
+                zone_type=zone_type,
+                location_type=location_type,
+                display_name=display_name,
+                description=description,
+                labels=labels,
+                metadata=metadata,
+            )
+        elif self.type == "asset":
+            return self.create_asset(
+                asset_source=asset_source,
+                asset_type=asset_type,
+                display_name=display_name,
+                description=description,
+                labels=labels,
+                metadata=metadata,
+            )
+
+    def ls_lakes(self, full_id=False):
+        """
+        Lists the lakes in the project.
+
+        Args:
+        - full_id (bool): If True, returns the full resource ID of the lakes.
+
+        Returns:
+        - (list): The list of lakes.
+        """
+        lakes = self.client.list_lakes(parent=self.parent)
+        output = [lake.name for lake in lakes]
+        if not full_id:
+            output = [name.split("/")[-1] for name in output]
+        return output
+
+    def ls_zones(self, full_id=False):
+        """
+        Lists the zones in the lake.
+
+        Args:
+        - full_id (bool): If True, returns the full resource ID of the zones. Otherwise returns the path of form "lake/zone".
+
+        Returns:
+        - (list): The list of zones.
+        """
+        parent = f"{self.parent}/lakes/{self.lake}"
+        zones = self.client.list_zones(parent=parent)
+        output = [zone.name for zone in zones]
+        if not full_id:
+            zones = [name.split("/")[-1] for name in output]
+            output = [f"{self.lake}/{zone}" for zone in zones]
+        return output
+
+    def ls_assets(self, full_id=False):
+        """
+        Lists the assets in the zone.
+
+        Args:
+        - full_id (bool): If True, returns the full resource ID of the assets. Otherwise returns the path of form "lake/zone/asset".
+
+        Returns:
+        - (list): The list of assets.
+        """
+        parent = f"{self.parent}/zones/{self.zone}"
+        assets = self.client.list_assets(parent=parent)
+        output = [asset.name for asset in assets]
+        if not full_id:
+            assets = [name.split("/")[-1] for name in output]
+            output = [f"{self.lake}/{self.zone}/{asset}" for asset in assets]
+        return output
+
+    def ls(self, full_id=False):
+        """
+        Lists the resources.
+
+        Args:
+        - full_id (bool): If True, returns the full resource ID of the resources.
+
+        Returns:
+        - (list): The list of resources.
+        """
+        if self.type == "asset":
+            raise ValueError("The method 'Dataplex.ls' is not supported for assets.")
+        list_method = {
+            "project": self.ls_lakes,
+            "lake": self.ls_zones,
+            "zone": self.ls_assets,
+        }.get(self.type)
+        output = list_method(full_id=full_id)
+        return output
+
+    def exists(self):
+        """
+        Checks if the resource exists.
+
+        Returns:
+        - (bool): True if the resource exists, False otherwise.
+        """
+        try:
+            self.get()
+            return True
+        except:
+            return False
+
 
 if __name__ == "__main__":
     # Example: Create a Dataplex object
     from gcp_pal import BigQuery
 
-    Dataplex(path="test-lake1").create_lake()
-    Dataplex(path="test-lake1/test-zone1").create_zone()
-    BigQuery(dataset="dataplex_dataset").create()
+    # Dataplex(path="test-lake1").create_lake()
+    # Dataplex(path="test-lake1/test-zone1").create_zone()
+    BigQuery(dataset="dataplex_dataset2").create()
     Dataplex(
-        path="test-lake1/test-zone1/test-asset1",
-    ).create_asset(
-        asset_source="dataplex_dataset",
+        path="test-lake2/test-zone2/test-asset2",
+    ).create(
+        asset_source="dataplex_dataset2",
         asset_type="bigquery",
     )
