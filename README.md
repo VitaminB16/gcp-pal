@@ -17,6 +17,7 @@ TODO:
 [x] Publish to PyPI
 [x] Tests
 [x] Project Module
+[x] Dataplex Module
 ...
 -->
 
@@ -1028,3 +1029,73 @@ project_number = Project("project-name").number()
 print(project_number)
 # Output: "1234567890"
 ```
+
+
+---
+
+## Dataplex Module
+
+The Dataplex module in the `gcp-pal` library allows you to interact with Dataplex services.
+
+### Initializing Dataplex
+
+Import the Dataplex class from the `gcp_pal` module:
+
+```python
+from gcp_pal import Dataplex
+```
+
+### Listing Dataplex objects
+
+The Dataplex module supports listing all lakes, zones, and assets within a Dataplex instance:
+
+```python
+lakes = Dataplex().ls()
+print(lakes)
+# Output: ['lake1', 'lake2']
+zones = Dataplex("lake1").ls()
+print(zones)
+# Output: ['zone1', 'zone2']
+assets = Dataplex("lake1/zone1").ls()
+print(assets)
+# Output: ['asset1', 'asset2']
+```
+
+### Creating Dataplex objects
+
+To create a lake, zone, or asset within a Dataplex instance, use the `create_lake`, `create_zone`, and `create_asset` methods.
+
+To create a lake:
+
+```python
+Dataplex("lake1").create_lake()
+# Output: Lake "lake1" created
+```
+
+To create a zone (zone type and location type are required):
+
+```python
+Dataplex("lake1/zone1").create_zone(zone_type="raw", location_type="single-region")
+# Output: Zone "zone1" created in Lake "lake1"
+```
+
+To create an asset (asset source and asset type are required):
+
+```python
+Dataplex("lake1/zone1").create_asset(asset_source="dataset_name", asset_type="bigquery")
+# Output: Asset "asset1" created in Zone "zone1" of Lake "lake1"
+```
+
+### Deleting Dataplex objects
+
+Deleting objects can be done using a single `delete` method:
+
+```python
+Dataplex("lake1/zone1/asset1").delete()
+# Output: Asset "asset1" deleted
+Dataplax("lake1/zone1").delete()
+# Output: Zone "zone1" and all its assets deleted
+Dataplex("lake1").delete()
+# Output: Lake "lake1" and all its zones and assets deleted
+```
+
