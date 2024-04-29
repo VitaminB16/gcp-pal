@@ -2,6 +2,8 @@ import os
 from gcp_pal.utils import try_import
 
 try_import("google.cloud.dataplex_v1", "Dataplex")
+try_import("google.api_core.exceptions", "Dataplex")
+import google.api_core.exceptions
 from google.cloud.dataplex_v1 import DataplexServiceClient
 from google.cloud.dataplex_v1.types import Lake, Zone, Asset
 
@@ -40,6 +42,9 @@ class Dataplex:
         self.lake = lake
         self.zone = zone
         self.asset = asset
+        if isinstance(path, str) and path.startswith("projects/"):
+            paths = path.split("/")[1::2][2:]
+            path = "/".join(paths)
         try:
             # e.g. path = "lake" or "lake/zone" or "lake/zone/asset"
             self.lake = path.split("/")[0]
@@ -62,6 +67,7 @@ class Dataplex:
 
         self.type = self._get_type()
         self._verify_attributes()
+        self.path = self._get_path()
         self.parent = self._get_parent()
 
         if self.project in Dataplex._clients:
@@ -69,6 +75,13 @@ class Dataplex:
         else:
             self.client = DataplexServiceClient()
             Dataplex._clients[self.project] = self.client
+
+    def _refresh_client(self):
+        """
+        Refresh the client. This is useful when the client caches some data and it needs to be refreshed.
+        """
+        self.client = DataplexServiceClient()
+        Dataplex._clients[self.project] = self.client
 
     def _get_type(self):
         """
@@ -85,6 +98,23 @@ class Dataplex:
             return "zone"
         elif self.lake and self.zone and self.asset:
             return "asset"
+
+    def _get_path(self):
+        """
+        Get the path of the object.
+
+        Returns:
+        - (str): The path of the object. Of the form "lake/zone/asset" or "lake/zone" or "lake" or None.
+        """
+        if self.type == "project":
+            path = None
+        elif self.type == "lake":
+            path = self.lake
+        elif self.type == "zone":
+            path = f"{self.lake}/{self.zone}"
+        elif self.type == "asset":
+            path = f"{self.lake}/{self.zone}/{self.asset}"
+        return path
 
     def _verify_attributes(self):
         """
@@ -178,6 +208,7 @@ class Dataplex:
         labels: dict = None,
         metadata: dict = {},
         metastore_service: str = None,
+        if_exists: str = "ignore",
         **kwargs,
     ):
         """
@@ -201,35 +232,45 @@ class Dataplex:
             labels=labels,
             metastore=metastore,
         )
-        created_lake = self.client.create_lake(
-            parent=self.parent,
-            lake_id=self.lake_id,
-            lake=lake,
-            timeout=600,
-            metadata=metadata,
-        )
+        try:
+            created_lake = self.client.create_lake(
+                parent=self.parent,
+                lake_id=self.lake_id,
+                lake=lake,
+                timeout=600,
+                metadata=metadata,
+            )
+        except google.api_core.exceptions.AlreadyExists as e:
+            if if_exists == "ignore":
+                log(f"Dataplex - Lake '{self.lake_id}' already exists.")
+                return
+            raise e
         result = created_lake.result()
         log(f"Dataplex - Lake '{self.lake_id}' created.")
         return result
 
     def create_zone(
         self,
-        zone_type: str = "raw",  # or "curated"
-        location_type: str = "single-region",  # or "multi-region"
+        zone_type: str,  # "raw" or "curated"
+        location_type: str,  # "single-region" or "multi-region"
         display_name: str = None,
         description: str = None,
         labels: dict = None,
         metadata: dict = {},
+        if_exists: str = "ignore",
         **kwargs,
     ):
         """
         Creates a zone resource in the lake.
 
         Args:
+        - zone_type (str): The type of the zone. Either `"raw"` or `"curated"`.
+        - location_type (str): The location type of the zone. Either `"single-region"` or `"multi-region"`.
         - display_name (str): User-friendly display name of the zone. If not provided, it will be based on the zone_id.
         - description (str): The description of the zone resource.
         - labels (dict): The labels of the zone resource.
         - metadata (dict): The metadata of the zone resource.
+        - if_exists (str): If `"ignore"`, the operation will be ignored if the zone already exists.
 
         Returns:
         - (dict): The zone resource.
@@ -252,13 +293,20 @@ class Dataplex:
             type_=zone_type,
             resource_spec=resource_spec,
         )
-        created_zone = self.client.create_zone(
-            parent=self.parent,
-            zone_id=self.zone_id,
-            zone=zone,
-            timeout=600,
-            metadata=metadata,
-        )
+        try:
+            created_zone = self.client.create_zone(
+                parent=self.parent,
+                zone_id=self.zone_id,
+                zone=zone,
+                timeout=600,
+                metadata=metadata,
+            )
+        except google.api_core.exceptions.AlreadyExists as e:
+            if if_exists == "ignore":
+                log(f"Dataplex - Zone '{self.zone_id}' already exists.")
+                return
+            raise e
+
         result = created_zone.result()
         log(f"Dataplex - Zone '{self.zone_id}' created.")
         return result
@@ -271,6 +319,7 @@ class Dataplex:
         description: str = None,
         labels: dict = None,
         metadata: dict = {},
+        if_exists: str = "ignore",
         **kwargs,
     ):
         """
@@ -308,13 +357,19 @@ class Dataplex:
             labels=labels,
             resource_spec=resource_spec,
         )
-        created_asset = self.client.create_asset(
-            parent=self.parent,
-            asset_id=self.asset_id,
-            asset=asset,
-            timeout=600,
-            metadata=metadata,
-        )
+        try:
+            created_asset = self.client.create_asset(
+                parent=self.parent,
+                asset_id=self.asset_id,
+                asset=asset,
+                timeout=600,
+                metadata=metadata,
+            )
+        except google.api_core.exceptions.AlreadyExists as e:
+            if if_exists == "ignore":
+                log(f"Dataplex - Asset '{self.asset_id}' already exists.")
+                return
+            raise e
         result = created_asset.result()
         log(f"Dataplex - Asset '{self.asset_id}' created.")
         return result
@@ -378,8 +433,8 @@ class Dataplex:
 
         Args:
         - asset_source (str): The source of the asset. Either a bucket name or a dataset name.
-        - asset_type (str): The type of the asset. Either `"storage"` or `"bigquery"`.
-        - zone_type (str): The type of the zone. Either `"raw"` or `"curated"`.
+        - asset_type (str): The type of the asset. Either `"storage"` or `"bigquery"`. Has to be provided if the resource is a zone or an asset.
+        - zone_type (str): The type of the zone. Either `"raw"` or `"curated"`. Has to be provided if the resource is a zone or an asset.
         - location_type (str): The location type of the zone. Either `"single-region"` or `"multi-region"`.
         - display_name (str): User-friendly display name of the resource. If not provided, it will be based on the resource_id.
         - description (str): The description of the resource.
@@ -414,33 +469,36 @@ class Dataplex:
                 metadata=metadata,
             )
 
-    def ls_lakes(self, full_id=False):
+    def ls_lakes(self, name=None, full_id=False):
         """
         Lists the lakes in the project.
 
         Args:
+        - name (str): Optional path of the lake.
         - full_id (bool): If True, returns the full resource ID of the lakes.
 
         Returns:
         - (list): The list of lakes.
         """
-        lakes = self.client.list_lakes(parent=self.parent)
+        parent = name or self.parent
+        lakes = self.client.list_lakes(parent=parent)
         output = [lake.name for lake in lakes]
         if not full_id:
             output = [name.split("/")[-1] for name in output]
         return output
 
-    def ls_zones(self, full_id=False):
+    def ls_zones(self, name=None, full_id=False):
         """
         Lists the zones in the lake.
 
         Args:
+        - name (str): Optional path of the zone.
         - full_id (bool): If True, returns the full resource ID of the zones. Otherwise returns the path of form "lake/zone".
 
         Returns:
         - (list): The list of zones.
         """
-        parent = f"{self.parent}/lakes/{self.lake}"
+        parent = name or f"{self.parent}/lakes/{self.lake}"
         zones = self.client.list_zones(parent=parent)
         output = [zone.name for zone in zones]
         if not full_id:
@@ -448,17 +506,18 @@ class Dataplex:
             output = [f"{self.lake}/{zone}" for zone in zones]
         return output
 
-    def ls_assets(self, full_id=False):
+    def ls_assets(self, name=None, full_id=False):
         """
         Lists the assets in the zone.
 
         Args:
+        - name (str): Optional path of the asset.
         - full_id (bool): If True, returns the full resource ID of the assets. Otherwise returns the path of form "lake/zone/asset".
 
         Returns:
         - (list): The list of assets.
         """
-        parent = f"{self.parent}/zones/{self.zone}"
+        parent = name or f"{self.parent}/zones/{self.zone}"
         assets = self.client.list_assets(parent=parent)
         output = [asset.name for asset in assets]
         if not full_id:
@@ -499,17 +558,146 @@ class Dataplex:
         except:
             return False
 
+    def delete_lake(self, name: str = None, errors="ignore", wait_to_complete=True):
+        """
+        Deletes the lake resource.
+
+        Args:
+        - name (str): The full resource ID of the lake.
+
+        Returns:
+        - (dict): The response of the delete operation.
+        """
+        name = name or f"{self.parent}/lakes/{self.lake}"
+        try:
+            output = self.client.delete_lake(name=name)
+        except google.api_core.exceptions.FailedPrecondition as e:
+            msg = (
+                f"Dataplex - Lake '{self.lake}' is not empty. Deleting all its zones..."
+            )
+            log(msg)
+            lake = Dataplex(
+                lake=self.lake, project=self.project, location=self.location
+            )
+            zones = lake.ls_zones(full_id=True)
+            for zone in zones:
+                Dataplex(path=zone).delete()
+            self._refresh_client()
+            output = self.client.delete_lake(name=name)
+        except google.api_core.exceptions.NotFound as e:
+            if errors == "ignore":
+                log(f"Dataplex - Lake '{self.lake}' does not exist to delete.")
+                return
+            raise e
+        if wait_to_complete:
+            log(f"Dataplex - Waiting for the lake deletion...")
+            output = output.result(timeout=600)
+        log(f"Dataplex - Lake deleted: '{self.lake}'.")
+        return output
+
+    def delete_zone(self, name: str = None, errors="ignore", wait_to_complete=True):
+        """
+        Deletes the zone resource.
+
+        Args:
+        - name (str): The full resource ID of the zone.
+
+        Returns:
+        - (dict): The response of the delete operation.
+        """
+        name = name or f"{self.parent}/zones/{self.zone}"
+        try:
+            output = self.client.delete_zone(name=name)
+        except google.api_core.exceptions.FailedPrecondition as e:
+            msg = f"Dataplex - Zone '{self.path}' is not empty. Deleting all its assets..."
+            log(msg)
+            assets = self.ls_assets(name=name, full_id=True)
+            for asset in assets:
+                Dataplex(path=asset).delete()
+            self._refresh_client()
+            output = self.client.delete_zone(name=name)
+        except google.api_core.exceptions.NotFound as e:
+            if errors == "ignore":
+                log(f"Dataplex - Zone '{self.path}' does not exist to delete.")
+                return
+            raise e
+        if wait_to_complete:
+            log(f"Dataplex - Waiting for zone deletion...")
+            output = output.result(timeout=600)
+        log(f"Dataplex - Zone deleted: '{self.path}'.")
+        return output
+
+    def delete_asset(self, name: str = None, errors="ignore", wait_to_complete=True):
+        """
+        Deletes the asset resource.
+
+        Args:
+        - name (str): The full resource ID of the asset.
+        - wait_to_complete (bool): If True, waits until the operation is completed.
+
+        Returns:
+        - (dict): The response of the delete operation.
+        """
+        name = name or f"{self.parent}/assets/{self.asset}"
+        try:
+            output = self.client.delete_asset(name=name)
+        except google.api_core.exceptions.NotFound as e:
+            if errors == "ignore":
+                log(f"Dataplex - Asset '{self.path}' does not exist to delete.")
+                return
+            raise e
+        if wait_to_complete:
+            log(f"Dataplex - Waiting for asset deletion...")
+            output = output.result(timeout=600)
+        log(f"Dataplex - Asset deleted: '{self.path}'.")
+        return output
+
+    def delete(self, name: str = None, errors="ignore", wait_to_complete=True):
+        """
+        Deletes the resource.
+
+        Args:
+        - name (str): The full resource ID of the resource.
+        - errors (str): If "ignore", the operation will be ignored if the resource does not exist.
+        - wait_to_complete (bool): If True, waits until the operation is completed.
+
+        Returns:
+        - (dict): The response of the delete operation.
+        """
+        delete_method = {
+            "lake": self.delete_lake,
+            "zone": self.delete_zone,
+            "asset": self.delete_asset,
+        }.get(self.type)
+        output = delete_method(
+            name=name, errors=errors, wait_to_complete=wait_to_complete
+        )
+        return output
+
 
 if __name__ == "__main__":
     # Example: Create a Dataplex object
     from gcp_pal import BigQuery
 
-    # Dataplex(path="test-lake1").create_lake()
-    # Dataplex(path="test-lake1/test-zone1").create_zone()
+    lake_name = "test-lake1"
+    zone_name = "test-zone1"
+    Dataplex(path="artem-lake2").create_lake()
+    Dataplex(path=f"{lake_name}/{zone_name}").create_zone(
+        zone_type="raw", location_type="single-region"
+    )
+    BigQuery(dataset="dataplex_dataset1").create()
     BigQuery(dataset="dataplex_dataset2").create()
     Dataplex(
-        path="test-lake2/test-zone2/test-asset2",
-    ).create(
+        path=f"{lake_name}/{zone_name}/test-asset1",
+    ).create_asset(
+        asset_source="dataplex_dataset1",
+        asset_type="bigquery",
+    )
+    Dataplex(
+        path=f"{lake_name}/{zone_name}/test-asset2",
+    ).create_asset(
         asset_source="dataplex_dataset2",
         asset_type="bigquery",
     )
+
+    Dataplex(lake_name, location="europe-west2").delete()
