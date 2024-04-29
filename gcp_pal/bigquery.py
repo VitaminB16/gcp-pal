@@ -177,11 +177,11 @@ class BigQuery:
             raise ValueError("Project ID not specified.")
         if not self.dataset and self.table:
             raise ValueError("Table name specified without dataset.")
-        if self.project in BigQuery._clients:
-            self.client = BigQuery._clients[self.project]
+        if self.location in BigQuery._clients.get(self.project, {}):
+            self.client = BigQuery._clients[self.project][self.location]
         else:
             self.client = bigquery.Client(project=self.project, location=self.location)
-            BigQuery._clients[self.project] = self.client
+            BigQuery._clients[self.project] = {self.location: self.client}
 
     def __repr__(self):
         return f"BigQuery({self.table_id})"

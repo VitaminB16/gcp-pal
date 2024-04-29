@@ -42,11 +42,14 @@ class CloudRun:
 
         if self.project in CloudRun._client:
             self.client = CloudRun._client[self.project]
-            self.jobs_client = CloudRun._jobs_client[self.project]
         else:
             self.client = run_v2.ServicesClient()
-            self.jobs_client = run_v2.JobsClient()
             CloudRun._client[self.project] = self.client
+
+        if self.project in CloudRun._jobs_client:
+            self.jobs_client = CloudRun._jobs_client[self.project]
+        else:
+            self.jobs_client = run_v2.JobsClient()
             CloudRun._jobs_client[self.project] = self.jobs_client
 
     def ls_jobs(self, active_only=False, full_id=False):
