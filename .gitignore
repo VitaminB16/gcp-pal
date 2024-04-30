@@ -17,3 +17,4 @@ tests_output/*
 *.zip
 *.tar.gz
 *.whl
+docs/

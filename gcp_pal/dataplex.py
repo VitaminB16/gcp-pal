@@ -1,4 +1,5 @@
 import os
+import threading
 from gcp_pal.utils import try_import
 
 try_import("google.cloud.dataplex_v1", "Dataplex")
@@ -632,6 +633,9 @@ class Dataplex:
             lake = Dataplex(
                 lake=self.lake, project=self.project, location=self.location
             )
+            lake_assets = lake.ls_assets(full_id=True)
+            for asset in lake_assets:
+                Dataplex(path=asset).delete()
             zones = lake.ls_zones(full_id=True)
             for zone in zones:
                 Dataplex(path=zone).delete()
@@ -659,14 +663,19 @@ class Dataplex:
         - (dict): The response of the delete operation.
         """
         name = name or f"{self.parent}/zones/{self.zone}"
+        log(f"Dataplex - Deleting zone: '{self.path}'...")
         try:
             output = self.client.delete_zone(name=name)
         except google.api_core.exceptions.FailedPrecondition as e:
             msg = f"Dataplex - Zone '{self.path}' is not empty. Deleting all its assets..."
             log(msg)
-            assets = self.ls_assets(name=name, full_id=True)
-            for asset in assets:
-                Dataplex(path=asset).delete()
+            zone = Dataplex(
+                lake=self.lake,
+                zone=self.zone,
+                project=self.project,
+                location=self.location,
+            )
+            self._delete_parallel(zone.ls_assets(full_id=True))
             self._refresh_client()
             output = self.client.delete_zone(name=name)
         except google.api_core.exceptions.NotFound as e:
@@ -675,7 +684,6 @@ class Dataplex:
                 return
             raise e
         if wait_to_complete:
-            log(f"Dataplex - Waiting for zone deletion...")
             output = output.result(timeout=600)
         log(f"Dataplex - Zone deleted: '{self.path}'.")
         return output
@@ -692,6 +700,7 @@ class Dataplex:
         - (dict): The response of the delete operation.
         """
         name = name or f"{self.parent}/assets/{self.asset}"
+        log(f"Dataplex - Deleting asset: '{self.path}'...")
         try:
             output = self.client.delete_asset(name=name)
         except google.api_core.exceptions.NotFound as e:
@@ -700,10 +709,66 @@ class Dataplex:
                 return
             raise e
         if wait_to_complete:
-            log(f"Dataplex - Waiting for asset deletion...")
             output = output.result(timeout=600)
         log(f"Dataplex - Asset deleted: '{self.path}'.")
         return output
+
+    def delete_lake(self, name: str = None, errors="ignore", wait_to_complete=True):
+        """
+        Deletes the lake resource using parallel deletion for assets and zones.
+
+        Args:
+        - name (str): The full resource ID of the lake.
+
+        Returns:
+        - (dict): The response of the delete operation.
+        """
+        name = name or f"{self.parent}/lakes/{self.lake}"
+        try:
+            output = self.client.delete_lake(name=name)
+        except google.api_core.exceptions.FailedPrecondition:
+            log(
+                f"Dataplex - Lake '{self.lake}' is not empty. Deleting all its zones and assets..."
+            )
+            lake = Dataplex(
+                lake=self.lake, project=self.project, location=self.location
+            )
+
+            # Deleting all assets in all zones in the lake
+            self._delete_parallel(lake.ls_assets(full_id=True))
+
+            # Deleting zones in the lake
+            self._delete_parallel(lake.ls_zones(full_id=True))
+
+            self._refresh_client()
+            output = self.client.delete_lake(name=name)
+        except google.api_core.exceptions.NotFound:
+            if errors == "ignore":
+                log(f"Dataplex - Lake '{self.lake}' does not exist to delete.")
+                return
+            raise
+        if wait_to_complete:
+            log(f"Dataplex - Waiting for the lake deletion...")
+            output = output.result(timeout=600)
+        log(f"Dataplex - Lake deleted: '{self.lake}'.")
+        return output
+
+    def _delete_parallel(self, items):
+        """
+        Deletes items in parallel using threading.
+
+        Args:
+        - items (list): List of full resource IDs of assets or zones to delete.
+        """
+        threads = []
+        for item in items:
+            thread = threading.Thread(
+                target=lambda item=item: Dataplex(path=item).delete()
+            )
+            thread.start()
+            threads.append(thread)
+        for thread in threads:
+            thread.join()
 
     def delete(self, name: str = None, errors="ignore", wait_to_complete=True):
         """
@@ -732,16 +797,14 @@ if __name__ == "__main__":
     # Example: Create a Dataplex object
     from gcp_pal import BigQuery
 
-    print(Dataplex().ls(level="assets", full_id=False))
-
-    # lake_name = "artem-lake3"
-    # zone_name = "artem-zone3"
+    lake_name = "artem-lake1"
+    zone_name = "artem-zone1"
     # Dataplex(path=lake_name).create_lake()
     # Dataplex(path=f"{lake_name}/{zone_name}").create_zone(
     #     zone_type="raw", location_type="single-region"
     # )
-    # # BigQuery(dataset="dataplex_dataset1").create()
-    # # BigQuery(dataset="dataplex_dataset2").create()
+    # BigQuery(dataset="dataplex_dataset1").create()
+    # BigQuery(dataset="dataplex_dataset2").create()
     # Dataplex(
     #     path=f"{lake_name}/{zone_name}/test-asset1",
     # ).create_asset(
@@ -755,4 +818,4 @@ if __name__ == "__main__":
     #     asset_type="bigquery",
     # )
 
-    # Dataplex(lake_name, location="europe-west2").delete()
+    Dataplex(lake_name, location="europe-west2").delete()
