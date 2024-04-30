@@ -48,15 +48,15 @@ class Storage:
 
         self.ref_type = self._ref_type()
 
-        if self.project in Storage._clients:
-            self.fs = Storage._clients[self.project]
+        if self.location in Storage._clients.get(self.project, {}):
+            self.fs = Storage._clients[self.project][self.location]
         else:
             self.fs = gcsfs.GCSFileSystem(
                 project=self.project,
                 default_location=self.location,
                 cache_timeout=0,
             )
-            Storage._clients[self.project] = self.fs
+            Storage._clients[self.project][self.location] = self.fs
 
     def __repr__(self):
         """
