@@ -56,7 +56,7 @@ class Storage:
                 default_location=self.location,
                 cache_timeout=0,
             )
-            Storage._clients[self.project][self.location] = self.fs
+            Storage._clients[self.project] = {self.location: self.fs}
 
     def __repr__(self):
         """
@@ -483,26 +483,26 @@ class Storage:
         return Blob(path, bucket)
 
 
-if __name__ == "__main__":
-    import pyarrow as pa
-    import pyarrow.parquet as pq
-    import pandas as pd
+# if __name__ == "__main__":
+#     import pyarrow as pa
+#     import pyarrow.parquet as pq
+#     import pandas as pd
 
-    success = {}
-    bucket_name = f"test_bucket_vita_1324"
-    Storage(bucket_name).create()
+#     success = {}
+#     bucket_name = f"test_bucket_vita_1324"
+#     Storage(bucket_name).create()
 
-    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-    partition_cols = ["a"]
-    file_name = f"gs://{bucket_name}/file.parquet"
-    table = pa.Table.from_pandas(df)
-    pq.write_to_dataset(
-        table, file_name, partition_cols=partition_cols, basename_template="{i}.parquet"
-    )
-    print(file_name)
-    print(Storage(file_name).isfile())
-    print(Storage(file_name).isfile("a=1"))
-    exit()
+#     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+#     partition_cols = ["a"]
+#     file_name = f"gs://{bucket_name}/file.parquet"
+#     table = pa.Table.from_pandas(df)
+#     pq.write_to_dataset(
+#         table, file_name, partition_cols=partition_cols, basename_template="{i}.parquet"
+#     )
+#     print(file_name)
+#     print(Storage(file_name).isfile())
+#     print(Storage(file_name).isfile("a=1"))
+#     exit()
 
 if __name__ == "__main__":
     print(Storage("bucket_name").bucket_name == "bucket_name")
