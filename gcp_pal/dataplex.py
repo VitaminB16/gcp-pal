@@ -42,9 +42,10 @@ class Dataplex:
         self.lake = lake
         self.zone = zone
         self.asset = asset
+
         if isinstance(path, str) and path.startswith("projects/"):
-            paths = path.split("/")[1::2][2:]
-            path = "/".join(paths)
+            path = self._convert_full_id_to_path(path)
+
         try:
             # e.g. path = "lake" or "lake/zone" or "lake/zone/asset"
             self.lake = path.split("/")[0]
@@ -152,6 +153,22 @@ class Dataplex:
         elif self.type == "asset":
             parent += f"/lakes/{self.lake}/zones/{self.zone}"
         return parent
+
+    def _convert_full_id_to_path(self, full_id):
+        """
+        Converts the full resource ID to the path of the form "lake/zone/asset" or "lake/zone" or "lake" or None.
+
+        Args:
+        - full_id (str): The full resource ID.
+
+        Returns:
+        - (str): The path of the resource.
+        """
+        if not full_id:
+            return None
+        paths = full_id.split("/")[1::2][2:]
+        path = "/".join(paths)
+        return path
 
     def get_lake(self):
         """
@@ -484,7 +501,7 @@ class Dataplex:
         lakes = self.client.list_lakes(parent=parent)
         output = [lake.name for lake in lakes]
         if not full_id:
-            output = [name.split("/")[-1] for name in output]
+            output = [self._convert_full_id_to_path(name) for name in output]
         return output
 
     def ls_zones(self, name=None, full_id=False):
@@ -498,12 +515,21 @@ class Dataplex:
         Returns:
         - (list): The list of zones.
         """
-        parent = name or f"{self.parent}/lakes/{self.lake}"
-        zones = self.client.list_zones(parent=parent)
-        output = [zone.name for zone in zones]
+        output = []
+        if self.type == "project":
+            # Listing all zones in the project
+            zones = []
+            lakes = self.ls_lakes(full_id=True)
+            for lake in lakes:
+                lake = Dataplex(path=lake)
+                zones = lake.ls_zones(full_id=True)
+                output += zones
+        else:
+            parent = name or f"{self.parent}/lakes/{self.lake}"
+            zones = self.client.list_zones(parent=parent)
+            output = [zone.name for zone in zones]
         if not full_id:
-            zones = [name.split("/")[-1] for name in output]
-            output = [f"{self.lake}/{zone}" for zone in zones]
+            output = [self._convert_full_id_to_path(name) for name in output]
         return output
 
     def ls_assets(self, name=None, full_id=False):
@@ -517,19 +543,39 @@ class Dataplex:
         Returns:
         - (list): The list of assets.
         """
-        parent = name or f"{self.parent}/zones/{self.zone}"
-        assets = self.client.list_assets(parent=parent)
-        output = [asset.name for asset in assets]
+        output = []
+        if self.type == "project":
+            # Listing all assets in the project
+            assets = []
+            lakes = self.ls_lakes(full_id=True)
+            for lake in lakes:
+                lake = Dataplex(path=lake)
+                zones = lake.ls_zones(full_id=True)
+                for zone in zones:
+                    zone = Dataplex(path=zone)
+                    assets = zone.ls_assets(full_id=True)
+                    output += assets
+        elif self.type == "lake":
+            # Listing all assets in the lake
+            zones = self.ls_zones(full_id=True)
+            for zone in zones:
+                zone = Dataplex(path=zone)
+                assets = zone.ls_assets(full_id=True)
+                output += assets
+        else:
+            parent = name or f"{self.parent}/zones/{self.zone}"
+            assets = self.client.list_assets(parent=parent)
+            output = [asset.name for asset in assets]
         if not full_id:
-            assets = [name.split("/")[-1] for name in output]
-            output = [f"{self.lake}/{self.zone}/{asset}" for asset in assets]
+            output = [self._convert_full_id_to_path(name) for name in output]
         return output
 
-    def ls(self, full_id=False):
+    def ls(self, level=None, full_id=False):
         """
         Lists the resources.
 
         Args:
+        - level (str): The level of the resources to list. Either "lakes", "zones" or "assets".
         - full_id (bool): If True, returns the full resource ID of the resources.
 
         Returns:
@@ -537,11 +583,18 @@ class Dataplex:
         """
         if self.type == "asset":
             raise ValueError("The method 'Dataplex.ls' is not supported for assets.")
-        list_method = {
-            "project": self.ls_lakes,
-            "lake": self.ls_zones,
-            "zone": self.ls_assets,
-        }.get(self.type)
+        if level:
+            list_method = {
+                "lakes": self.ls_lakes,
+                "zones": self.ls_zones,
+                "assets": self.ls_assets,
+            }.get(level)
+        else:
+            list_method = {
+                "project": self.ls_lakes,
+                "lake": self.ls_zones,
+                "zone": self.ls_assets,
+            }.get(self.type)
         output = list_method(full_id=full_id)
         return output
 
@@ -679,25 +732,27 @@ if __name__ == "__main__":
     # Example: Create a Dataplex object
     from gcp_pal import BigQuery
 
-    lake_name = "test-lake1"
-    zone_name = "test-zone1"
-    Dataplex(path="artem-lake2").create_lake()
-    Dataplex(path=f"{lake_name}/{zone_name}").create_zone(
-        zone_type="raw", location_type="single-region"
-    )
-    BigQuery(dataset="dataplex_dataset1").create()
-    BigQuery(dataset="dataplex_dataset2").create()
-    Dataplex(
-        path=f"{lake_name}/{zone_name}/test-asset1",
-    ).create_asset(
-        asset_source="dataplex_dataset1",
-        asset_type="bigquery",
-    )
-    Dataplex(
-        path=f"{lake_name}/{zone_name}/test-asset2",
-    ).create_asset(
-        asset_source="dataplex_dataset2",
-        asset_type="bigquery",
-    )
+    print(Dataplex().ls(level="assets", full_id=False))
 
-    Dataplex(lake_name, location="europe-west2").delete()
+    # lake_name = "artem-lake3"
+    # zone_name = "artem-zone3"
+    # Dataplex(path=lake_name).create_lake()
+    # Dataplex(path=f"{lake_name}/{zone_name}").create_zone(
+    #     zone_type="raw", location_type="single-region"
+    # )
+    # # BigQuery(dataset="dataplex_dataset1").create()
+    # # BigQuery(dataset="dataplex_dataset2").create()
+    # Dataplex(
+    #     path=f"{lake_name}/{zone_name}/test-asset1",
+    # ).create_asset(
+    #     asset_source="dataplex_dataset1",
+    #     asset_type="bigquery",
+    # )
+    # Dataplex(
+    #     path=f"{lake_name}/{zone_name}/test-asset2",
+    # ).create_asset(
+    #     asset_source="dataplex_dataset2",
+    #     asset_type="bigquery",
+    # )
+
+    # Dataplex(lake_name, location="europe-west2").delete()
