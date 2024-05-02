@@ -4,7 +4,7 @@ from gcp_pal.utils import try_import
 try_import("gcsfs", "Storage")
 import gcsfs
 
-from gcp_pal.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log, ClientHandler
 
 
 class Storage:
@@ -48,15 +48,20 @@ class Storage:
 
         self.ref_type = self._ref_type()
 
-        if self.location in Storage._clients.get(self.project, {}):
-            self.fs = Storage._clients[self.project][self.location]
-        else:
-            self.fs = gcsfs.GCSFileSystem(
-                project=self.project,
-                default_location=self.location,
-                cache_timeout=0,
-            )
-            Storage._clients[self.project] = {self.location: self.fs}
+        # if self.location in Storage._clients.get(self.project, {}):
+        #     self.fs = Storage._clients[self.project][self.location]
+        # else:
+        #     self.fs = gcsfs.GCSFileSystem(
+        #         project=self.project,
+        #         default_location=self.location,
+        #         cache_timeout=0,
+        #     )
+        #     Storage._clients[self.project] = {self.location: self.fs}
+        self.fs = ClientHandler(gcsfs.GCSFileSystem).get(
+            project=self.project,
+            default_location=self.location,
+            cache_timeout=0,
+        )
 
     def __repr__(self):
         """

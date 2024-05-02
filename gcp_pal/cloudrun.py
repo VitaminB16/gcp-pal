@@ -20,7 +20,7 @@ from google.cloud.run_v2.types import (
 import google.api_core.exceptions
 
 from gcp_pal.pydocker import Docker
-from gcp_pal.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log, ClientHandler
 
 
 class CloudRun:
@@ -40,17 +40,19 @@ class CloudRun:
         self.full_name = f"{self.parent}/{self.type}s/{self.name}"
         self.image_url = None
 
-        if self.project in CloudRun._client:
-            self.client = CloudRun._client[self.project]
-        else:
-            self.client = run_v2.ServicesClient()
-            CloudRun._client[self.project] = self.client
+        # if self.project in CloudRun._client:
+        #     self.client = CloudRun._client[self.project]
+        # else:
+        #     self.client = run_v2.ServicesClient()
+        #     CloudRun._client[self.project] = self.client
+        self.client = ClientHandler(run_v2.ServicesClient).get(project=self.project)
 
-        if self.project in CloudRun._jobs_client:
-            self.jobs_client = CloudRun._jobs_client[self.project]
-        else:
-            self.jobs_client = run_v2.JobsClient()
-            CloudRun._jobs_client[self.project] = self.jobs_client
+        # if self.project in CloudRun._jobs_client:
+        #     self.jobs_client = CloudRun._jobs_client[self.project]
+        # else:
+        #     self.jobs_client = run_v2.JobsClient()
+        #     CloudRun._jobs_client[self.project] = self.jobs_client
+        self.jobs_client = ClientHandler(run_v2.JobsClient).get(project=self.project)
 
     def ls_jobs(self, active_only=False, full_id=False):
         """

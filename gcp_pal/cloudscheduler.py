@@ -16,7 +16,7 @@ from google.cloud.scheduler_v1.types import (
     OidcToken,
 )
 
-from gcp_pal.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log, ClientHandler
 
 
 class CloudScheduler:
@@ -32,11 +32,13 @@ class CloudScheduler:
         self.parent = f"projects/{self.project}/locations/{self.location}"
         self.full_name = f"{self.parent}/jobs/{self.name}"
 
-        if self.project in CloudScheduler._client:
-            self.client = CloudScheduler._client[self.project]
-        else:
-            self.client = CloudSchedulerClient()
-            CloudScheduler._client[self.project] = self.client
+        # if self.project in CloudScheduler._client:
+        #     self.client = CloudScheduler._client[self.project]
+        # else:
+        #     self.client = CloudSchedulerClient()
+        #     CloudScheduler._client[self.project] = self.client
+
+        self.client = ClientHandler(CloudSchedulerClient).get(project=self.project)
 
     def __repr__(self):
         return f"CloudScheduler({self.name})"

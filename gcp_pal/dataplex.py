@@ -8,7 +8,7 @@ import google.api_core.exceptions
 from google.cloud.dataplex_v1 import DataplexServiceClient
 from google.cloud.dataplex_v1.types import Lake, Zone, Asset
 
-from gcp_pal.utils import get_auth_default, log, get_all_kwargs
+from gcp_pal.utils import get_auth_default, log, get_all_kwargs, ClientHandler
 
 
 class Dataplex:
@@ -72,11 +72,13 @@ class Dataplex:
         self.path = self._get_path()
         self.parent = self._get_parent()
 
-        if self.project in Dataplex._clients:
-            self.client = Dataplex._clients[self.project]
-        else:
-            self.client = DataplexServiceClient()
-            Dataplex._clients[self.project] = self.client
+        self.client = ClientHandler(DataplexServiceClient).get()
+
+        # if self.project in Dataplex._clients:
+        #     self.client = Dataplex._clients[self.project]
+        # else:
+        #     self.client = DataplexServiceClient()
+        #     Dataplex._clients[self.project] = self.client
 
     def _refresh_client(self):
         """

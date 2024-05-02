@@ -8,7 +8,7 @@ try_import("google.api_core.exceptions", "SecretManager")
 from google.cloud import secretmanager
 import google.api_core.exceptions
 
-from gcp_pal.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log, ClientHandler
 
 
 class SecretManager:
@@ -23,11 +23,13 @@ class SecretManager:
         self.name = name
         self.full_name = f"{self.parent}/secrets/{self.name}"
 
-        if self.project in SecretManager._client:
-            self.client = SecretManager._client[self.project]
-        else:
-            self.client = secretmanager.SecretManagerServiceClient()
-            SecretManager._client[self.project] = self.client
+        # if self.project in SecretManager._client:
+        #     self.client = SecretManager._client[self.project]
+        # else:
+        #     self.client = secretmanager.SecretManagerServiceClient()
+        #     SecretManager._client[self.project] = self.client
+
+        self.client = ClientHandler(secretmanager.SecretManagerServiceClient).get()
 
     def __repr__(self):
         return f"SecretManager({self.name})"
