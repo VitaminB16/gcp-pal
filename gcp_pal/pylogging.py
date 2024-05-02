@@ -5,7 +5,7 @@ import datetime
 from gcp_pal.utils import try_import
 
 
-from gcp_pal.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log, ClientHandler
 
 
 class LogEntry:
@@ -67,14 +67,18 @@ class Logging:
         self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         self.filters = []
 
-        if self.project in Logging._client:
-            self.client = Logging._client[self.project]
-        else:
-            try_import("google.cloud.logging", "Logging")
-            from google.cloud import logging
+        # if self.project in Logging._client:
+        #     self.client = Logging._client[self.project]
+        # else:
+        #     try_import("google.cloud.logging", "Logging")
+        #     from google.cloud import logging
 
-            self.client = logging.Client(project=self.project)
-            Logging._client[self.project] = self.client
+        #     self.client = logging.Client(project=self.project)
+        #     Logging._client[self.project] = self.client
+        try_import("google.cloud.logging", "Logging")
+        from google.cloud import logging
+
+        self.client = ClientHandler(logging.Client).get(project=self.project)
 
     def ls(
         self,

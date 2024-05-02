@@ -17,7 +17,7 @@ from google.cloud.functions_v2 import (
     Environment,
 )
 
-from gcp_pal.utils import get_auth_default, log, get_all_kwargs
+from gcp_pal.utils import get_auth_default, log, get_all_kwargs, ClientHandler
 
 
 class CloudFunctions:
@@ -38,11 +38,14 @@ class CloudFunctions:
         if self.name == self.function_id:
             self.name = self.function_id.split("/")[-1]
 
-        if self.project in CloudFunctions._clients:
-            self.client = CloudFunctions._clients[self.project]
-        else:
-            self.client = functions_v2.FunctionServiceClient()
-            CloudFunctions._clients[self.project] = self.client
+        # if self.project in CloudFunctions._clients:
+        #     self.client = CloudFunctions._clients[self.project]
+        # else:
+        #     self.client = functions_v2.FunctionServiceClient()
+        #     CloudFunctions._clients[self.project] = self.client
+        self.client = ClientHandler(functions_v2.FunctionServiceClient).get(
+            project=self.project
+        )
 
     def __repr__(self):
         return f"CloudFunctions({self.name})"

@@ -9,7 +9,7 @@ try_import("google.cloud.firestore", "Firestore")
 from google.cloud import firestore
 
 from gcp_pal.schema import enforce_schema
-from gcp_pal.utils import is_dataframe, get_auth_default, log
+from gcp_pal.utils import is_dataframe, get_auth_default, log, ClientHandler
 
 
 class Firestore:
@@ -37,11 +37,7 @@ class Firestore:
         self.path = path
 
         # Only initialize the client once per project
-        if self.project in Firestore._clients:
-            self.client = Firestore._clients[self.project]
-        else:
-            self.client = firestore.Client(self.project)
-            Firestore._clients[self.project] = self.client
+        self.client = ClientHandler(firestore.Client).get(project=self.project)
 
     def __repr__(self):
         return f"Firestore({self.path})"
