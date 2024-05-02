@@ -9,8 +9,14 @@ from google.cloud import bigquery
 try_import("google.api_core.exceptions", "BigQuery")
 from google.cloud.exceptions import NotFound as NotFoundError
 
-from gcp_pal.utils import is_dataframe, get_auth_default, orient_dict, log
 from gcp_pal.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
+from gcp_pal.utils import (
+    is_dataframe,
+    get_auth_default,
+    orient_dict,
+    log,
+    ClientHandler,
+)
 
 
 class SQLBuilder:
@@ -177,11 +183,14 @@ class BigQuery:
             raise ValueError("Project ID not specified.")
         if not self.dataset and self.table:
             raise ValueError("Table name specified without dataset.")
-        if self.location in BigQuery._clients.get(self.project, {}):
-            self.client = BigQuery._clients[self.project][self.location]
-        else:
-            self.client = bigquery.Client(project=self.project, location=self.location)
-            BigQuery._clients[self.project] = {self.location: self.client}
+        # if self.location in BigQuery._clients.get(self.project, {}):
+        #     self.client = BigQuery._clients[self.project][self.location]
+        # else:
+        #     self.client = bigquery.Client(project=self.project, location=self.location)
+        #     BigQuery._clients[self.project] = {self.location: self.client}
+        self.client = ClientHandler(bigquery.Client).get(
+            project=self.project, location=self.location
+        )
 
     def __repr__(self):
         return f"BigQuery({self.table_id})"
@@ -417,7 +426,17 @@ class BigQuery:
         log(f"BigQuery - Data written to {self.table}, schema: {schema}")
         return success
 
-    def _create_table(self, data=None, schema=None, exists_ok=True, if_exists=None):
+    def _create_table(
+        self,
+        data=None,
+        schema=None,
+        exists_ok=True,
+        if_exists=None,
+        time_partition_col=None,
+        range_partition_col=None,
+        cluster_cols=None,
+        labels=None,
+    ):
         """
         Routine for creating a new BigQuery table.
 
@@ -425,8 +444,19 @@ class BigQuery:
         - data (pandas.DataFrame): The data to insert into the new table.
         - schema (list of bigquery.SchemaField): Schema definition for the new table.
         - exists_ok (bool): If True, the table will be replaced if it already exists.
+        - if_exists (str): If "replace", the table will be replaced if it already exists. If "append", the data will be appended to the table.
+        - time_partition_col (str): The column to partition the table by. This is used for time-based partitioning.
+        - range_partition_col (str): The column to partition the table by. This is used for range-based partitioning.
+        - cluster_cols (list): The columns to cluster the table by.
+        - labels (dict): Labels to apply to the table.
 
+        Returns:
+        - True if successful.
         """
+        if time_partition_col and range_partition_col:
+            raise ValueError(
+                "Cannot have both time and range partitioning in the same table."
+            )
         if isinstance(schema, dict):
             schema = dict_to_bigquery_fields(schema)
 
@@ -443,6 +473,19 @@ class BigQuery:
                 location=self.location,
             )
         table = bigquery.Table(self.table_id, schema=schema)
+        if time_partition_col:
+            table.time_partitioning = bigquery.TimePartitioning(
+                field=time_partition_col
+            )
+        if range_partition_col:
+            table.range_partitioning = bigquery.RangePartitioning(
+                field=range_partition_col
+            )
+        if cluster_cols:
+            table.clustering_fields = cluster_cols
+        if labels:
+            table.labels = labels
+
         table = self.client.create_table(table, exists_ok=exists_ok)
         log(f"BigQuery - Table created: {self.table_id}")
 
