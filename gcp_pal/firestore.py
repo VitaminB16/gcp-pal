@@ -5,11 +5,14 @@ import json
 import concurrent.futures
 from gcp_pal.utils import try_import
 
-try_import("google.cloud.firestore", "Firestore")
-from google.cloud import firestore
-
 from gcp_pal.schema import enforce_schema
-from gcp_pal.utils import is_dataframe, get_auth_default, log, ClientHandler
+from gcp_pal.utils import (
+    is_dataframe,
+    get_auth_default,
+    log,
+    ClientHandler,
+    ModuleHandler,
+)
 
 
 class Firestore:
@@ -37,7 +40,10 @@ class Firestore:
         self.path = path
 
         # Only initialize the client once per project
-        self.client = ClientHandler(firestore.Client).get(project=self.project)
+        self.firestore = ModuleHandler("google.cloud").please_import(
+            "firestore", who_is_calling="Firestore"
+        )
+        self.client = ClientHandler(self.firestore.Client).get(project=self.project)
 
     def __repr__(self):
         return f"Firestore({self.path})"
@@ -262,8 +268,8 @@ class Firestore:
             concurrent.futures.wait(futures)
 
     def _ref_type(self, doc_ref):
-        is_doc_ref = isinstance(doc_ref, firestore.DocumentReference)
-        is_coll_ref = isinstance(doc_ref, firestore.CollectionReference)
+        is_doc_ref = isinstance(doc_ref, self.firestore.DocumentReference)
+        is_coll_ref = isinstance(doc_ref, self.firestore.CollectionReference)
         return "document" if is_doc_ref else "collection" if is_coll_ref else None
 
     def ls(self, path=None) -> list[str]:

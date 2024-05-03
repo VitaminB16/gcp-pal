@@ -3,9 +3,6 @@ from __future__ import annotations
 import os
 from gcp_pal.utils import try_import
 
-try_import("google.cloud.bigquery", "BigQuery")
-from google.cloud import bigquery
-
 try_import("google.api_core.exceptions", "BigQuery")
 from google.cloud.exceptions import NotFound as NotFoundError
 
@@ -16,6 +13,7 @@ from gcp_pal.utils import (
     orient_dict,
     log,
     ClientHandler,
+    ModuleHandler,
 )
 
 
@@ -183,12 +181,11 @@ class BigQuery:
             raise ValueError("Project ID not specified.")
         if not self.dataset and self.table:
             raise ValueError("Table name specified without dataset.")
-        # if self.location in BigQuery._clients.get(self.project, {}):
-        #     self.client = BigQuery._clients[self.project][self.location]
-        # else:
-        #     self.client = bigquery.Client(project=self.project, location=self.location)
-        #     BigQuery._clients[self.project] = {self.location: self.client}
-        self.client = ClientHandler(bigquery.Client).get(
+
+        self.bigquery = ModuleHandler("google.cloud").please_import(
+            "bigquery", who_is_calling="BigQuery"
+        )
+        self.client = ClientHandler(self.bigquery.Client).get(
             project=self.project, location=self.location
         )
 
@@ -333,7 +330,7 @@ class BigQuery:
         - bigquery.QueryJobConfig object: The updated job_config.
         """
         if not job_config:
-            job_config = bigquery.QueryJobConfig()
+            job_config = self.bigquery.QueryJobConfig()
 
         query_params = []
 
@@ -342,9 +339,10 @@ class BigQuery:
                 type(value).__name__, "STRING"
             )
             if isinstance(value, list):
-                query_params.append(bigquery.ArrayQueryParameter(key, val_type, value))
+                bq_param = self.bigquery.ArrayQueryParameter(key, val_type, value)
             else:
-                query_params.append(bigquery.ScalarQueryParameter(key, val_type, value))
+                bq_param = self.bigquery.ScalarQueryParameter(key, val_type, value)
+            query_params.append(bq_param)
         job_config.query_parameters = job_config.query_parameters + query_params
         return job_config
 
@@ -381,7 +379,7 @@ class BigQuery:
             table = self.client.get_table(self.table_id)  # Make sure the table exists
             errors = self.client.insert_rows_json(table, data)
         elif schema:
-            table = bigquery.Table(self.table_id, schema=schema)
+            table = self.bigquery.Table(self.table_id, schema=schema)
             errors = self.client.insert_rows_json(table, data)
         else:
             raise ValueError(
@@ -472,13 +470,13 @@ class BigQuery:
                 if_exists=if_exists,
                 location=self.location,
             )
-        table = bigquery.Table(self.table_id, schema=schema)
+        table = self.bigquery.Table(self.table_id, schema=schema)
         if time_partition_col:
-            table.time_partitioning = bigquery.TimePartitioning(
+            table.time_partitioning = self.bigquery.TimePartitioning(
                 field=time_partition_col
             )
         if range_partition_col:
-            table.range_partitioning = bigquery.RangePartitioning(
+            table.range_partitioning = self.bigquery.RangePartitioning(
                 field=range_partition_col
             )
         if cluster_cols:
@@ -536,7 +534,7 @@ class BigQuery:
         if infer_uri:
             uri, source_format, extra_metadata = self._infer_uri(uri, source_format)
 
-        external_config = bigquery.ExternalConfig(source_format=source_format)
+        external_config = self.bigquery.ExternalConfig(source_format=source_format)
         external_config.source_uris = [uri]
         # if schema:
         # external_config.schema = schema
@@ -544,14 +542,14 @@ class BigQuery:
         partition_columns = extra_metadata.get("partition_columns", None)
         if source_format == "PARQUET" and partition_columns:
             source_uri_prefix = uri.replace("*", "")
-            partition_options = bigquery.external_config.HivePartitioningOptions
+            partition_options = self.bigquery.external_config.HivePartitioningOptions
             options = {
                 "mode": "STRINGS",
                 "sourceUriPrefix": source_uri_prefix,
             }
             external_config.hive_partitioning = partition_options.from_api_repr(options)
 
-        table = bigquery.Table(self.table_id)
+        table = self.bigquery.Table(self.table_id)
         table.external_data_configuration = external_config
         try:
             self.client.create_table(table, exists_ok=exists_ok)
@@ -630,7 +628,7 @@ class BigQuery:
         Returns:
         - True if successful.
         """
-        dataset = bigquery.Dataset(self.dataset_id)
+        dataset = self.bigquery.Dataset(self.dataset_id)
         dataset = self.client.create_dataset(dataset, exists_ok=exists_ok)
         log(f"BigQuery - Dataset created: {self.dataset_id}")
         return True
@@ -922,6 +920,8 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
     # Example usage
+    from google.cloud import bigquery
+
     dataset = "clean"
     print(BigQuery().ls())
     print(BigQuery(dataset=dataset).get_dataset().dataset_id)

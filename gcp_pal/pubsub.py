@@ -2,10 +2,7 @@ import os
 import json
 from gcp_pal.utils import try_import
 
-try_import("google.cloud.pubsub_v1", "PubSub")
-from google.cloud import pubsub_v1
-
-from gcp_pal.utils import get_auth_default, log, ClientHandler
+from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 
 class PubSub:
@@ -28,13 +25,10 @@ class PubSub:
         self.topic_id = topic
         self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
 
-        # Initialize the publisher client only once per project
-        # if self.project in PubSub._clients:
-        #     self.publisher = PubSub._clients[self.project]
-        # else:
-        #     self.publisher = pubsub_v1.PublisherClient()
-        #     PubSub._clients[self.project] = self.publisher
-        self.publisher = ClientHandler(pubsub_v1.PublisherClient).get()
+        self.pubsub = ModuleHandler("google.cloud").please_import(
+            "pubsub_v1", who_is_calling="PubSub"
+        )
+        self.publisher = ClientHandler(self.pubsub.PublisherClient).get()
 
         self.topic_path = self.publisher.topic_path(self.project, topic)
 

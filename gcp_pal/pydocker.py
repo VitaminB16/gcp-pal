@@ -2,10 +2,7 @@ import os
 
 from gcp_pal.utils import try_import
 
-try_import("docker", "Docker")
-import docker
-
-from gcp_pal.utils import get_auth_default, log
+from gcp_pal.utils import get_auth_default, log, ModuleHandler
 
 
 class Docker:
@@ -13,8 +10,9 @@ class Docker:
     _client = None
 
     def __init__(self, name, project=None, tag="latest", destination=None):
+        self.docker = ModuleHandler("docker").please_import(who_is_calling="Docker")
         if self._client is None:
-            self.client = docker.from_env()
+            self.client = self.docker.from_env()
             Docker._client = self.client
         else:
             self.client = self._client

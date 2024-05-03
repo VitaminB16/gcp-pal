@@ -1,17 +1,6 @@
-import json
 import requests
-from gcp_pal.utils import try_import
 
-try_import("google.auth", "Requests")
-try_import("google.oauth2", "Requests")
-try_import("google.auth.transport.requests", "Requests")
-import requests
-import google.auth
-import google.auth.exceptions
-from google.oauth2 import id_token
-from google.auth.transport.requests import Request as AuthRequest
-
-from gcp_pal.utils import log
+from gcp_pal.utils import log, ModuleHandler
 
 
 class Request:
@@ -33,8 +22,21 @@ class Request:
         """
         self.url = url
 
+        self.google_auth = ModuleHandler("google.auth").please_import(
+            who_is_calling="Request"
+        )
+        self.id_token = ModuleHandler("google.oauth2").please_import(
+            "id_token", who_is_calling="Request"
+        )
+        self.AuthRequest = ModuleHandler(
+            "google.auth.transport.requests"
+        ).please_import("Request", who_is_calling="Request")
+        self.exceptions = ModuleHandler("google.auth.exceptions").please_import(
+            who_is_calling="Request"
+        )
+
         scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-        self.credentials, self.project = google.auth.default(scopes=scopes)
+        self.credentials, self.project = self.google_auth.default(scopes=scopes)
 
         self.project = project or self.project
 
@@ -53,7 +55,7 @@ class Request:
 
     def get_identity_token(self):
         # Attempt to fetch an identity token for the given URL
-        auth_req = AuthRequest()
+        auth_req = self.AuthRequest()
         try:
             # Ensure the credentials are valid and refreshed
             if not self.credentials.valid:
@@ -61,12 +63,12 @@ class Request:
 
             # The audience URL should be the URL of the cloud function or service you are accessing.
             # Make sure this matches exactly what's expected by the service.
-            token = id_token.fetch_id_token(auth_req, self.url)
+            token = self.id_token.fetch_id_token(auth_req, self.url)
             return token
-        except google.auth.exceptions.DefaultCredentialsError:
+        except self.exceptions.DefaultCredentialsError:
             log(f"Request - Fetching credentials via access token.")
             return self._fetch_identity_access_token(auth_req)
-        except google.auth.exceptions.RefreshError as e:
+        except self.exceptions.RefreshError as e:
             log(f"Request - Error refreshing credentials: {e}")
             return None
 

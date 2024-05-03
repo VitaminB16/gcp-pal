@@ -2,13 +2,16 @@ import os
 import threading
 from gcp_pal.utils import try_import
 
-try_import("google.cloud.dataplex_v1", "Dataplex")
 try_import("google.api_core.exceptions", "Dataplex")
 import google.api_core.exceptions
-from google.cloud.dataplex_v1 import DataplexServiceClient
-from google.cloud.dataplex_v1.types import Lake, Zone, Asset
 
-from gcp_pal.utils import get_auth_default, log, get_all_kwargs, ClientHandler
+from gcp_pal.utils import (
+    get_auth_default,
+    log,
+    get_all_kwargs,
+    ClientHandler,
+    ModuleHandler,
+)
 
 
 class Dataplex:
@@ -72,20 +75,19 @@ class Dataplex:
         self.path = self._get_path()
         self.parent = self._get_parent()
 
-        self.client = ClientHandler(DataplexServiceClient).get()
-
-        # if self.project in Dataplex._clients:
-        #     self.client = Dataplex._clients[self.project]
-        # else:
-        #     self.client = DataplexServiceClient()
-        #     Dataplex._clients[self.project] = self.client
+        self.dataplex = ModuleHandler("google.cloud").please_import(
+            "dataplex_v1", who_is_calling="Dataplex"
+        )
+        self.types = self.dataplex.types
+        self.client = ClientHandler(self.dataplex.DataplexServiceClient).get()
 
     def _refresh_client(self):
         """
         Refresh the client. This is useful when the client caches some data and it needs to be refreshed.
         """
-        self.client = DataplexServiceClient()
-        Dataplex._clients[self.project] = self.client
+        self.client = ClientHandler(self.dataplex.DataplexServiceClient).get(
+            force_refresh=True
+        )
 
     def _get_type(self):
         """
@@ -245,8 +247,8 @@ class Dataplex:
         - (dict): The lake resource.
         """
         log(f"Dataplex - Creating lake '{self.lake_id}' [location: {self.location}]...")
-        metastore = Lake.Metastore(service=metastore_service)
-        lake = Lake(
+        metastore = self.types.Lake.Metastore(service=metastore_service)
+        lake = self.types.Lake(
             display_name=display_name,
             description=description,
             labels=labels,
@@ -295,9 +297,9 @@ class Dataplex:
         Returns:
         - (dict): The zone resource.
         """
-        ResourceSpec = Zone.ResourceSpec
+        ResourceSpec = self.types.Zone.ResourceSpec
         LocationType = ResourceSpec.LocationType
-        ZoneType = Zone.Type
+        ZoneType = self.types.Zone.Type
         log(
             f"Dataplex - Creating zone '{self.zone_id}' [type: {zone_type}, location: {self.location} ({location_type})]..."
         )
@@ -305,8 +307,8 @@ class Dataplex:
         zone_type = {"raw": 1, "curated": 2}.get(zone_type, 0)
         location_type = LocationType(location_type)
         zone_type = ZoneType(zone_type)
-        resource_spec = Zone.ResourceSpec(location_type=location_type)
-        zone = Zone(
+        resource_spec = self.types.Zone.ResourceSpec(location_type=location_type)
+        zone = self.types.Zone(
             display_name=display_name,
             description=description,
             labels=labels,
@@ -363,7 +365,7 @@ class Dataplex:
         log(
             f"Dataplex - Creating asset '{self.asset_id}' [source: {asset_source}, type: {asset_type}]..."
         )
-        ResourceSpec = Asset.ResourceSpec
+        ResourceSpec = self.types.Asset.ResourceSpec
         ResourceType = ResourceSpec.Type
         path_bit = {"storage": "buckets", "bigquery": "datasets"}.get(asset_type)
         asset_type = {"storage": 1, "bigquery": 2}.get(asset_type, 0)
@@ -371,7 +373,7 @@ class Dataplex:
         if not asset_source.startswith("projects/"):
             asset_source = f"projects/{self.project}/{path_bit}/{asset_source}"
         resource_spec = ResourceSpec(name=asset_source, type_=asset_type)
-        asset = Asset(
+        asset = self.types.Asset(
             display_name=display_name,
             description=description,
             labels=labels,

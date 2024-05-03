@@ -1,10 +1,8 @@
 import os
 from gcp_pal.utils import try_import
 
-try_import("gcsfs", "Storage")
-import gcsfs
 
-from gcp_pal.utils import get_auth_default, log, ClientHandler
+from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 
 class Storage:
@@ -47,17 +45,9 @@ class Storage:
             self.bucket_path = None
 
         self.ref_type = self._ref_type()
-
-        # if self.location in Storage._clients.get(self.project, {}):
-        #     self.fs = Storage._clients[self.project][self.location]
-        # else:
-        #     self.fs = gcsfs.GCSFileSystem(
-        #         project=self.project,
-        #         default_location=self.location,
-        #         cache_timeout=0,
-        #     )
-        #     Storage._clients[self.project] = {self.location: self.fs}
-        self.fs = ClientHandler(gcsfs.GCSFileSystem).get(
+        self.gcsfs = ModuleHandler("gcsfs").please_import(who_is_calling="Storage")
+        self.GCSFileSystem = self.gcsfs.GCSFileSystem
+        self.fs = ClientHandler(self.GCSFileSystem).get(
             project=self.project,
             default_location=self.location,
             cache_timeout=0,
@@ -234,7 +224,7 @@ class Storage:
             raise ValueError("Bucket name is required.")
         try:
             output = self.fs.mkdir(bucket_name)
-        except gcsfs.retry.HttpError as e:
+        except self.gcsfs.retry.HttpError as e:
             exists = "Your previous request to create the named bucket succeeded and you already own it."
             if exists in str(e) and exists_ok:
                 return
