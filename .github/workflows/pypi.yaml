@@ -57,6 +57,10 @@ jobs:
     - name: Build distribution
       run: python3 -m poetry build
 
+    - name: Get version from poetry
+      id: get_version
+      run: echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+
     # - name: Publish distribution to PyPI
     #   uses: pypa/gh-action-pypi-publish@release/v1
     #   with:
@@ -68,8 +72,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v$(poetry version -s)
-        release_name: Release $(poetry version -s)
-        body: 'New release $(poetry version -s)'
+        tag_name: "v${{ env.VERSION }}"
+        release_name: "Release ${{ env.VERSION }}"
+        body: "New release ${{ env.VERSION }}"
         draft: false
         prerelease: false
