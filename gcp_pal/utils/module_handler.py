@@ -42,7 +42,7 @@ class ModuleHandler:
         # Try to import the module. This will show the missing dependencies.
         try_import(full_name, who_is_calling, errors)
 
-        # If no errors, we can import the module:
+        # If no errors, we can import the module (this is fast):
         try:
             module = importlib.import_module(full_name)
         except ModuleNotFoundError:
@@ -54,3 +54,7 @@ class ModuleHandler:
         ModuleHandler._imported[full_name] = module
 
         return module
+
+
+if __name__ == "__main__":
+    bq_client1 = ModuleHandler("google.cloud.bigquery").please_import("Client")()

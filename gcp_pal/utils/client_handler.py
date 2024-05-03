@@ -43,15 +43,32 @@ class ClientHandler:
 
 if __name__ == "__main__":
     from google.cloud import bigquery, firestore
+    import time
 
+    time_now = time.time()
     bq_client1 = ClientHandler(bigquery.Client).get()
+    time_after_bq_client1 = time.time()
+    print(f"Time taken for bq_client1: {time_after_bq_client1 - time_now}")
     bq_client2 = ClientHandler(bigquery.Client).get()
+    time_after_bq_client2 = time.time()
+    print(f"Time taken for bq_client2: {time_after_bq_client2 - time_after_bq_client1}")
     bq_client3 = ClientHandler(bigquery.Client).get(force_refresh=True)
+    time_after_bq_client3 = time.time()
+    print(f"Time taken for bq_client3: {time_after_bq_client3 - time_after_bq_client2}")
 
     fs_client1 = ClientHandler(firestore.Client).get()
+    time_after_fs_client1 = time.time()
+    print(f"Time taken for fs_client1: {time_after_fs_client1 - time_after_bq_client3}")
     fs_client2 = ClientHandler(firestore.Client).get(project="my-project")
+    time_after_fs_client2 = time.time()
+    print(f"Time taken for fs_client2: {time_after_fs_client2 - time_after_fs_client1}")
     fs_client3 = ClientHandler(firestore.Client).get(force_refresh=True)
+    time_after_fs_client3 = time.time()
+    print(f"Time taken for fs_client3: {time_after_fs_client3 - time_after_fs_client2}")
     fs_client4 = ClientHandler(firestore.Client).get(project="my-project")
+    time_after_fs_client4 = time.time()
+    print(f"Time taken for fs_client4: {time_after_fs_client4 - time_after_fs_client3}")
+
 
     assert bq_client1 is bq_client2
     assert bq_client1 is not bq_client3

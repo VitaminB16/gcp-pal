@@ -1,16 +1,17 @@
-name: Build and publish gcp-pal to PyPI
+name: Build and publish gcp-pal to PyPI and GitHub
+
 on:
   push:
     branches:
     - main
 
 jobs:
-  pypi:
+  pypi-and-github:
     permissions:
-      contents: 'read'
+      contents: 'write'
       id-token: 'write'
 
-    name: Publish to PyPI
+    name: Publish to PyPI and GitHub
     runs-on: ubuntu-latest
 
     steps:
@@ -56,14 +57,23 @@ jobs:
     - name: Build distribution
       run: python3 -m poetry build
 
+    - name: Get version from poetry
+      id: get_version
+      run: echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
+
     - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: "dist/*"
+      id: create_release
+      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ env.VERSION }}"
+        release_name: "Release ${{ env.VERSION }}"
+        body: "New release ${{ env.VERSION }}"
+        draft: false
+        prerelease: false
