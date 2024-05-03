@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "gcp-pal"
-version = "1.0.10"
+version = "1.0.11"
 description = "Set of utilities for interacting with Google Cloud Platform"
 authors = ["VitaminB16 <artemiy.nosov@gmail.com>"]
 readme = "README.md"
+homepage = "https://github.com/VitaminB16/gcp-pal"
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -35,6 +37,7 @@ google-cloud-scheduler = "^2.13.3"
 google-cloud-logging = "^3.10.0"
 google-cloud-resource-manager = "^1.12.3"
 google-cloud-dataplex = "^1.13.0"
+google-cloud-datastore = "^2.19.0"
 
 [build-system]
 requires = ["poetry-core"]
