@@ -68,7 +68,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: $(poetry version -s)
+        tag_name: v$(poetry version -s)
         release_name: Release $(poetry version -s)
         body: 'New release $(poetry version -s)'
         draft: false
