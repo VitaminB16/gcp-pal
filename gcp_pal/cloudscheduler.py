@@ -38,7 +38,7 @@ class CloudScheduler:
         #     self.client = CloudSchedulerClient()
         #     CloudScheduler._client[self.project] = self.client
 
-        self.client = ClientHandler(CloudSchedulerClient).get(project=self.project)
+        self.client = ClientHandler(CloudSchedulerClient).get()
 
     def __repr__(self):
         return f"CloudScheduler({self.name})"

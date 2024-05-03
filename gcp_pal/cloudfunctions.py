@@ -43,9 +43,7 @@ class CloudFunctions:
         # else:
         #     self.client = functions_v2.FunctionServiceClient()
         #     CloudFunctions._clients[self.project] = self.client
-        self.client = ClientHandler(functions_v2.FunctionServiceClient).get(
-            project=self.project
-        )
+        self.client = ClientHandler(functions_v2.FunctionServiceClient).get()
 
     def __repr__(self):
         return f"CloudFunctions({self.name})"
