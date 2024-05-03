@@ -43,7 +43,12 @@ class ModuleHandler:
         try_import(full_name, who_is_calling, errors)
 
         # If no errors, we can import the module:
-        module = importlib.import_module(full_name)
+        try:
+            module = importlib.import_module(full_name)
+        except ModuleNotFoundError:
+            module = importlib.import_module(self.module_name)
+            if thing is not None:
+                module = getattr(module, thing)
 
         # Save the imported module to the cache:
         ModuleHandler._imported[full_name] = module

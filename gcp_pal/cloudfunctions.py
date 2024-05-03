@@ -47,7 +47,7 @@ class CloudFunctions:
         - (list) List of cloud functions.
         """
         parent = f"projects/{self.project}/locations/{self.location}"
-        request = functions_v2.ListFunctionsRequest(parent=parent)
+        request = self.functions.ListFunctionsRequest(parent=parent)
         page_result = self.client.list_functions(request)
         if active_only:
             output = [f.name for f in page_result if f.status.name == "ACTIVE"]
@@ -71,7 +71,7 @@ class CloudFunctions:
             function_id = f"{self.parent}/functions/{name}"
         else:
             function_id = self.function_id
-        request = functions_v2.GetFunctionRequest(name=function_id)
+        request = self.functions.GetFunctionRequest(name=function_id)
         output = self.client.get_function(request)
         return output
 

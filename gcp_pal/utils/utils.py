@@ -19,7 +19,9 @@ def try_import(module_name, origin_module=None, errors="raise"):
 
     try:
         return importlib.import_module(module_name)
-    except (ImportError, ModuleNotFoundError):
+    except (ImportError, ModuleNotFoundError) as e:
+        if "is not a package" in str(e):
+            return None
         pypi_name = PYPI_NAMES.get(module_name, None)
         pypi_str = f"(PyPI: '{pypi_name}')" if pypi_name else ""
         if origin_module:

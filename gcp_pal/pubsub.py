@@ -28,7 +28,7 @@ class PubSub:
         self.pubsub = ModuleHandler("google.cloud").please_import(
             "pubsub_v1", who_is_calling="PubSub"
         )
-        self.publisher = ClientHandler(self.pubsub_v1.PublisherClient).get()
+        self.publisher = ClientHandler(self.pubsub.PublisherClient).get()
 
         self.topic_path = self.publisher.topic_path(self.project, topic)
 

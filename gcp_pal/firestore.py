@@ -268,8 +268,8 @@ class Firestore:
             concurrent.futures.wait(futures)
 
     def _ref_type(self, doc_ref):
-        is_doc_ref = isinstance(doc_ref, firestore.DocumentReference)
-        is_coll_ref = isinstance(doc_ref, firestore.CollectionReference)
+        is_doc_ref = isinstance(doc_ref, self.firestore.DocumentReference)
+        is_coll_ref = isinstance(doc_ref, self.firestore.CollectionReference)
         return "document" if is_doc_ref else "collection" if is_coll_ref else None
 
     def ls(self, path=None) -> list[str]:

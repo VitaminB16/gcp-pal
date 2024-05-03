@@ -1,16 +1,11 @@
 import os
 from gcp_pal.utils import try_import
 
-try_import("pyarrow", "Parquet")
-try_import("pyarrow.parquet", "Parquet")
-import pyarrow as pa
-import pyarrow.parquet as pq
-
 from typing import List
 from urllib.parse import unquote
 
 
-from gcp_pal.utils import is_dataframe, force_list
+from gcp_pal.utils import is_dataframe, force_list, ModuleHandler
 
 
 class Parquet:
@@ -20,12 +15,16 @@ class Parquet:
 
     def __init__(self, path: str, **kwargs):
         self.path = path
+        self.pa = ModuleHandler("pyarrow").please_import(who_is_calling="Parquet")
+        self.pq = ModuleHandler("pyarrow.parquet").please_import(
+            who_is_calling="Parquet"
+        )
 
     def write(
         self,
         data,
         partition_cols: List[str] = None,
-        schema: pa.Schema = None,
+        schema=None,
         basename_template="{i}.parquet",
         **kwargs,
     ):
@@ -79,8 +78,8 @@ class Parquet:
         - kwargs: Additional arguments to pass to `pyarrow.parquet.write_to_dataset`.
         """
         if is_dataframe(data):
-            pq.write_to_dataset(
-                table=pa.Table.from_pandas(data),
+            self.pq.write_to_dataset(
+                table=self.pa.Table.from_pandas(data),
                 root_path=self.path,
                 partition_cols=partition_cols,
                 schema=schema,
@@ -141,7 +140,7 @@ class Parquet:
 
                 schema = Schema(schema).pyarrow()
             try:
-                df = pq.read_table(
+                df = self.pq.read_table(
                     self.path,
                     columns=columns,
                     filters=filters,
