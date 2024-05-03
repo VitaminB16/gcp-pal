@@ -22,6 +22,15 @@ def try_import(module_name, origin_module=None, errors="raise"):
     except (ImportError, ModuleNotFoundError) as e:
         if "is not a package" in str(e):
             return None
+        elif "No module name" in str(e):
+            try:
+                # Try to import the module, e.g. "google.cloud.bigquery" and get the class, e.g. "Client"
+                class_name = module_name.split(".")[-1]
+                try_module_name = ".".join(module_name.split(".")[:-1])
+                module = importlib.import_module(try_module_name)
+                return getattr(module, class_name)
+            except (ImportError, ModuleNotFoundError):
+                raise ImportError(str(e)) from None
         pypi_name = PYPI_NAMES.get(module_name, None)
         pypi_str = f"(PyPI: '{pypi_name}')" if pypi_name else ""
         if origin_module:
