@@ -3,7 +3,7 @@ name: Build and publish gcp-pal to PyPI and GitHub
 on:
   push:
     branches:
-    - dev
+    - main
 
 jobs:
   pypi-and-github:
@@ -46,13 +46,13 @@ jobs:
         poetry config virtualenvs.create false --local
         poetry install
 
-    # - name: Run tests
-    #   run: |
-    #     ./runtests.sh | tee output.txt
-    #     if grep -q "= FAILURES =" output.txt; then
-    #       echo "Tests failed"
-    #       exit 1
-    #     fi
+    - name: Run tests
+      run: |
+        ./runtests.sh | tee output.txt
+        if grep -q "= FAILURES =" output.txt; then
+          echo "Tests failed"
+          exit 1
+        fi
 
     - name: Build distribution
       run: python3 -m poetry build
@@ -61,10 +61,10 @@ jobs:
       id: get_version
       run: echo "VERSION=$(poetry version -s)" >> $GITHUB_ENV
 
-    # - name: Publish distribution to PyPI
-    #   uses: pypa/gh-action-pypi-publish@release/v1
-    #   with:
-    #     password: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Publish distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Create GitHub Release
       id: create_release
