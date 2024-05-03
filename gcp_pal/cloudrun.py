@@ -40,19 +40,19 @@ class CloudRun:
         self.full_name = f"{self.parent}/{self.type}s/{self.name}"
         self.image_url = None
 
-        # if self.project in CloudRun._client:
+        # if self.project in CloudRun._client:E
         #     self.client = CloudRun._client[self.project]
         # else:
         #     self.client = run_v2.ServicesClient()
         #     CloudRun._client[self.project] = self.client
-        self.client = ClientHandler(run_v2.ServicesClient).get(project=self.project)
+        self.client = ClientHandler(run_v2.ServicesClient).get()
 
         # if self.project in CloudRun._jobs_client:
         #     self.jobs_client = CloudRun._jobs_client[self.project]
         # else:
         #     self.jobs_client = run_v2.JobsClient()
         #     CloudRun._jobs_client[self.project] = self.jobs_client
-        self.jobs_client = ClientHandler(run_v2.JobsClient).get(project=self.project)
+        self.jobs_client = ClientHandler(run_v2.JobsClient).get()
 
     def ls_jobs(self, active_only=False, full_id=False):
         """

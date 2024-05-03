@@ -14,7 +14,10 @@ class ClientHandler:
         """
         self.client_initializer = client_initializer
         self.module_name = client_initializer.__module__
-        self.client_name = client_initializer.__name__
+        try:
+            self.client_name = client_initializer.__name__
+        except AttributeError:
+            self.client_name = client_initializer.__class__.__name__
         self.initializer_name = f"{self.module_name}.{self.client_name}"
 
     def get(self, force_refresh=False, **kwargs):
