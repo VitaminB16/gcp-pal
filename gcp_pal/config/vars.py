@@ -9,6 +9,7 @@ PYPI_NAMES = {
     "google.cloud.logging": "google-cloud-logging",
     "google.cloud.pubsub_v1": "google-cloud-pubsub",
     "google.cloud.bigquery": "google-cloud-bigquery",
+    "google.cloud.datastore": "google-cloud-datastore",
     "google.cloud.firestore": "google-cloud-firestore",
     "google.cloud.dataplex_v1": "google-cloud-dataplex",
     "google.cloud.functions_v1": "google-cloud-functions",

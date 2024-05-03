@@ -1,11 +1,6 @@
 import os
-from gcp_pal.utils import try_import
 
-try_import("google.cloud.resourcemanager_v3", "Project")
-
-from google.cloud.resourcemanager_v3 import ProjectsClient
-from google.cloud.resourcemanager_v3.types import Project as ProjectType
-from gcp_pal.utils import get_auth_default, log, ClientHandler
+from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 
 class Project:
@@ -22,13 +17,12 @@ class Project:
         self.parent = f"folders/{self.folder}" if self.folder else None
         self.name = f"projects/{self.project_id}"
 
-        # if self.project_id in Project._clients:
-        #     self.client = Project._clients[self.project_id]
-        # else:
-        #     self.client = ProjectsClient()
-        #     Project._clients[self.project_id] = self.client
-
-        self.client = ClientHandler(ProjectsClient).get()
+        self.resourcemanager = ModuleHandler("google.cloud").please_import(
+            "resourcemanager_v3", who_is_calling="Project"
+        )
+        self.ProjectsClient = self.resourcemanager.ProjectsClient
+        self.types = self.resourcemanager.types
+        self.client = ClientHandler(self.ProjectsClient).get()
 
     def __repr__(self):
         return f"Project({self.project_id})"
@@ -40,7 +34,7 @@ class Project:
         Returns:
         - google.cloud.resourcemanager_v3.types.Project
         """
-        project = ProjectType(project_id=self.project_id, parent=self.parent)
+        project = self.types.Project(project_id=self.project_id, parent=self.parent)
         output = self.client.create_project(project=project)
         output = output.result(timeout=300)
         log(f"Project - Created project '{self.project_id}'.")

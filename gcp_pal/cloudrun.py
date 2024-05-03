@@ -5,22 +5,11 @@ from uuid import uuid4
 
 from gcp_pal.utils import try_import
 
-try_import("google.cloud.run_v2", "CloudRun")
 try_import("google.api_core.exceptions", "CloudRun")
-from google.cloud import run_v2
-from google.cloud.run_v2 import Service, TrafficTarget, Condition, Job
-from google.cloud.run_v2.types import (
-    EnvVar,
-    ResourceRequirements,
-    UpdateServiceRequest,
-    UpdateJobRequest,
-    CreateServiceRequest,
-    CreateJobRequest,
-)
 import google.api_core.exceptions
 
 from gcp_pal.pydocker import Docker
-from gcp_pal.utils import get_auth_default, log, ClientHandler
+from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 
 class CloudRun:
@@ -40,19 +29,12 @@ class CloudRun:
         self.full_name = f"{self.parent}/{self.type}s/{self.name}"
         self.image_url = None
 
-        # if self.project in CloudRun._client:E
-        #     self.client = CloudRun._client[self.project]
-        # else:
-        #     self.client = run_v2.ServicesClient()
-        #     CloudRun._client[self.project] = self.client
-        self.client = ClientHandler(run_v2.ServicesClient).get()
-
-        # if self.project in CloudRun._jobs_client:
-        #     self.jobs_client = CloudRun._jobs_client[self.project]
-        # else:
-        #     self.jobs_client = run_v2.JobsClient()
-        #     CloudRun._jobs_client[self.project] = self.jobs_client
-        self.jobs_client = ClientHandler(run_v2.JobsClient).get()
+        self.run = ModuleHandler("google.cloud").please_import(
+            "run_v2", who_is_calling="CloudRun"
+        )
+        self.types = self.run.types
+        self.client = ClientHandler(self.run.ServicesClient).get()
+        self.jobs_client = ClientHandler(self.run.JobsClient).get()
 
     def ls_jobs(self, active_only=False, full_id=False):
         """
@@ -190,7 +172,7 @@ class CloudRun:
         image_url = image_url or self.image_url
         # gcloud run deploy seems to set HOST=0.0.0.0 by default?
         default_env_vars = {"HOST": "0.0.0.0"}
-        service = Service(
+        service = self.run.Service(
             template={
                 "containers": [
                     {
@@ -198,7 +180,9 @@ class CloudRun:
                         "env": self._parse_env_vars(
                             env_vars_file, default=default_env_vars
                         ),
-                        "resources": ResourceRequirements(limits={"memory": memory}),
+                        "resources": self.types.ResourceRequirements(
+                            limits={"memory": memory}
+                        ),
                         **container_kwargs,
                     }
                 ],
@@ -213,13 +197,13 @@ class CloudRun:
         if not service_exists:
             log(f"Cloud Run - Creating service '{self.name}'...")
             args = {"parent": self.parent, "service": service, "service_id": self.name}
-            request = CreateServiceRequest(**args)
+            request = self.types.CreateServiceRequest(**args)
             response = self.client.create_service(request=request)
         else:
             log(f"Cloud Run - Updating service '{self.name}'...")
             # Add 'name' to service.template.containers
             service.name = self.full_name
-            request = UpdateServiceRequest(service=service)
+            request = self.types.UpdateServiceRequest(service=service)
             response = self.client.update_service(request=request)
         if wait_to_complete:
             log(f"Cloud Run - Waiting for service '{self.name}' to complete...")
@@ -243,14 +227,16 @@ class CloudRun:
         - job_kwargs (dict): Additional job configuration.
         """
         image_url = image_url or self.image_url
-        job = Job(
+        job = self.run.Job(
             name=self.full_name,
             template={
                 "containers": [
                     {
                         "image": image_url,
                         "env": self._parse_env_vars(env_vars_file),
-                        "resources": ResourceRequirements(limits={"memory": memory}),
+                        "resources": self.types.ResourceRequirements(
+                            limits={"memory": memory}
+                        ),
                         **container_kwargs,
                     }
                 ]
@@ -314,7 +300,7 @@ class CloudRun:
             return []
         data = load_yaml(yaml_file)
         data = {**default, **data}
-        return [EnvVar(name=k, value=str(v)) for k, v in data.items()]
+        return [self.types.EnvVar(name=k, value=str(v)) for k, v in data.items()]
 
     def deploy(
         self,

@@ -1,14 +1,7 @@
 import os
 import json
 
-from gcp_pal.utils import try_import
-
-try_import("google.cloud.secretmanager", "SecretManager")
-try_import("google.api_core.exceptions", "SecretManager")
-from google.cloud import secretmanager
-import google.api_core.exceptions
-
-from gcp_pal.utils import get_auth_default, log, ClientHandler
+from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 
 class SecretManager:
@@ -23,13 +16,14 @@ class SecretManager:
         self.name = name
         self.full_name = f"{self.parent}/secrets/{self.name}"
 
-        # if self.project in SecretManager._client:
-        #     self.client = SecretManager._client[self.project]
-        # else:
-        #     self.client = secretmanager.SecretManagerServiceClient()
-        #     SecretManager._client[self.project] = self.client
+        self.exceptions = ModuleHandler("google.api_core").please_import(
+            "exceptions", who_is_calling="SecretManager"
+        )
 
-        self.client = ClientHandler(secretmanager.SecretManagerServiceClient).get()
+        self.secretmanager = ModuleHandler("google.cloud").please_import(
+            "secretmanager", who_is_calling="SecretManager"
+        )
+        self.client = ClientHandler(self.secretmanager.SecretManagerServiceClient).get()
 
     def __repr__(self):
         return f"SecretManager({self.name})"
@@ -85,7 +79,7 @@ class SecretManager:
         try:
             self.get(name=name)
             return True
-        except google.api_core.exceptions.NotFound:
+        except self.exceptions.NotFound:
             return False
 
     def create(self, value=None, labels=None, replication=None, if_exists="update"):
@@ -105,7 +99,7 @@ class SecretManager:
         if replication is None:
             replication = {"automatic": {}}
 
-        secret = secretmanager.Secret(
+        secret = self.secretmanager.Secret(
             name=self.full_name,
             replication=replication,
             labels=labels,
@@ -115,7 +109,7 @@ class SecretManager:
                 secret=secret, parent=self.parent, secret_id=self.name
             )
             log(f"Secret Manager - Created secret {self.name}.")
-        except google.api_core.exceptions.AlreadyExists:
+        except self.exceptions.AlreadyExists:
             if if_exists == "update":
                 log(
                     f"Secret Manager - Secret {self.name} already exists. Adding new version..."
@@ -154,7 +148,7 @@ class SecretManager:
         """
         try:
             output = self.client.delete_secret(name=self.full_name)
-        except google.api_core.exceptions.NotFound:
+        except self.exceptions.NotFound:
             if errors == "ignore":
                 log(f"Secret Manager - Secret {self.name} not found to delete.")
                 return None

@@ -3,20 +3,10 @@ import json
 
 from gcp_pal.utils import try_import
 
-try_import("google.cloud.scheduler_v1", "CloudScheduler")
 try_import("google.api_core.exceptions", "CloudScheduler")
 import google.api_core.exceptions
-from google.cloud.scheduler_v1 import CloudSchedulerClient
-from google.cloud.scheduler_v1.types import (
-    Job,
-    HttpTarget,
-    PubsubTarget,
-    HttpMethod,
-    OAuthToken,
-    OidcToken,
-)
 
-from gcp_pal.utils import get_auth_default, log, ClientHandler
+from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 
 class CloudScheduler:
@@ -32,13 +22,11 @@ class CloudScheduler:
         self.parent = f"projects/{self.project}/locations/{self.location}"
         self.full_name = f"{self.parent}/jobs/{self.name}"
 
-        # if self.project in CloudScheduler._client:
-        #     self.client = CloudScheduler._client[self.project]
-        # else:
-        #     self.client = CloudSchedulerClient()
-        #     CloudScheduler._client[self.project] = self.client
-
-        self.client = ClientHandler(CloudSchedulerClient).get()
+        self.scheduler = ModuleHandler("google.cloud").please_import(
+            "scheduler_v1", who_is_calling="CloudScheduler"
+        )
+        self.types = self.scheduler.types
+        self.client = ClientHandler(self.scheduler.CloudSchedulerClient).get()
 
     def __repr__(self):
         return f"CloudScheduler({self.name})"
@@ -116,9 +104,9 @@ class CloudScheduler:
         if service_account == "DEFAULT":
             service_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
         if service_account:
-            oauth_token = OAuthToken(service_account_email=service_account)
-            oidc_token = OidcToken(service_account_email=service_account)
-        job = Job(
+            oauth_token = self.types.OAuthToken(service_account_email=service_account)
+            oidc_token = self.types.OidcToken(service_account_email=service_account)
+        job = self.types.Job(
             name=self.full_name,
             schedule=schedule,
             time_zone=time_zone,
@@ -126,10 +114,10 @@ class CloudScheduler:
         )
         payload = json.dumps(payload).encode("utf-8")
         if not target.startswith("http"):
-            job.pubsub_target = PubsubTarget(topic_name=target, data=payload)
+            job.pubsub_target = self.types.PubsubTarget(topic_name=target, data=payload)
         else:
-            http_method = HttpMethod.POST
-            job.http_target = HttpTarget(
+            http_method = self.types.HttpMethod.POST
+            job.http_target = self.types.HttpTarget(
                 uri=target,
                 http_method=http_method,
                 body=payload,

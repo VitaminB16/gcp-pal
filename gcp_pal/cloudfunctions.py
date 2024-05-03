@@ -1,23 +1,13 @@
 import os
 import json
 
-from gcp_pal.utils import try_import
-
-try_import("google.cloud.functions_v2", "CloudFunctions")
-import google.cloud.functions_v2 as functions_v2
-from google.cloud.functions_v2 import (
-    Function,
-    BuildConfig,
-    ServiceConfig,
-    Source,
-    StorageSource,
-    RepoSource,
-    CreateFunctionRequest,
-    UpdateFunctionRequest,
-    Environment,
+from gcp_pal.utils import (
+    get_auth_default,
+    log,
+    get_all_kwargs,
+    ClientHandler,
+    ModuleHandler,
 )
-
-from gcp_pal.utils import get_auth_default, log, get_all_kwargs, ClientHandler
 
 
 class CloudFunctions:
@@ -38,12 +28,10 @@ class CloudFunctions:
         if self.name == self.function_id:
             self.name = self.function_id.split("/")[-1]
 
-        # if self.project in CloudFunctions._clients:
-        #     self.client = CloudFunctions._clients[self.project]
-        # else:
-        #     self.client = functions_v2.FunctionServiceClient()
-        #     CloudFunctions._clients[self.project] = self.client
-        self.client = ClientHandler(functions_v2.FunctionServiceClient).get()
+        self.functions = ModuleHandler("google.cloud").please_import(
+            "functions_v2", who_is_calling="CloudFunctions"
+        )
+        self.client = ClientHandler(self.functions.FunctionServiceClient).get()
 
     def __repr__(self):
         return f"CloudFunctions({self.name})"
@@ -250,23 +238,27 @@ class CloudFunctions:
 
             obj = Storage(path)
             bucket_name, file_name = obj.bucket_name, obj.file_name
-            storage_source = StorageSource(bucket=bucket_name, object=file_name)
-            source = Source(storage_source=storage_source)
+            storage_source = self.functions.StorageSource(
+                bucket=bucket_name, object=file_name
+            )
+            source = self.functions.Source(storage_source=storage_source)
         else:
-            source = Source(repository=RepoSource(url=path))
+            source = self.functions.Source(
+                repository=self.functions.RepoSource(url=path)
+            )
         if service_account_email is None:
             default_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
             service_account_email = default_account
-        environment = Environment(environment)
+        environment = self.functions.Environment(environment)
         all_kwargs = get_all_kwargs(locals())
         function_exists = self.exists()
         function_kwargs, service_kwargs, build_kwargs = self._split_deploy_kwargs(
             all_kwargs
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in all_kwargs}
-        build_config = BuildConfig(**build_kwargs)
-        service_config = ServiceConfig(**service_kwargs)
-        cloud_function = Function(
+        build_config = self.functions.BuildConfig(**build_kwargs)
+        service_config = self.functions.ServiceConfig(**service_kwargs)
+        cloud_function = self.functions.Function(
             name=self.function_id,
             build_config=build_config,
             service_config=service_config,
@@ -275,11 +267,13 @@ class CloudFunctions:
         )
         if function_exists and if_exists == "REPLACE":
             log(f"Cloud Function - Updating '{self.name}'...")
-            request = UpdateFunctionRequest(function=cloud_function, update_mask=None)
+            request = self.functions.UpdateFunctionRequest(
+                function=cloud_function, update_mask=None
+            )
             output = self.client.update_function(request)
         else:
             print(f"Cloud Function - Creating '{self.name}'...")
-            request = CreateFunctionRequest(
+            request = self.functions.CreateFunctionRequest(
                 function=cloud_function, parent=self.parent, function_id=self.name
             )
             output = self.client.create_function(request)
@@ -313,7 +307,7 @@ class CloudFunctions:
         Returns:
         - (dict) The response from the delete request.
         """
-        request = functions_v2.DeleteFunctionRequest(name=self.function_id)
+        request = self.functions.DeleteFunctionRequest(name=self.function_id)
         try:
             output = self.client.delete_function(request)
             if wait_to_complete:
@@ -362,11 +356,11 @@ class CloudFunctions:
         service_kwargs = {}
         build_kwargs = {}
         for key, value in kwargs.items():
-            if key in Function.__annotations__:
+            if key in self.functions.Function.__annotations__:
                 function_kwargs[key] = value
-            elif key in ServiceConfig.__annotations__:
+            elif key in self.functions.ServiceConfig.__annotations__:
                 service_kwargs[key] = value
-            elif key in BuildConfig.__annotations__:
+            elif key in self.functions.BuildConfig.__annotations__:
                 build_kwargs[key] = value
         return function_kwargs, service_kwargs, build_kwargs
 
