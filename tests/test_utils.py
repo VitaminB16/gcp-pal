@@ -272,3 +272,35 @@ def test_zip_directory():
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
+
+
+def test_module_handler():
+    from gcp_pal.utils import ModuleHandler
+
+    success = {}
+
+    math = ModuleHandler("math").please_import()
+
+    success[0] = math is not None
+
+    success[1] = "sqrt" in dir(math)
+    success[2] = math.sqrt(4) - 2.0 < 1e-6
+
+    math2 = ModuleHandler("math").please_import()
+
+    success[3] = math2 is math
+    success[4] = math2 == math
+
+    bq1 = ModuleHandler("google.cloud").please_import("bigquery")
+    bq2 = ModuleHandler("google.cloud.bigquery").please_import()
+
+    success[5] = bq1 is bq2
+    success[6] = bq1 == bq2
+
+    bq_client1 = bq1.Client()
+    bq_client2 = ModuleHandler("google.cloud.bigquery").please_import("Client")()
+    success[7] = sorted(dir(bq_client1)) == sorted(dir(bq_client2))
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
