@@ -304,3 +304,22 @@ def test_module_handler():
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
+
+
+def test_client_handler():
+    from gcp_pal.utils import ClientHandler, ModuleHandler
+
+    success = {}
+    bigquery = ModuleHandler("google.cloud").please_import("bigquery")
+    bq_client1 = ClientHandler(bigquery.Client).get()
+    bq_client2 = ClientHandler(bigquery.Client).get()
+
+    success[0] = bq_client1 is bq_client2
+    success[1] = bq_client1 == bq_client2
+
+    bq_client3 = ClientHandler(bigquery.Client).get(location="europe-west1")
+    success[2] = bq_client3 is not bq_client1
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
