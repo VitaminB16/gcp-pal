@@ -9,7 +9,17 @@ class Docker:
 
     _client = None
 
-    def __init__(self, name, project=None, tag="latest", destination=None):
+    def __init__(self, name, project=None, tag="latest", destination=None, repository="docker"):
+        """
+        Initialize a Docker object.
+
+        Args:
+        - name (str): The name of the Docker image.
+        - project (str): The GCP project ID. Defaults to the PROJECT environment variable or the default auth project.
+        - tag (str): The tag of the Docker image. Defaults to 'latest'.
+        - destination (str): The destination of the pushed image. Defaults to gcr.io/{project}/{name}:{tag}.
+        - repository (str): The name of the Artifact Registry repository. Defaults to 'docker'.
+        """
         self.docker = ModuleHandler("docker").please_import(who_is_calling="Docker")
         if self._client is None:
             self.client = self.docker.from_env()
@@ -20,7 +30,10 @@ class Docker:
         self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         self.name = name
         self.tag = tag
-        self.default_dest = f"gcr.io/{self.project}/{self.name}:{self.tag}"
+        self.repository = repository
+        gcr_dest = f"gcr.io/{self.project}/{self.name}:{self.tag}"
+        ar_dest = f"{self.location}-docker.pkg.dev/{self.project}/{self.repository}/{self.name}:{self.tag}"
+        self.default_dest = gcr_dest
         self.destination = destination or self.default_dest
 
     def build(self, path=".", dockerfile="Dockerfile", verbose=False, **kwargs):

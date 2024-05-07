@@ -274,7 +274,7 @@ class Dataplex:
     def create_zone(
         self,
         zone_type: str,  # "raw" or "curated"
-        location_type: str,  # "single-region" or "multi-region"
+        location_type: str = "single-region",  # "single-region"/"single" or "multi-region"/"multi"
         display_name: str = None,
         description: str = None,
         labels: dict = None,
@@ -287,7 +287,7 @@ class Dataplex:
 
         Args:
         - zone_type (str): The type of the zone. Either `"raw"` or `"curated"`.
-        - location_type (str): The location type of the zone. Either `"single-region"` or `"multi-region"`.
+        - location_type (str): The location type of the zone. Either `"single-region"`/`"single"` or `"multi-region"`/`"multi"`.
         - display_name (str): User-friendly display name of the zone. If not provided, it will be based on the zone_id.
         - description (str): The description of the zone resource.
         - labels (dict): The labels of the zone resource.
@@ -303,7 +303,12 @@ class Dataplex:
         log(
             f"Dataplex - Creating zone '{self.zone_id}' [type: {zone_type}, location: {self.location} ({location_type})]..."
         )
-        location_type = {"single-region": 1, "multi-region": 2}.get(location_type, 0)
+        location_type = {
+            "single-region": 1,
+            "multi-region": 2,
+            "single": 1,
+            "multi": 2,
+        }.get(location_type, 0)
         zone_type = {"raw": 1, "curated": 2}.get(zone_type, 0)
         location_type = LocationType(location_type)
         zone_type = ZoneType(zone_type)
@@ -651,7 +656,6 @@ class Dataplex:
                 return
             raise e
         if wait_to_complete:
-            log(f"Dataplex - Waiting for the lake deletion...")
             output = output.result(timeout=600)
         log(f"Dataplex - Lake deleted: '{self.lake}'.")
         return output
@@ -752,7 +756,6 @@ class Dataplex:
                 return
             raise
         if wait_to_complete:
-            log(f"Dataplex - Waiting for the lake deletion...")
             output = output.result(timeout=600)
         log(f"Dataplex - Lake deleted: '{self.lake}'.")
         return output
@@ -795,6 +798,16 @@ class Dataplex:
             name=name, errors=errors, wait_to_complete=wait_to_complete
         )
         return output
+
+    def state(self):
+        """
+        Retrieves the state of the resource.
+
+        Returns:
+        - (str): The state of the resource.
+        """
+        state = self.get().state.name
+        return state
 
 
 if __name__ == "__main__":
