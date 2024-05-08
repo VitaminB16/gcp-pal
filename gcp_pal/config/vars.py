@@ -17,6 +17,7 @@ PYPI_NAMES = {
     "google.cloud.scheduler_v1": "google-cloud-scheduler",
     "google.cloud.secretmanager": "google-cloud-secret-manager",
     "google.cloud.resource_manager": "google-cloud-resource-manager",
+    "google.cloud.artifactregistry": "google-cloud-artifact-registry",
     "google.cloud.resourcemanager_v3": "google-cloud-resource-manager",
     "pyarrow": "pyarrow",
     "pandas": "pandas",

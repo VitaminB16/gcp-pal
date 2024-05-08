@@ -38,6 +38,7 @@ google-cloud-logging = "^3.10.0"
 google-cloud-resource-manager = "^1.12.3"
 google-cloud-dataplex = "^1.13.0"
 google-cloud-datastore = "^2.19.0"
+google-cloud-artifact-registry = "^1.11.3"
 
 [build-system]
 requires = ["poetry-core"]
