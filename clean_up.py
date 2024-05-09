@@ -6,6 +6,7 @@ from gcp_pal import (
     CloudRun,
     SecretManager,
     Dataplex,
+    ArtifactRegistry,
 )
 from concurrent.futures import ThreadPoolExecutor
 
@@ -158,6 +159,38 @@ def delete_test_dataplex_lakes():
         executor.map(del_fun, lakes_to_delete)
 
 
+def delete_test_artifact_registry():
+    """
+    Deletes all Artifact Registry images that start with "test-"
+    """
+    gcr_images = ArtifactRegistry("gcr.io", location="us").ls()
+    gcr_images_to_delete = [
+        r
+        for r in gcr_images
+        if r.startswith("gcr.io/test_")
+        or r.startswith("gcr.io/test-")
+        or r.startswith("gcr.io/temp_")
+        or r.startswith("gcr.io/example_")
+        or r.startswith("gcr.io/example-")
+    ]
+    del_fun = lambda x: ArtifactRegistry(x, location="us").delete()
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, gcr_images_to_delete)
+
+    test_repositories = ArtifactRegistry().ls()
+    repositories_to_delete = [
+        r
+        for r in test_repositories
+        if r.startswith("test_")
+        or r.startswith("test-")
+        or r.startswith("temp_")
+        or r.startswith("example_")
+    ]
+    del_fun = lambda x: ArtifactRegistry(x).delete()
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, repositories_to_delete)
+
+
 if __name__ == "__main__":
     delete_test_bigquery_datasets()
     delete_test_firestore_collections()
@@ -166,3 +199,4 @@ if __name__ == "__main__":
     delete_test_cloud_run_services()
     delete_test_secret_manager_secrets()
     delete_test_dataplex_lakes()
+    delete_test_artifact_registry()
