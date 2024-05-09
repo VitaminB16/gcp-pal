@@ -171,6 +171,7 @@ def delete_test_artifact_registry():
         or r.startswith("gcr.io/test-")
         or r.startswith("gcr.io/temp_")
         or r.startswith("gcr.io/example_")
+        or r.startswith("gcr.io/example-")
     ]
     del_fun = lambda x: ArtifactRegistry(x, location="us").delete()
     with ThreadPoolExecutor() as executor:

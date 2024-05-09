@@ -371,9 +371,9 @@ class ArtifactRegistry:
         )
         return sha256_version
 
-    def get_tag(self, repository=None, image=None, tag=None):
+    def get_from_tag(self, repository=None, image=None, tag=None):
         """
-        Get a tag.
+        Get the artifact from a tag.
 
         Args:
         - repository (str): The name of the repository.
@@ -386,6 +386,24 @@ class ArtifactRegistry:
         version = self.get_version_from_tag(repository, image, tag)
         output = self.get_version(repository, image, version)
         return output
+
+    def get_tag(self, repository=None, image=None, tag=None):
+        """
+        Get a tag.
+
+        Args:
+        - repository (str): The name of the repository.
+        - image (str): The name of the image.
+        - tag (str): The tag of the image.
+
+        Returns:
+        - Tag: The tag.
+        """
+        repository = repository or self.repository
+        image = image or self.image
+        tag = tag or self.tag
+        parent = f"{self.parent}/repositories/{repository}/packages/{image}/tags/{tag}"
+        return self.client.get_tag(name=parent)
 
     def get(self):
         """
@@ -401,7 +419,7 @@ class ArtifactRegistry:
         elif self.level == "version":
             return self.get_version()
         elif self.level == "tag":
-            return self.get_tag()
+            return self.get_from_tag()
         else:
             raise ValueError("Cannot get item at this level.")
 
@@ -471,7 +489,7 @@ class ArtifactRegistry:
         )
         return output
 
-    def delete_tag(self, repository=None, image=None, tag=None, **kwargs):
+    def delete_tag(self, tag=None, repository=None, image=None, **kwargs):
         """
         Delete a tag.
 
@@ -552,6 +570,105 @@ class ArtifactRegistry:
         for thread in threads:
             thread.join()
 
+    def create_repository(
+        self,
+        name=None,
+        format="docker",
+        mode="standard",
+        immutable_tags=False,
+        version_policy=None,
+    ):
+        """
+        Create a repository.
+
+        Args:
+        - name (str): The name of the repository. If not provided, the repository name from the constructor will be used.
+        - format (str): The format of the repository. Can be either 'docker' or 'maven' (default: 'docker')
+        - mode (str): The mode of the repository. One of 'standard', 'remote' or 'virtual' (default: 'standard')
+        - immutable_tags (bool): [Docker only] Whether to use immutable tags (default: False)
+        - version_policy (str): [Maven only] The version policy for the repository - None, Snapshop or Release (default: None)
+
+
+
+        Returns:
+        - Repository: The repository.
+        """
+        maven_config = None
+        docker_config = None
+        repository = name or self.repository
+        parent = f"{self.parent}/repositories/{repository}"
+        if format == "docker":
+            docker_config = self.types.Repository.DockerRepositoryConfig(
+                immutable_tags=immutable_tags
+            )
+        elif format == "maven":
+            if isinstance(version_policy, str):
+                version_policy = version_policy.lower()
+            version_policy = {None: 0, "none": 0, "snapshot": 1, "release": 2}[
+                version_policy
+            ]
+            version_policy = self.types.Repository.MavenRepositoryConfig.VersionPolicy(
+                version_policy
+            )
+            maven_config = self.types.Repository.MavenRepositoryConfig(
+                version_policy=version_policy
+            )
+        mode = {"standard": 1, "remote": 2, "virtual": 3}.get(mode.lower(), None)
+        if mode is None:
+            raise ValueError("Mode must be either 'standard', 'remote' or 'virtual'.")
+        format = {"docker": 1, "maven": 2}.get(format.lower(), None)
+        if format is None:
+            raise ValueError("Format must be either 'docker' or 'maven'.")
+        format = self.types.Repository.Format(format)
+        mode = self.types.Repository.Mode(mode)
+        repository = self.types.Repository(
+            name=parent,
+            format_=format,
+            mode=mode,
+            docker_config=docker_config,
+            maven_config=maven_config,
+        )
+        output = self.client.create_repository(
+            parent=self.parent, repository=repository, repository_id=self.repository
+        )
+        log(
+            f"Artifact Registry - Created repository {self.project}/{self.location}/{repository}."
+        )
+        return output
+
+    def create_tag(self, tag, repository=None, image=None, version=None):
+        """
+        Create a tag.
+
+        Args:
+        - tag (str): The tag to add to the version of the image.
+        - value (str): The value of the tag.
+        - repository (str): The name of the repository.
+        - image (str): The name of the image.
+        - version (str): The version of the image.
+
+        Returns:
+        - Tag: The tag.
+        """
+        tag_name = tag
+        repository = repository or self.repository
+        image = image or self.image
+        version = version or self.version
+        tag = tag or self.tag
+        Tag = self.types.Tag
+        package_id = f"{self.parent}/repositories/{repository}/packages/{image}"
+        version_id = f"{package_id}/versions/sha256:{version}"
+        tag_id = f"{package_id}/tags/{tag}"
+        tag = Tag(name=tag_id, version=version_id)
+        output = self.client.create_tag(parent=package_id, tag=tag, tag_id=tag_name)
+        log(
+            f"Artifact Registry - Created tag {self.location}/{repository}/{image}:{tag}."
+        )
+        return output
+
 
 if __name__ == "__main__":
-    breakpoint()
+    ArtifactRegistry(
+        "gcr.io/example-service-123/sha256:411f06abcbda4b36a77c6e792e699b4eeb0193ebe441b6144f8fe42db6eada47",
+        location="us",
+    ).create_tag("latest_123")
