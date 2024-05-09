@@ -1,4 +1,6 @@
 import os
+import threading
+
 from gcp_pal.utils import ModuleHandler, ClientHandler, log, get_auth_default
 
 
@@ -17,7 +19,7 @@ class ArtifactRegistry:
         Initialize an ArtifactRegistry object.
 
         Args:
-        - path (str): The path to the resource. This follows the hierarchy `repository/image/tag`.
+        - path (str): The path to the resource. This follows the hierarchy `repository/image/version/tag`.
                       If a full path is given (starting with `'projects/'`), the `project`, `location`, `repository`,
                       `image`, and `tag` will be extracted from the path.
                       The path can be either one of the forms:
@@ -92,20 +94,34 @@ class ArtifactRegistry:
         self.FailedPrecondition = ModuleHandler(
             "google.api_core.exceptions"
         ).please_import("FailedPrecondition", who_is_calling="ArtifactRegistry")
+        self.NotFound = ModuleHandler("google.api_core.exceptions").please_import(
+            "NotFound", who_is_calling="ArtifactRegistry"
+        )
         self.parent = self._get_parent()
 
-    def _get_level(self):
+    def __repr__(self):
+        return f"ArtifactRegistry({self.project}/{self.location}/{self.path})"
+
+    def _get_level(self, repository=None, image=None, version=None, tag=None):
         """
         Get the level of the path. Can be either 'project', 'location', 'repository', or 'file'.
+
+        Args:
+        - repository (str): The name of the repository.
+        - image (str): The name of the image.
+        - version (str): The version of the image.
+        - tag (str): The tag of the image.
 
         Returns:
         - str: The level of the path.
         """
-        if self.tag or self.version:
-            return "digest"
-        elif self.image:
+        if tag or self.tag:
+            return "tag"
+        elif version or self.version:
+            return "version"
+        elif image or self.image:
             return "image"
-        elif self.repository:
+        elif repository or self.repository:
             return "repository"
         elif self.location:
             return "location"
@@ -135,9 +151,9 @@ class ArtifactRegistry:
             path = f"projects/{self.project}/locations/{self.location}/repositories/{self.repository}"
         elif self.level == "image":
             path = f"projects/{self.project}/locations/{self.location}/repositories/{self.repository}/packages/{self.image}"
-        elif self.level == "digest" and self.tag:
+        elif self.level == "tag":
             path = f"projects/{self.project}/locations/{self.location}/repositories/{self.repository}/packages/{self.image}/tags/{self.tag}"
-        elif self.level == "digest" and self.version:
+        elif self.level == "version":
             path = f"projects/{self.project}/locations/{self.location}/repositories/{self.repository}/packages/{self.image}/versions/sha256:{self.version}"
         if shorten:
             path = "/".join(path.split("/")[1::2])
@@ -254,10 +270,10 @@ class ArtifactRegistry:
         repository = repository or self.repository
         image = image or self.image
         version = version or self.version
-        parent = f"{self.parent}/repositories/{repository}/packages/{image}/versions/sha256:{version}"
-        breakpoint()
+        parent = f"{self.parent}/repositories/{repository}/packages/{image}"
         output = self.client.list_tags(parent=parent)
-        output = [tag.name for tag in output]
+        tag_version = f"{parent}/versions/sha256:{version}"
+        output = [tag.name for tag in output if tag.version == tag_version]
         if not full_id:
             tags = [tag.replace(f"{parent}/tags/", "") for tag in output]
             output = [f"{repository}/{image}:{tag}" for tag in tags]
@@ -270,7 +286,9 @@ class ArtifactRegistry:
         Returns:
         - list: The list of repositories or files.
         """
-        if self.level == "image":
+        if self.level == "version":
+            return self.ls_tags()
+        elif self.level == "image":
             return self.ls_versions()
         elif self.level == "repository":
             return self.ls_images()
@@ -380,15 +398,14 @@ class ArtifactRegistry:
             return self.get_repository()
         elif self.level == "image":
             return self.get_image()
-        elif self.level == "digest":
-            if self.tag:
-                return self.get_tag()
-            elif self.version:
-                return self.get_version()
+        elif self.level == "version":
+            return self.get_version()
+        elif self.level == "tag":
+            return self.get_tag()
         else:
             raise ValueError("Cannot get item at this level.")
 
-    def delete_repository(self, repository=None):
+    def delete_repository(self, repository=None, **kwargs):
         """
         Delete a repository.
 
@@ -405,7 +422,7 @@ class ArtifactRegistry:
         log(f"Artifact Registry - Deleted repository {self.location}/{repository}.")
         return output
 
-    def delete_image(self, repository=None, image=None):
+    def delete_image(self, repository=None, image=None, **kwargs):
         """
         Delete an image.
 
@@ -424,7 +441,7 @@ class ArtifactRegistry:
         log(f"Artifact Registry - Deleted image {self.location}/{repository}/{image}.")
         return output
 
-    def delete_version(self, repository=None, image=None, version=None):
+    def delete_version(self, repository=None, image=None, version=None, **kwargs):
         """
         Delete a version.
 
@@ -445,13 +462,16 @@ class ArtifactRegistry:
             output.result()
         except self.FailedPrecondition as e:
             if "because it is tagged." in str(e):
-                breakpoint()
+                log("Artifact Registry - Version is tagged. Deleting tags first...")
+                tags = self.ls_tags(repository, image, version)
+                self._delete_parallel(tags)
+                output = self.client.delete_version(name=parent)
         log(
-            f"Artifact Registry - Deleted digest {self.location}/{repository}/{image}/sha256:{version}"
+            f"Artifact Registry - Deleted version {self.location}/{repository}/{image}/sha256:{version}"
         )
         return output
 
-    def delete_tag(self, repository=None, image=None, tag=None):
+    def delete_tag(self, repository=None, image=None, tag=None, **kwargs):
         """
         Delete a tag.
 
@@ -466,37 +486,72 @@ class ArtifactRegistry:
         repository = repository or self.repository
         image = image or self.image
         tag = tag or self.tag
-        version = self.get_version_from_tag(repository, image, tag)
-        parent = f"{self.parent}/repositories/{repository}/packages/{image}/versions/sha256:{version}"
+        parent = f"{self.parent}/repositories/{repository}/packages/{image}/tags/{tag}"
         output = self.client.delete_tag(name=parent)
-        output.result()
+        try:
+            output.result()
+        except AttributeError:
+            pass
         log(
-            f"Artifact Registry - Deleted digest {self.location}/{repository}/{image}:{tag}."
+            f"Artifact Registry - Deleted tag {self.location}/{repository}/{image}:{tag}."
         )
         return output
 
-    def delete(self):
+    def delete(
+        self, repository=None, image=None, version=None, tag=None, errors="ignore"
+    ):
         """
-        Delete an image, version, or tag.
+        Delete a repository, image, version, or a tag.
+
+        Args:
+        - repository (str): The name of the repository.
+        - image (str): The name of the image.
+        - version (str): The version of the image.
+        - tag (str): The tag of the image.
+        - errors (str): How to handle errors if the item is not found. Can be either 'ignore' or 'raise'.
 
         Returns:
         - None
         """
         if self.level == "repository":
-            return self.delete_repository()
+            operation = self.delete_repository
         elif self.level == "image":
-            return self.delete_image()
-        elif self.level == "digest":
-            if self.tag:
-                return self.delete_tag()
-            elif self.version:
-                return self.delete_version()
+            operation = self.delete_image
+        elif self.level == "version":
+            operation = self.delete_version
+        elif self.level == "tag":
+            operation = self.delete_tag
         else:
             raise ValueError("Cannot delete item at this level.")
+        try:
+            output = operation(
+                repository=repository, image=image, version=version, tag=tag
+            )
+        except self.NotFound as e:
+            if errors == "ignore":
+                log(f"Artifact Registry - WARNING: {e}")
+            else:
+                raise e
+
+    def _delete_parallel(self, items):
+        """
+        Deletes items in parallel using threading.
+
+        Args:
+        - items (list): List of items to delete.
+        """
+        threads = []
+        for item in items:
+            thread = threading.Thread(
+                target=lambda item=item: ArtifactRegistry(
+                    path=item, location=self.location
+                ).delete()
+            )
+            thread.start()
+            threads.append(thread)
+        for thread in threads:
+            thread.join()
 
 
 if __name__ == "__main__":
-    ArtifactRegistry(
-        "gcr.io/example-service-123/sha256:411f06abcbda4b36a77c6e792e699b4eeb0193ebe441b6144f8fe42db6eada47",
-        location="us",
-    ).ls()
+    breakpoint()
