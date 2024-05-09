@@ -66,7 +66,9 @@ def test_dataplex():
         success[22] = not BigQuery(bq_dataset_name).exists()
 
     except Exception as e:
-        if "429 Quota exceeded for quota metric" in str(e):
+        if "429 Quota exceeded for quota metric" in str(e) or "429 Quota limit" in str(
+            e
+        ):
             print("Could not finish test_dataplex due to quota exceeded error.")
         else:
             raise e
