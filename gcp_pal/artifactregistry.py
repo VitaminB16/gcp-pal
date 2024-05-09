@@ -98,6 +98,8 @@ class ArtifactRegistry:
             "NotFound", who_is_calling="ArtifactRegistry"
         )
         self.parent = self._get_parent()
+        if self.project is None:
+            raise ValueError("Project is required.")
 
     def __repr__(self):
         return f"ArtifactRegistry({self.project}/{self.location}/{self.path})"
@@ -423,6 +425,19 @@ class ArtifactRegistry:
         else:
             raise ValueError("Cannot get item at this level.")
 
+    def exists(self):
+        """
+        Check if a repo/image/version/tag exists.
+
+        Returns:
+        - bool: Whether the image or version exists.
+        """
+        try:
+            self.get()
+            return True
+        except self.NotFound:
+            return False
+
     def delete_repository(self, repository=None, **kwargs):
         """
         Delete a repository.
@@ -631,6 +646,10 @@ class ArtifactRegistry:
         output = self.client.create_repository(
             parent=self.parent, repository=repository, repository_id=self.repository
         )
+        try:
+            output.result()
+        except AttributeError:
+            pass
         log(
             f"Artifact Registry - Created repository {self.project}/{self.location}/{repository}."
         )
