@@ -1125,3 +1125,88 @@ Dataplex("lake1").delete()
 # Output: Lake "lake1" and all its zones and assets deleted
 ```
 
+
+---
+
+
+## Artifact Registry
+
+The Artifact Registry module in the `gcp-pal` library allows you to interact with Artifact Registry services.
+
+### Initializing Artifact Registry
+
+Import the ArtifactRegistry class from the `gcp_pal` module:
+
+```python
+from gcp_pal import ArtifactRegistry
+```
+
+### Listing Artifact Registry objects
+
+The objects within Artifact Registry module follow the hierarchy: repositories > packages > versions > tags.
+
+To list all repositories within a project, use the `ls` method:
+
+```python
+repositories = ArtifactRegistry().ls()
+print(repositories)
+# Output: ['repo1', 'repo2']
+```
+
+To list all packages (or "images") within a repository, use the `ls` method with the repository name:
+
+```python
+images = ArtifactRegistry("repo1").ls()
+print(images)
+# Output: ['image1', 'image2']
+```
+
+To list all versions of a package, use the `ls` method with the repository and package names:
+
+```python
+versions = ArtifactRegistry("repo1/image1").ls()
+print(versions)
+# Output: ['repo1/image1/sha256:version1', 'repo1/image1/sha256:version2']
+```
+
+To list all tags of a version, use the `ls` method with the repository, package, and version names:
+
+```python
+tags = ArtifactRegistry("repo1/image1/sha256:version1").ls()
+print(tags)
+# Output: ['repo1/image1/tag1', 'repo1/image1/tag2']
+```
+
+### Creating Artifact Registry objects
+
+To create a repository, use the `create_repository` method with the repository name:
+
+```python
+ArtifactRegistry("repo1").create_repository()
+# Output: Repository "repo1" created
+```
+
+Some additional parameters can be specified within the method, such as format (`"docker"` or `"maven"`), mode (`'standard'`, `'remote'` or `'virtual'`).
+
+To create a tag, use the `create_tag` method with the repository, package, version, and tag names:
+
+```python
+ArtifactRegistry("repo1/image1/sha256:version1").create_tag("tag1")
+# Output: Tag "tag1" created for version "version1" of package "image1" in repository "repo1"
+```
+
+### Deleting Artifact Registry objects
+
+Deleting objects can be done using a single `delete` method:
+
+```python
+ArtifactRegistry("repo1/image1:tag1").delete()
+# Output: Tag "tag1" deleted for package "image1" in repository "repo1"
+ArtifactRegistry("repo1/image1/sha256:version1").delete()
+# Output: Version "version1" deleted for package "image1" in repository "repo1"
+ArtifactRegistry("repo1/image1").delete()
+# Output: Package "image1" deleted in repository "repo1"
+ArtifactRegistry("repo1").delete()
+# Output: Repository "repo1" deleted
+```
+

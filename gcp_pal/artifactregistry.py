@@ -655,7 +655,7 @@ class ArtifactRegistry:
         )
         return output
 
-    def create_tag(self, tag, repository=None, image=None, version=None):
+    def create_tag(self, tag=None, repository=None, image=None, version=None):
         """
         Create a tag.
 
@@ -669,11 +669,11 @@ class ArtifactRegistry:
         Returns:
         - Tag: The tag.
         """
-        tag_name = tag
         repository = repository or self.repository
         image = image or self.image
         version = version or self.version
         tag = tag or self.tag
+        tag_name = tag
         Tag = self.types.Tag
         package_id = f"{self.parent}/repositories/{repository}/packages/{image}"
         version_id = f"{package_id}/versions/sha256:{version}"
@@ -684,6 +684,37 @@ class ArtifactRegistry:
             f"Artifact Registry - Created tag {self.location}/{repository}/{image}:{tag}."
         )
         return output
+
+    def create(self, repository=None, image=None, version=None, tag=None, **kwargs):
+        """
+        Create a repository, image, version, or a tag.
+
+        Args:
+        - repository (str): The name of the repository.
+        - image (str): The name of the image.
+        - version (str): The version of the image.
+        - tag (str): The tag of the image.
+        - kwargs: Additional arguments to pass to the creation function.
+
+        Returns:
+        - Repository, Package, Version, or Tag: The repository, image, version, or tag.
+        """
+        inputs = {
+            "repository": repository,
+            "image": image,
+            "version": version,
+            "tag": tag,
+        }
+        if self.level == "repository":
+            return self.create_repository(**inputs, **kwargs)
+        elif self.level == "image":
+            raise ValueError("Creating images from the API is not supported.")
+        elif self.level == "version":
+            raise ValueError("Creating versions from the API is not supported.")
+        elif self.level == "tag":
+            return self.create_tag(**inputs, **kwargs)
+        else:
+            raise ValueError("Cannot create item at this level.")
 
 
 if __name__ == "__main__":
