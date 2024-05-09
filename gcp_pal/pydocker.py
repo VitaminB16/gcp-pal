@@ -9,7 +9,15 @@ class Docker:
 
     _client = None
 
-    def __init__(self, name, project=None, tag="latest", destination=None, repository="docker"):
+    def __init__(
+        self,
+        name,
+        project=None,
+        tag="latest",
+        destination=None,
+        repository="docker",
+        location="europe-west2",
+    ):
         """
         Initialize a Docker object.
 
@@ -31,6 +39,7 @@ class Docker:
         self.name = name
         self.tag = tag
         self.repository = repository
+        self.location = location
         gcr_dest = f"gcr.io/{self.project}/{self.name}:{self.tag}"
         ar_dest = f"{self.location}-docker.pkg.dev/{self.project}/{self.repository}/{self.name}:{self.tag}"
         self.default_dest = gcr_dest
