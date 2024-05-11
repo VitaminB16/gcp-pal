@@ -18,6 +18,7 @@ TODO:
 [x] Tests
 [x] Project Module
 [x] Dataplex Module
+[x] Artifact Registry Module
 ...
 -->
 
@@ -34,25 +35,24 @@ The utilities are designed to work with the `google-cloud` Python libraries, pro
 
 ## Table of Contents
 
-| Section Link | Module Class |
+| Module | Python Class |
 |--------------|-------------|
-| [Installation](#installation) |  |
-| [Configuration](#configuration) |  |
-| [Firestore Module](#firestore-module) | `gcp_pal.Firestore` |
-| [PubSub Module](#pubsub-module) | `gcp_pal.PubSub` |
-| [Request Module](#request-module) | `gcp_pal.Request` |
-| [BigQuery Module](#bigquery-module) | `gcp_pal.BigQuery` |
-| [Storage Module](#storage-module) | `gcp_pal.Storage` |
-| [Parquet Module](#parquet-module) | `gcp_pal.Parquet` |
-| [Schema Module](#schema-module) | `gcp_pal.Schema` |
-| [Cloud Functions Module](#cloud-functions-module) | `gcp_pal.CloudFunctions` |
-| [Docker Module](#docker-module) | `gcp_pal.Docker` |
-| [Cloud Run Module](#cloud-run-module) | `gcp_pal.CloudRun` |
-| [Logging Module](#logging-module) | `gcp_pal.Logging` |
-| [Secret Manager Module](#secret-manager-module) | `gcp_pal.SecretManager` |
-| [Cloud Scheduler Module](#cloud-scheduler-module) | `gcp_pal.CloudScheduler` |
-| [Project Module](#project-module) | `gcp_pal.Project` |
-| [Dataplex Module](#dataplex-module) | `gcp_pal.Dataplex` |
+| [Firestore](#firestore-module) | `gcp_pal.Firestore` |
+| [PubSub](#pubsub-module) | `gcp_pal.PubSub` |
+| [Request](#request-module) | `gcp_pal.Request` |
+| [BigQuery](#bigquery-module) | `gcp_pal.BigQuery` |
+| [Storage](#storage-module) | `gcp_pal.Storage` |
+| [Parquet](#parquet-module) | `gcp_pal.Parquet` |
+| [Schema](#schema-module) | `gcp_pal.Schema` |
+| [Cloud Functions](#cloud-functions-module) | `gcp_pal.CloudFunctions` |
+| [Docker](#docker-module) | `gcp_pal.Docker` |
+| [Cloud Run](#cloud-run-module) | `gcp_pal.CloudRun` |
+| [Logging](#logging-module) | `gcp_pal.Logging` |
+| [Secret Manager](#secret-manager-module) | `gcp_pal.SecretManager` |
+| [Cloud Scheduler](#cloud-scheduler-module) | `gcp_pal.CloudScheduler` |
+| [Project](#project-module) | `gcp_pal.Project` |
+| [Dataplex](#dataplex-module) | `gcp_pal.Dataplex` |
+| [Artifact Registry](#artifact-registry) | `gcp_pal.ArtifactRegistry` |
 
 
 
