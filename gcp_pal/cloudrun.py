@@ -5,9 +5,6 @@ from uuid import uuid4
 
 from gcp_pal.utils import try_import
 
-try_import("google.api_core.exceptions", "CloudRun")
-import google.api_core.exceptions
-
 from gcp_pal.pydocker import Docker
 from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
@@ -35,6 +32,9 @@ class CloudRun:
         self.types = self.run.types
         self.client = ClientHandler(self.run.ServicesClient).get()
         self.jobs_client = ClientHandler(self.run.JobsClient).get()
+        self.exceptions = ModuleHandler("google.api_core.exceptions").please_import(
+            who_is_calling="CloudRun"
+        )
 
     def ls_jobs(self, active_only=False, full_id=False):
         """
@@ -380,7 +380,7 @@ class CloudRun:
                 if wait_to_complete:
                     result.result()
                 log(f"Cloud Run - Deleted service '{self.name}'.")
-        except google.api_core.exceptions.NotFound:
+        except self.exceptions.NotFound:
             if errors == "ignore":
                 log(f"Cloud Run - Service '{self.name}' not found to delete.")
                 return None

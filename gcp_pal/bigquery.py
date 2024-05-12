@@ -3,9 +3,6 @@ from __future__ import annotations
 import os
 from gcp_pal.utils import try_import
 
-try_import("google.api_core.exceptions", "BigQuery")
-from google.cloud.exceptions import NotFound as NotFoundError
-
 from gcp_pal.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
 from gcp_pal.utils import (
     is_dataframe,
@@ -187,6 +184,9 @@ class BigQuery:
         )
         self.client = ClientHandler(self.bigquery.Client).get(
             project=self.project, location=self.location
+        )
+        self.exceptions = ModuleHandler("google.api_core.exceptions").please_import(
+            who_is_calling="BigQuery"
         )
 
     def __repr__(self):
@@ -419,7 +419,7 @@ class BigQuery:
 
         try:
             success = self.insert(data, schema=schema)
-        except NotFoundError:
+        except self.exceptions.NotFound:
             success = self.create_table(data, schema=schema, exists_ok=True)
         log(f"BigQuery - Data written to {self.table}, schema: {schema}")
         return success
@@ -508,7 +508,7 @@ class BigQuery:
         """
         try:
             return self._create_table(data=data, schema=schema, exists_ok=exists_ok)
-        except NotFoundError:
+        except self.exceptions.NotFound:
             # Dataset does not exist, so create it and try again
             self.create_dataset(exists_ok=exists_ok)
             return self._create_table(data=data, schema=schema, exists_ok=exists_ok)
@@ -553,7 +553,7 @@ class BigQuery:
         table.external_data_configuration = external_config
         try:
             self.client.create_table(table, exists_ok=exists_ok)
-        except NotFoundError:
+        except self.exceptions.NotFound:
             # Dataset does not exist, so create it and try again
             self.create_dataset()
             self.client.create_table(table)
@@ -577,7 +577,7 @@ class BigQuery:
         """
         try:
             return self._create_external_table(uri, schema=schema, exists_ok=exists_ok)
-        except NotFoundError:
+        except self.exceptions.NotFound:
             # Dataset does not exist, so create it and try again
             self.create_dataset(exists_ok=exists_ok)
             return self._create_external_table(uri, schema=schema, exists_ok=exists_ok)
@@ -765,13 +765,13 @@ class BigQuery:
             try:
                 self.client.get_table(self.table_id)
                 output = True
-            except NotFoundError:
+            except self.exceptions.NotFound:
                 output = False
         else:
             try:
                 self.client.get_dataset(self.dataset_id)
                 output = True
-            except NotFoundError:
+            except self.exceptions.NotFound:
                 output = False
         return output
 

@@ -3,9 +3,6 @@ import json
 
 from gcp_pal.utils import try_import
 
-try_import("google.api_core.exceptions", "CloudScheduler")
-import google.api_core.exceptions
-
 from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 
@@ -27,6 +24,9 @@ class CloudScheduler:
         )
         self.types = self.scheduler.types
         self.client = ClientHandler(self.scheduler.CloudSchedulerClient).get()
+        self.exceptions = ModuleHandler("google.api_core.exceptions").please_import(
+            who_is_calling="CloudScheduler"
+        )
 
     def __repr__(self):
         return f"CloudScheduler({self.name})"
@@ -202,7 +202,7 @@ class CloudScheduler:
         """
         try:
             output = self.client.run_job(name=self.full_name)
-        except google.api_core.exceptions.FailedPrecondition:
+        except self.exceptions.FailedPrecondition:
             if force:
                 self.resume()
                 output = self.client.run_job(name=self.full_name)

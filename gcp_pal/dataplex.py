@@ -2,9 +2,6 @@ import os
 import threading
 from gcp_pal.utils import try_import
 
-try_import("google.api_core.exceptions", "Dataplex")
-import google.api_core.exceptions
-
 from gcp_pal.utils import (
     get_auth_default,
     log,
@@ -80,6 +77,9 @@ class Dataplex:
         )
         self.types = self.dataplex.types
         self.client = ClientHandler(self.dataplex.DataplexServiceClient).get()
+        self.exceptions = ModuleHandler("google.api_core.exceptions").please_import(
+            who_is_calling="Dataplex"
+        )
 
     def _refresh_client(self):
         """
@@ -262,7 +262,7 @@ class Dataplex:
                 timeout=600,
                 metadata=metadata,
             )
-        except google.api_core.exceptions.AlreadyExists as e:
+        except self.exceptions.AlreadyExists as e:
             if if_exists == "ignore":
                 log(f"Dataplex - Lake '{self.lake_id}' already exists.")
                 return
@@ -328,7 +328,7 @@ class Dataplex:
                 timeout=600,
                 metadata=metadata,
             )
-        except google.api_core.exceptions.AlreadyExists as e:
+        except self.exceptions.AlreadyExists as e:
             if if_exists == "ignore":
                 log(f"Dataplex - Zone '{self.zone_id}' already exists.")
                 return
@@ -392,7 +392,7 @@ class Dataplex:
                 timeout=600,
                 metadata=metadata,
             )
-        except google.api_core.exceptions.AlreadyExists as e:
+        except self.exceptions.AlreadyExists as e:
             if if_exists == "ignore":
                 log(f"Dataplex - Asset '{self.asset_id}' already exists.")
                 return
@@ -634,7 +634,7 @@ class Dataplex:
         name = name or f"{self.parent}/lakes/{self.lake}"
         try:
             output = self.client.delete_lake(name=name)
-        except google.api_core.exceptions.FailedPrecondition as e:
+        except self.exceptions.FailedPrecondition as e:
             msg = (
                 f"Dataplex - Lake '{self.lake}' is not empty. Deleting all its zones..."
             )
@@ -650,7 +650,7 @@ class Dataplex:
                 Dataplex(path=zone).delete()
             self._refresh_client()
             output = self.client.delete_lake(name=name)
-        except google.api_core.exceptions.NotFound as e:
+        except self.exceptions.NotFound as e:
             if errors == "ignore":
                 log(f"Dataplex - Lake '{self.lake}' does not exist to delete.")
                 return
@@ -674,7 +674,7 @@ class Dataplex:
         log(f"Dataplex - Deleting zone: '{self.path}'...")
         try:
             output = self.client.delete_zone(name=name)
-        except google.api_core.exceptions.FailedPrecondition as e:
+        except self.exceptions.FailedPrecondition as e:
             msg = f"Dataplex - Zone '{self.path}' is not empty. Deleting all its assets..."
             log(msg)
             zone = Dataplex(
@@ -686,7 +686,7 @@ class Dataplex:
             self._delete_parallel(zone.ls_assets(full_id=True))
             self._refresh_client()
             output = self.client.delete_zone(name=name)
-        except google.api_core.exceptions.NotFound as e:
+        except self.exceptions.NotFound as e:
             if errors == "ignore":
                 log(f"Dataplex - Zone '{self.path}' does not exist to delete.")
                 return
@@ -711,7 +711,7 @@ class Dataplex:
         log(f"Dataplex - Deleting asset: '{self.path}'...")
         try:
             output = self.client.delete_asset(name=name)
-        except google.api_core.exceptions.NotFound as e:
+        except self.exceptions.NotFound as e:
             if errors == "ignore":
                 log(f"Dataplex - Asset '{self.path}' does not exist to delete.")
                 return
@@ -734,7 +734,7 @@ class Dataplex:
         name = name or f"{self.parent}/lakes/{self.lake}"
         try:
             output = self.client.delete_lake(name=name)
-        except google.api_core.exceptions.FailedPrecondition:
+        except self.exceptions.FailedPrecondition:
             log(
                 f"Dataplex - Lake '{self.lake}' is not empty. Deleting all its zones and assets..."
             )
@@ -750,7 +750,7 @@ class Dataplex:
 
             self._refresh_client()
             output = self.client.delete_lake(name=name)
-        except google.api_core.exceptions.NotFound:
+        except self.exceptions.NotFound:
             if errors == "ignore":
                 log(f"Dataplex - Lake '{self.lake}' does not exist to delete.")
                 return
