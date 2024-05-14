@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 import importlib
 import collections.abc
@@ -408,34 +409,31 @@ def load_yaml(file_path):
         return yaml.safe_load(f)
 
 
-def test_client_handler():
-    from gcp_pal.utils import ClientHandler
-    from google.cloud import bigquery, firestore
+class JSON:
+    """
+    Class for operating json files
+    """
 
-    bq_client1 = ClientHandler(bigquery.Client).get()
-    bq_client2 = ClientHandler(bigquery.Client).get()
-    bq_client3 = ClientHandler(bigquery.Client).get(force_refresh=True)
+    def __init__(self, path, platform=os):
+        self.path = path
+        self.platform = platform
 
-    fs_client1 = ClientHandler(firestore.Client).get()
-    fs_client2 = ClientHandler(firestore.Client).get(project="my-project")
-    fs_client3 = ClientHandler(firestore.Client).get(force_refresh=True)
-    fs_client4 = ClientHandler(firestore.Client).get(project="my-project")
+    def load(self, allow_empty=True):
+        """
+        Load a json file as a dict
+        """
+        log("Loading", self.path)
+        if allow_empty and not self.platform.exists(self.path):
+            return {}
+        with self.platform.open(self.path, "r") as f:
+            return json.load(f)
 
-    assert bq_client1 is bq_client2
-    assert bq_client1 is not bq_client3
-
-    assert fs_client1 is not fs_client2
-    assert fs_client1 is not fs_client3
-    assert fs_client2 is fs_client4
-
-    assert len(ClientHandler._clients) == 3
-
-
-def test_lazy_loader():
-    from gcp_pal.utils import LazyLoader
-
-    bq = LazyLoader("google.cloud.bigquery")
-    bq_client = bq.Client()
-    assert bq_client is not None
-    assert bq_client.__class__.__name__ == "Client"
-    assert bq_client.__module__ == "google.cloud.bigquery.client"
+    def write(self, data, **kwargs):
+        """
+        Write a json file
+        """
+        kwargs.setdefault("indent", 3)
+        kwargs.setdefault("sort_keys", True)
+        self.platform.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with self.platform.open(self.path, "w") as f:
+            json.dump(data, f, **kwargs)

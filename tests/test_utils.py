@@ -323,3 +323,36 @@ def test_client_handler():
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
+
+
+def test_client_handler():
+    from gcp_pal.utils import ClientHandler
+    from google.cloud import bigquery, firestore
+
+    bq_client1 = ClientHandler(bigquery.Client).get()
+    bq_client2 = ClientHandler(bigquery.Client).get()
+    bq_client3 = ClientHandler(bigquery.Client).get(force_refresh=True)
+
+    fs_client1 = ClientHandler(firestore.Client).get()
+    fs_client2 = ClientHandler(firestore.Client).get(project="my-project")
+    fs_client3 = ClientHandler(firestore.Client).get(force_refresh=True)
+    fs_client4 = ClientHandler(firestore.Client).get(project="my-project")
+
+    assert bq_client1 is bq_client2
+    assert bq_client1 is not bq_client3
+
+    assert fs_client1 is not fs_client2
+    assert fs_client1 is not fs_client3
+    assert fs_client2 is fs_client4
+
+    assert len(ClientHandler._clients) == 3
+
+
+def test_lazy_loader():
+    from gcp_pal.utils import LazyLoader
+
+    bq = LazyLoader("google.cloud.bigquery")
+    bq_client = bq.Client()
+    assert bq_client is not None
+    assert bq_client.__class__.__name__ == "Client"
+    assert bq_client.__module__ == "google.cloud.bigquery.client"
