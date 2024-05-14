@@ -1,5 +1,3 @@
-import requests
-
 from gcp_pal.utils import log, ModuleHandler
 
 
@@ -22,6 +20,7 @@ class Request:
         """
         self.url = url
 
+        self.requests = ModuleHandler("requests").please_import(who_is_calling="Request")
         self.google_auth = ModuleHandler("google.auth").please_import(
             who_is_calling="Request"
         )
@@ -92,7 +91,7 @@ class Request:
             "Metadata-Flavor": "Google",
             "Authorization": f"Bearer {access_token}",
         }
-        response = requests.post(url, params=params, headers=headers)
+        response = self.requests.post(url, params=params, headers=headers)
         if response.status_code == 200:
             response_json = response.json()
             return response_json.get("token")
@@ -110,17 +109,17 @@ class Request:
     def post(self, payload=None, **kwargs):
         arg_name = "data" if isinstance(payload, dict) else "json"
         self.args = {arg_name: payload, "headers": self.headers, **kwargs}
-        response = requests.post(self.url, **self.args)
+        response = self.requests.post(self.url, **self.args)
         return response
 
     def get(self, **kwargs):
-        response = requests.get(self.url, headers=self.headers, **kwargs)
+        response = self.requests.get(self.url, headers=self.headers, **kwargs)
         return response
 
     def put(self, payload=None, **kwargs):
         arg_name = "data" if isinstance(payload, dict) else "json"
         self.args = {arg_name: payload, "headers": self.headers, **kwargs}
-        response = requests.put(self.url, **self.args)
+        response = self.requests.put(self.url, **self.args)
         return response
 
 

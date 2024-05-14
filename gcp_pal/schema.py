@@ -279,6 +279,29 @@ def dict_to_bigquery_fields(schema_dict):
     return schema
 
 
+def bigquery_fields_to_dict(schema):
+    """
+    Convert a schema to a list of columns.
+
+    Args:
+    - schema: list, the schema to convert.
+
+    Returns:
+    - (dict): The columns schema of the form
+              {column_name: column_type, column_name: {nested_column_name: nested_column_type}}
+    """
+    columns = {}
+    for field in schema:
+        name = field.name
+        fields = field.fields
+        if fields:
+            fields = bigquery_fields_to_dict(fields)
+        columns[name] = fields
+        if not fields:
+            columns[name] = field.field_type
+    return columns
+
+
 def bigquery_fields_dict_to_dict(schema_fields_dict):
     """
     Convert BigQuery schema fields dictionary to a string dictionary.
@@ -290,8 +313,9 @@ def bigquery_fields_dict_to_dict(schema_fields_dict):
     - dict: The dictionary representation of the schema.
 
     Examples:
-    >>> bigquery_fields_dict_to_dict({"a": bigquery.SchemaField("a", "INTEGER"), "b": bigquery.SchemaField("b", "STRING")})
-    {"a": "INTEGER", "b": "STRING"}
+    >>> bigquery_fields_dict_to_dict({"a": bigquery.SchemaField("a", "INTEGER"),
+                                      "b": bigquery.SchemaField("b", "STRING")})
+        {"a": "INTEGER", "b": "STRING"}
     """
     schema_dict = {}
     for col, col_type in schema_fields_dict.items():
