@@ -1,3 +1,4 @@
+from uuid import uuid4
 import pandas as pd
 from gcp_pal.utils import (
     is_series,
@@ -356,3 +357,29 @@ def test_lazy_loader():
     assert bq_client is not None
     assert bq_client.__class__.__name__ == "Client"
     assert bq_client.__module__ == "google.cloud.bigquery.client"
+
+
+def test_json():
+    import os
+    import json
+    import shutil
+    from gcp_pal.utils import JSON
+
+    success = {}
+
+    d = {"a": 1, "b": 2, "c": 3}
+    folder_name = f"test_dir_{uuid4()}"
+    file_name = f"{folder_name}/test_file.json"
+    JSON(file_name).write(d)
+
+    success[0] = os.path.exists(file_name)
+
+    read_file = JSON(file_name).load()
+
+    success[1] = json.dumps(d, sort_keys=True) == json.dumps(read_file, sort_keys=True)
+
+    shutil.rmtree(folder_name)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
