@@ -328,22 +328,6 @@ def bigquery_fields_dict_to_dict(schema_fields_dict):
     return schema_dict
 
 
-def bigquery_fields_to_dict(schema_fields):
-    """
-    Convert BigQuery schema fields to a dictionary.
-
-    Args:
-    - schema_fields (list[bigquery.SchemaField]): The BigQuery schema fields.
-
-    Returns:
-    - dict: The dictionary representation of the schema.
-    """
-    schema_dict = {}
-    for field in schema_fields:
-        schema_dict[field.name] = field.field_type
-    return schema_dict
-
-
 def bigquery_to_dict(schema):
     """
     Convert a BigQuery schema to a dictionary.
