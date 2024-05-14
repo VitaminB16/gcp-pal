@@ -28,9 +28,16 @@ def try_import(module_name, origin_module=None, errors="raise"):
                 class_name = module_name.split(".")[-1]
                 try_module_name = ".".join(module_name.split(".")[:-1])
                 module = importlib.import_module(try_module_name)
-                return getattr(module, class_name)
+                try:
+                    return getattr(module, class_name)
+                except AttributeError:
+                    if errors == "raise":
+                        raise ImportError(
+                            f"Missing required class: '{class_name}'"
+                        ) from None
             except (ImportError, ModuleNotFoundError):
-                raise ImportError(str(e)) from None
+                if errors == "ignore":
+                    return None
         pypi_name = PYPI_NAMES.get(module_name, None)
         pypi_str = f"(PyPI: '{pypi_name}')" if pypi_name else ""
         if origin_module:
@@ -376,6 +383,7 @@ def get_all_kwargs(locals_kwargs):
     Returns:
     - dict: The dictionary of kwargs.
     """
+
     all_kwargs = locals_kwargs.copy()
     all_kwargs.pop("self")
     kwargs = all_kwargs.pop("kwargs")

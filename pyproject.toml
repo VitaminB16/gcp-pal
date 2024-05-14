@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gcp-pal"
-version = "1.0.17"
+version = "1.0.18"
 description = "Set of utilities for interacting with Google Cloud Platform"
 authors = ["VitaminB16 <artemiy.nosov@gmail.com>"]
 readme = "README.md"
@@ -9,6 +9,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+google-auth = "^2.29.0"
+google-cloud = "^0.34.0"
 
 
 [tool.poetry.group.dev.dependencies]
