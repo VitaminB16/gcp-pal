@@ -417,15 +417,17 @@ class JSON:
     def __init__(self, path, platform=os):
         self.path = path
         self.platform = platform
+        self.open = self.platform.open if platform != os else open
+        self.exists = self.platform.exists if platform != os else os.path.exists
 
     def load(self, allow_empty=True):
         """
         Load a json file as a dict
         """
         log("Loading", self.path)
-        if allow_empty and not self.platform.exists(self.path):
+        if allow_empty and not self.exists(self.path):
             return {}
-        with self.platform.open(self.path, "r") as f:
+        with self.open(self.path, "r") as f:
             return json.load(f)
 
     def write(self, data, **kwargs):
@@ -435,5 +437,10 @@ class JSON:
         kwargs.setdefault("indent", 3)
         kwargs.setdefault("sort_keys", True)
         self.platform.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with self.platform.open(self.path, "w") as f:
+        with self.open(self.path, mode="w") as f:
             json.dump(data, f, **kwargs)
+
+
+if __name__ == "__main__":
+    d = {"a": 1, "b": {"c": 2}, "d": [3, {"e": 4}]}
+    JSON("red/test.json").write(d)
