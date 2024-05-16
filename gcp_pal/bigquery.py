@@ -4,6 +4,7 @@ import os
 from gcp_pal.utils import try_import
 
 from gcp_pal.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
+from gcp_pal.schema import bigquery_fields_to_dict
 from gcp_pal.utils import (
     is_dataframe,
     get_auth_default,
@@ -819,14 +820,21 @@ class BigQuery:
         else:
             return self.get_dataset()
 
-    def schema(self):
+    def schema(self, as_dict=False):
         """
         Get the schema of the BigQuery table.
+
+        Args:
+        - as_dict (bool): If True, returns the schema as a dictionary. The output will be a (nested) dictionary:
+                            `{"name": "type", "name": {"name": "type"}}`.
 
         Returns:
         - tuple[bigquery.SchemaField]: The schema of the table (column definitions).
         """
-        return self.get_table().schema
+        schema = self.get_table().schema
+        if as_dict:
+            schema = bigquery_fields_to_dict(schema)
+        return schema
 
     def set_schema(self, schema):
         """

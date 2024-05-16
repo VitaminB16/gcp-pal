@@ -267,7 +267,7 @@ def is_python_schema(obj):
     return str(type(obj)) == "<class 'type'>"
 
 
-def reverse_dict(d):
+def reverse_dict(d, errors="ignore"):
     """
     Reverse a dictionary. If the dictionary is not one-to-one, the last value in the dictionary will be the one that is kept.
 
@@ -277,7 +277,13 @@ def reverse_dict(d):
     Returns:
     - dict: The reversed dictionary.
     """
-    return {v: k for k, v in d.items()}
+    output = {v: k for k, v in d.items()}
+    if len(output) < len(d):
+        if errors == "ignore":
+            print("Warning: Dictionary is not one-to-one.")
+        else:
+            raise ValueError("Dictionary is not one-to-one.")
+    return output
 
 
 def orient_dict(d, orientation=""):
