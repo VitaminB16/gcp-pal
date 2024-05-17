@@ -447,6 +447,16 @@ class JSON:
             json.dump(data, f, **kwargs)
 
 
+def jprint(x, sort_keys=False, indent=3):
+    """
+    Pretty print a json object. Basically alias for print(json.dumps(x, indent=3))
+    """
+    log(json.dumps(x, indent=indent, sort_keys=sort_keys))
+
+    
+
+
+
 if __name__ == "__main__":
     d = {"a": 1, "b": {"c": 2}, "d": [3, {"e": 4}]}
     JSON("red/test.json").write(d)
