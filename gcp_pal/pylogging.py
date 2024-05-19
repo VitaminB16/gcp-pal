@@ -61,8 +61,6 @@ class LogEntry:
 
 class Logging:
 
-    _client = {}
-
     def __init__(self, project=None):
         self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         self.filters = []

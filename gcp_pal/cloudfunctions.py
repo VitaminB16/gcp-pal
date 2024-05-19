@@ -12,8 +12,6 @@ from gcp_pal.utils import (
 
 class CloudFunctions:
 
-    _clients = {}
-
     def __init__(self, name=None, project=None, location="europe-west2"):
         if isinstance(name, str) and name.startswith("projects/"):
             name = name.split("/")[-1]

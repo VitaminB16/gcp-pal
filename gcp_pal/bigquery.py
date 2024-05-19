@@ -120,8 +120,6 @@ class BigQuery:
     Class for operating Google BigQuery.
     """
 
-    _clients = {}
-
     def __init__(self, table=None, dataset=None, project=None, location="europe-west2"):
         """
         Initializes the BigQuery client.

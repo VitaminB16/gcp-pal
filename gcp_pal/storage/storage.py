@@ -10,8 +10,6 @@ class Storage:
     Class for operating Google Cloud Storage
     """
 
-    _clients = {}
-
     def __init__(
         self,
         path=None,

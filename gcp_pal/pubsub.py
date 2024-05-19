@@ -14,8 +14,6 @@ class PubSub:
     - `PubSub("topic").publish({"key": "value"})` -> Publish `{"key": "value"}` to "topic"
     """
 
-    _clients = {}
-
     def __init__(self, topic: str, project=None):
         """
         Args:

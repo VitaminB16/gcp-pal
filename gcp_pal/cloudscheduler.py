@@ -8,8 +8,6 @@ from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 class CloudScheduler:
 
-    _client = {}
-
     def __init__(self, name=None, project=None, location="europe-west2"):
         self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         if isinstance(name, str) and name.startswith("projects/"):

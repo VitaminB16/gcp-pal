@@ -11,9 +11,6 @@ from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 class CloudRun:
 
-    _client = {}
-    _jobs_client = {}
-
     def __init__(self, name=None, project=None, location="europe-west2", job=False):
         self.job = job
         self.type = "job" if job else "service"
