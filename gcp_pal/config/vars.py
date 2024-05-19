@@ -19,6 +19,7 @@ PYPI_NAMES = {
     "google.cloud.resource_manager": "google-cloud-resource-manager",
     "google.cloud.artifactregistry": "google-cloud-artifact-registry",
     "google.cloud.resourcemanager_v3": "google-cloud-resource-manager",
+    "google.cloud.artifactregistry_v1": "google-cloud-artifact-registry",
     "pyarrow": "pyarrow",
     "pandas": "pandas",
     "pandas_gbq": "pandas-gbq",
