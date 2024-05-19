@@ -5,8 +5,6 @@ from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 class Project:
 
-    _clients = {}
-
     def __init__(self, project_id: str = None, folder: str = None):
         self.project_id = (
             project_id

@@ -13,8 +13,6 @@ from gcp_pal.utils import (
 
 class Dataplex:
 
-    _clients = {}
-
     def __init__(
         self,
         path: str = None,

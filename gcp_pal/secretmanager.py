@@ -6,8 +6,6 @@ from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 class SecretManager:
 
-    _client = {}
-
     def __init__(self, name=None, project=None):
         self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         self.parent = f"projects/{self.project}"

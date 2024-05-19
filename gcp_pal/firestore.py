@@ -20,8 +20,6 @@ class Firestore:
     Class for operating Firestore
     """
 
-    _clients = {}
-
     def __init__(self, path=None, project=None):
         """
         Args:
