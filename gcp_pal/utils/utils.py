@@ -415,16 +415,29 @@ def load_yaml(file_path):
         return yaml.safe_load(f)
 
 
+def jprint(x, sort_keys=False, indent=3):
+    """
+    Pretty print a json object. Basically alias for print(json.dumps(x, indent=3))
+    """
+    try:
+        log(json.dumps(x, indent=indent, sort_keys=sort_keys))
+    except Exception as e:
+        log(x)
+
+
 class JSON:
     """
     Class for operating json files
     """
 
-    def __init__(self, path, platform=os):
+    def __init__(self, path, platform=os, input_dict=None):
         self.path = path
+        if isinstance(path, dict):
+            input_dict = path
         self.platform = platform
         self.open = self.platform.open if platform != os else open
         self.exists = self.platform.exists if platform != os else os.path.exists
+        self.input_dict = input_dict
 
     def load(self, allow_empty=True):
         """
@@ -446,15 +459,12 @@ class JSON:
         with self.open(self.path, mode="w") as f:
             json.dump(data, f, **kwargs)
 
-
-def jprint(x, sort_keys=False, indent=3):
-    """
-    Pretty print a json object. Basically alias for print(json.dumps(x, indent=3))
-    """
-    log(json.dumps(x, indent=indent, sort_keys=sort_keys))
-
-    
-
+    def print(self, sort_keys=False, indent=3):
+        """
+        Print the contents of a json file
+        """
+        if isinstance(self.path, dict):
+            jprint(self.path, sort_keys=sort_keys, indent=indent)
 
 
 if __name__ == "__main__":
