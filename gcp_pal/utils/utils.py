@@ -486,6 +486,13 @@ class YAML:
         with open(self.file_name, "w") as file:
             self.yaml.dump(data, file, default_flow_style=False, sort_keys=sort_keys)
 
+    def print(self):
+        if isinstance(self.file_name, dict):
+            jprint(self.file_name, sort_keys=False, indent=3)
+        else:
+            with open(self.file_name, "r") as file:
+                jprint(self.yaml.safe_load(file), sort_keys=False, indent=3)
+
 
 if __name__ == "__main__":
     d = {"a": 1, "b": {"c": 2}, "d": [3, {"e": 4}]}
