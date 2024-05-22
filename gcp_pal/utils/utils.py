@@ -427,7 +427,7 @@ def jprint(x, sort_keys=False, indent=3):
 
 class JSON:
     """
-    Class for operating json files
+    Class for operating JSON files
     """
 
     def __init__(self, path, platform=os, input_dict=None):
@@ -465,6 +465,26 @@ class JSON:
         """
         if isinstance(self.path, dict):
             jprint(self.path, sort_keys=sort_keys, indent=indent)
+
+
+class YAML:
+    """
+    Class for operating YAML files
+    """
+
+    def __init__(self, file_name):
+        from gcp_pal.utils import ModuleHandler
+
+        self.file_name = file_name
+        self.yaml = ModuleHandler("yaml").please_import(who_is_calling="YAML")
+
+    def load(self):
+        with open(self.file_name, "r") as file:
+            return self.yaml.safe_load(file)
+
+    def write(self, data, sort_keys=True):
+        with open(self.file_name, "w") as file:
+            self.yaml.dump(data, file, default_flow_style=False, sort_keys=sort_keys)
 
 
 if __name__ == "__main__":
