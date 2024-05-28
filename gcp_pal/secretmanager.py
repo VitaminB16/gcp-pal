@@ -108,12 +108,12 @@ class SecretManager:
             )
             log(f"Secret Manager - Created secret {self.name}.")
         except self.exceptions.AlreadyExists:
-            if if_exists == "update":
+            if if_exists.lower() == "update":
                 log(
                     f"Secret Manager - Secret {self.name} already exists. Adding new version..."
                 )
                 pass
-            elif if_exists == "replace":
+            elif if_exists.lower() == "replace":
                 log(
                     f"Secret Manager - Secret {self.name} already exists. Deleting and recreating..."
                 )
