@@ -261,7 +261,7 @@ class Dataplex:
                 metadata=metadata,
             )
         except self.exceptions.AlreadyExists as e:
-            if if_exists == "ignore":
+            if if_exists.lower() == "ignore":
                 log(f"Dataplex - Lake '{self.lake_id}' already exists.")
                 return
             raise e
@@ -327,7 +327,7 @@ class Dataplex:
                 metadata=metadata,
             )
         except self.exceptions.AlreadyExists as e:
-            if if_exists == "ignore":
+            if if_exists.lower() == "ignore":
                 log(f"Dataplex - Zone '{self.zone_id}' already exists.")
                 return
             raise e
@@ -391,7 +391,7 @@ class Dataplex:
                 metadata=metadata,
             )
         except self.exceptions.AlreadyExists as e:
-            if if_exists == "ignore":
+            if if_exists.lower() == "ignore":
                 log(f"Dataplex - Asset '{self.asset_id}' already exists.")
                 return
             raise e

@@ -263,7 +263,7 @@ class CloudFunctions:
             **function_kwargs,
             **kwargs,
         )
-        if function_exists and if_exists == "REPLACE":
+        if function_exists and if_exists.lower() == "replace":
             log(f"Cloud Function - Updating '{self.name}'...")
             request = self.functions.UpdateFunctionRequest(
                 function=cloud_function, update_mask=None
