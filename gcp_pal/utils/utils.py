@@ -372,6 +372,9 @@ def zip_directory(directory, output_file=None, omit_root=True):
     with ZipFile(output_file, "w") as z:
         for root, dirs, files in os.walk(directory):
             for file in files:
+                if file == os.path.basename(output_file):
+                    # Want to omit the zip file itself to avoid infinite recursion
+                    continue
                 if omit_root:
                     out_name = os.path.relpath(os.path.join(root, file), directory)
                 else:

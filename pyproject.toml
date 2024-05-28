@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gcp-pal"
-version = "1.0.26"
+version = "1.0.27"
 description = "Set of utilities for interacting with Google Cloud Platform"
 authors = ["VitaminB16 <artemiy.nosov@gmail.com>"]
 readme = "README.md"
