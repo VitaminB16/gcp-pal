@@ -73,6 +73,15 @@ class CloudFunctions:
         output = self.client.get_function(request)
         return output
 
+    def uri(self):
+        """
+        Returns the URI of the cloud function.
+
+        Returns:
+        - (str) The URI of the cloud function.
+        """
+        return self.get().service_config.uri
+
     def exists(self):
         """
         Checks if a cloud function exists.
@@ -108,7 +117,7 @@ class CloudFunctions:
 
         from gcp_pal import Request
 
-        uri = self.get().service_config.uri
+        uri = self.uri()
 
         output = Request(uri).post(data)
         if output.status_code != 200:

@@ -243,6 +243,12 @@ class CloudRun:
         response = self.jobs_client.create_job(parent=self.parent, job=job)
         return response
 
+    def uri(self):
+        """
+        Get the URI of the service.
+        """
+        return self.get().uri
+
     def call(
         self,
         data={},
@@ -265,7 +271,7 @@ class CloudRun:
 
         from gcp_pal import Request
 
-        uri = self.get().uri
+        uri = self.uri()
 
         output = Request(uri).post(data)
         if output.status_code != 200:
