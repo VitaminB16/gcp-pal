@@ -40,6 +40,16 @@ def test_constructor():
     success[15] = (
         ArtifactRegistry("gcr.io/image-name/sha256:version").repository == "gcr.io"
     )
+    r = ArtifactRegistry(repository="gcr.io", location="us")
+    success[16] = r.image is None
+    success[17] = r.repository == "gcr.io"
+    success[18] = r.location == "us"
+    success[19] = r.level == "repository"
+    r = ArtifactRegistry(repository="gcr.io", location="us", image="my-image")
+    success[16] = r.image == "my-image"
+    success[17] = r.repository == "gcr.io"
+    success[18] = r.location == "us"
+    success[19] = r.level == "image"
 
     failed = [k for k, v in success.items() if not v]
 
