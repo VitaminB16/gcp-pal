@@ -191,12 +191,30 @@ def delete_test_artifact_registry():
         executor.map(del_fun, repositories_to_delete)
 
 
+def delete_all_but_latest_artifact_registry_images():
+    """
+    Deletes all Artifact Registry images except the latest two versions.
+    """
+    for location in ["us", "europe-west2"]:
+        repositories = ArtifactRegistry(location=location).ls()
+        for repository in repositories:
+            images = ArtifactRegistry(path=repository, location=location).ls()
+            for image in images:
+                versions = ArtifactRegistry(path=image, location=location).ls()
+                versions_to_delete = versions[2:]
+                del_fun = lambda x: ArtifactRegistry(path=x, location=location).delete()
+                with ThreadPoolExecutor() as executor:
+                    executor.map(del_fun, versions_to_delete)
+
+
 if __name__ == "__main__":
-    delete_test_bigquery_datasets()
-    delete_test_firestore_collections()
-    delete_test_storage_buckets()
-    delete_test_cloud_functions()
-    delete_test_cloud_run_services()
-    delete_test_secret_manager_secrets()
-    delete_test_dataplex_lakes()
-    delete_test_artifact_registry()
+    delete_all_but_latest_artifact_registry_images()
+    breakpoint()
+    # delete_test_bigquery_datasets()
+    # delete_test_firestore_collections()
+    # delete_test_storage_buckets()
+    # delete_test_cloud_functions()
+    # delete_test_cloud_run_services()
+    # delete_test_secret_manager_secrets()
+    # delete_test_dataplex_lakes()
+    # delete_test_artifact_registry()
