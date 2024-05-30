@@ -58,7 +58,7 @@ class ArtifactRegistry:
         self.tag = tag
         self.version = version
         try:
-            self.repository = path.split("/")[0]
+            self.repository = path.split("/")[0] if path != "" else self.repository
         except IndexError:
             pass
         try:
@@ -66,7 +66,7 @@ class ArtifactRegistry:
             if len(self.image) > 1:
                 self.image = "/".join(self.image[:-1])
             elif self.image == []:
-                self.image = None
+                self.image = None or image
             else:
                 self.image = self.image[0]
         except IndexError:
