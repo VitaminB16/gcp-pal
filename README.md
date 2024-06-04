@@ -66,7 +66,22 @@ The package is available on PyPI as `gcp-pal`. To install with `pip`:
 pip install gcp-pal
 ```
 
-The library has no dependencies other than Python 3.10 or newer. The modules are set up to notify the user if any required libraries are missing. For example, when attempting to use the `Firestore` module:
+The library has module-specific dependencies. These can be installed via `pip install gcp-pal[ModuleName]`, e.g.:
+
+```bash
+pip install gcp-pal[BigQuery]
+# Installing 'google-cloud-bigquery'
+pip install gcp-pal[CloudRun]
+# Installing 'google-cloud-run' and 'docker'
+```
+
+To install all optional dependencies:
+
+```bash
+pip install gcp-pal[all]
+```
+
+The modules are also set up to notify the user if any required libraries are missing. For example, when attempting to use the `Firestore` module:
 
 ```python
 from gcp_pal import Firestore
