@@ -5,6 +5,7 @@ description = "Set of utilities for interacting with Google Cloud Platform"
 authors = ["VitaminB16 <artemiy.nosov@gmail.com>"]
 readme = "README.md"
 homepage = "https://github.com/VitaminB16/gcp-pal"
+keywords = ["gcp", "google cloud", "google cloud python", "gcp api", "gcp python api"]
 license = "MIT"
 
 [tool.poetry.dependencies]
