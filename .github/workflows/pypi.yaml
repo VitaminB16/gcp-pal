@@ -44,7 +44,7 @@ jobs:
     - name: Install dependencies
       run: |
         poetry config virtualenvs.create false --local
-        poetry install
+        poetry install --all-extras
 
     - name: Run tests
       run: |
