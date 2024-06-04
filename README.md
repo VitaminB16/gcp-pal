@@ -76,7 +76,7 @@ pip install gcp-pal[CloudRun]
 ```
 
 To install all optional dependencies:
-    
+
 ```bash
 pip install gcp-pal[all]
 ```
