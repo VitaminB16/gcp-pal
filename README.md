@@ -75,6 +75,12 @@ pip install gcp-pal[CloudRun]
 # Installing 'google-cloud-run' and 'docker'
 ```
 
+To install all optional dependencies:
+    
+```bash
+pip install gcp-pal[all]
+```
+
 The modules are also set up to notify the user if any required libraries are missing. For example, when attempting to use the `Firestore` module:
 
 ```python
