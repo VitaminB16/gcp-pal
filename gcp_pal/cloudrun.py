@@ -11,9 +11,10 @@ from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 class CloudRun:
 
-    def __init__(self, name=None, project=None, location="europe-west2", job=False):
+    def __init__(self, name=None, project=None, location="europe-west2", job=False, service_account=None):
         self.job = job
         self.type = "job" if job else "service"
+        self.service_account = service_account
         self.project = project or os.getenv("PROJECT") or get_auth_default()[1]
         self.location = location
         self.parent = f"projects/{self.project}/locations/{self.location}"
@@ -254,6 +255,7 @@ class CloudRun:
         data={},
         errors="ignore",
         to_json=True,
+        service_account=None,
     ):
         """
         Calls a cloud function.
@@ -262,6 +264,7 @@ class CloudRun:
         - data (dict|str): The data to send to the cloud function. If a dict, it will be converted to JSON. Defaults to {}.
         - errors (str): How to handle errors. Options are "ignore", "raise" or "log". Defaults to "ignore".
         - to_json (bool): Whether to convert the response to JSON. Defaults to True.
+        - service_account (str): The service account to use for the call.
 
         Returns:
         - (dict) The response from the cloud function.
@@ -272,8 +275,8 @@ class CloudRun:
         from gcp_pal import Request
 
         uri = self.uri()
-
-        output = Request(uri).post(data)
+        service_account = service_account or self.service_account
+        output = Request(uri, service_account=service_account).post(data)
         if output.status_code != 200:
             msg = f"Cloud Function - Error calling '{self.name}': {output.text}"
             if errors == "raise":
