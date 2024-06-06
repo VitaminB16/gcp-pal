@@ -3,8 +3,12 @@ from __future__ import annotations
 import os
 from gcp_pal.utils import try_import
 
-from gcp_pal.schema import dict_to_bigquery_fields, Schema, dict_to_bigquery_fields
-from gcp_pal.schema import bigquery_fields_to_dict
+from gcp_pal.schema import (
+    Schema,
+    dict_to_bigquery_fields,
+    dict_to_bigquery_fields,
+    bigquery_fields_to_dict,
+)
 from gcp_pal.utils import (
     is_dataframe,
     get_auth_default,

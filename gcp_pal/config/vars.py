@@ -20,9 +20,9 @@ PYPI_NAMES = {
     "google.cloud.artifactregistry": "google-cloud-artifact-registry",
     "google.cloud.resourcemanager_v3": "google-cloud-resource-manager",
     "google.cloud.artifactregistry_v1": "google-cloud-artifact-registry",
-    "pyarrow": "pyarrow",
-    "pandas": "pandas",
-    "pandas_gbq": "pandas-gbq",
-    "docker": "docker",
     "yaml": "pyyaml",
+    "pandas": "pandas",
+    "docker": "docker",
+    "pyarrow": "pyarrow",
+    "pandas_gbq": "pandas-gbq",
 }

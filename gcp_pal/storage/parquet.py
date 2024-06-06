@@ -4,7 +4,6 @@ from gcp_pal.utils import try_import
 from typing import List
 from urllib.parse import unquote
 
-
 from gcp_pal.utils import is_dataframe, force_list, ModuleHandler
 
 
