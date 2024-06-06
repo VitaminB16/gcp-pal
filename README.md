@@ -19,6 +19,7 @@ TODO:
 [x] Project Module
 [x] Dataplex Module
 [x] Artifact Registry Module
+[ ] Datastore Module
 ...
 -->
 
@@ -247,6 +248,14 @@ print(post_response)
 put_response = Request(url).put(data={"key": "value"})
 print(put_response)
 # Output: <Response [200]>
+```
+
+### Using service accounts
+
+Specify the service account email to make requests on behalf of a service account within the constructor:
+
+```python
+Request(url, service_account="account@email.com").get()
 ```
 
 ---
@@ -647,6 +656,16 @@ print(details)
 #          'build_config': {...}, 'service_config': {...}, 'state': {...}, ... }
 ```
 
+### Using service accounts
+
+Service account email can be specified either within the constructor or via the `service_account` parameter:
+
+```python
+CloudFunctions("function-name", service_account="account@email.com").deploy(**kwargs)
+# or
+CloudFunctions("function-name").deploy(service_account="account@email.com", **kwargs)
+```
+
 ---
 
 ## Docker Module
@@ -782,6 +801,16 @@ print(service_status)
 job_status = CloudRun("job-name", job=True).status()
 print(job_status)
 # Output: Active
+```
+
+### Using service accounts
+
+Service account email can be specified either within the constructor or via the `service_account` parameter:
+
+```python
+CloudRun("run-name", service_account="account@email.com").deploy(**kwargs)
+# or
+CloudRun("run-name").deploy(service_account="account@email.com", **kwargs)
 ```
 
 ---
@@ -1001,6 +1030,16 @@ If the job is paused, it will be resumed before running. To prevent this, set th
 ```python
 CloudScheduler("job-name").run(force=False)
 # Output: Cloud Scheduler job "job-name" not run if it is paused
+```
+
+### Using service accounts
+
+Service account email can be specified either within the constructor or via the `service_account` parameter:
+
+```python
+CloudScheduler("job-name", service_account="account@email.com").create(**kwargs)
+# or
+CloudScheduler("job-name").create(service_account="account@email.com", **kwargs)
 ```
 
 

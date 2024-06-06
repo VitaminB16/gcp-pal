@@ -12,9 +12,10 @@ from gcp_pal.utils import (
 
 class CloudFunctions:
 
-    def __init__(self, name=None, project=None, location="europe-west2"):
+    def __init__(self, name=None, project=None, location="europe-west2", service_account=None):
         if isinstance(name, str) and name.startswith("projects/"):
             name = name.split("/")[-1]
+        self.service_account = service_account
         self.name = name
         self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         self.location = location
@@ -100,6 +101,7 @@ class CloudFunctions:
         data={},
         errors="ignore",
         to_json=True,
+        service_account=None,
     ):
         """
         Calls a cloud function.
@@ -108,6 +110,7 @@ class CloudFunctions:
         - data (dict|str): The data to send to the cloud function. If a dict, it will be converted to JSON. Defaults to {}.
         - errors (str): How to handle errors. Options are "ignore", "raise" or "log". Defaults to "ignore".
         - to_json (bool): Whether to convert the response to JSON. Defaults to True.
+        - service_account (str): The service account to use for the cloud function. Defaults to None.
 
         Returns:
         - (dict) The response from the cloud function.
@@ -119,7 +122,8 @@ class CloudFunctions:
 
         uri = self.uri()
 
-        output = Request(uri).post(data)
+        service_account = service_account or self.service_account
+        output = Request(uri, service_account=service_account).post(data)
         if output.status_code != 200:
             msg = f"Cloud Function - Error calling '{self.name}': {output.text}"
             if errors == "raise":
@@ -148,7 +152,7 @@ class CloudFunctions:
         trigger="HTTP",
         if_exists="REPLACE",
         wait_to_complete=True,
-        service_account_email=None,
+        service_account=None,
         **kwargs,
     ):
         """
@@ -163,7 +167,7 @@ class CloudFunctions:
             - description (str): The description of the cloud function.
             - timeout (int): The timeout of the cloud function in seconds.
             - available_memory_mb (int): The amount of memory available to the cloud function in MB.
-            - service_account_email (str): The service account email to use for the cloud function. Defaults to PROJECT@PROJECT.iam.gserviceaccount.com.
+            - service_account (str): The service account email to use for the cloud function. Defaults to PROJECT@PROJECT.iam.gserviceaccount.com.
             - version_id (str): The version ID of the cloud function.
             - labels (dict): The labels to apply to the cloud function.
             - environment_variables (dict): The environment variables to set for the cloud function.
@@ -224,7 +228,7 @@ class CloudFunctions:
         if_exists="REPLACE",
         environment=2,
         wait_to_complete=True,
-        service_account_email=None,
+        service_account=None,
         **kwargs,
     ):
         """
@@ -253,9 +257,10 @@ class CloudFunctions:
             source = self.functions.Source(
                 repository=self.functions.RepoSource(url=path)
             )
-        if service_account_email is None:
+        service_account = service_account or self.service_account
+        if service_account is None:
             default_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
-            service_account_email = default_account
+            service_account = default_account
         environment = self.functions.Environment(environment)
         all_kwargs = get_all_kwargs(locals())
         function_exists = self.exists()

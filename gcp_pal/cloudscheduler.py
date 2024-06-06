@@ -8,7 +8,8 @@ from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
 
 class CloudScheduler:
 
-    def __init__(self, name=None, project=None, location="europe-west2"):
+    def __init__(self, name=None, project=None, location="europe-west2", service_account=None):
+        self.service_account = service_account
         self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
         if isinstance(name, str) and name.startswith("projects/"):
             name = name.split("/")[-1]
@@ -99,6 +100,7 @@ class CloudScheduler:
         """
         oauth_token = None
         oidc_token = None
+        service_account = service_account or self.service_account
         if service_account == "DEFAULT":
             service_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
         if service_account:
