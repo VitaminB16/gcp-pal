@@ -1,5 +1,5 @@
-from uuid import uuid4
 import pandas as pd
+from uuid import uuid4
 from gcp_pal.utils import (
     is_series,
     force_list,

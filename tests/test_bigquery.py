@@ -1,4 +1,3 @@
-import time
 import pandas as pd
 from uuid import uuid4
 from pandas_gbq import read_gbq

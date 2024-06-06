@@ -69,7 +69,6 @@ if __name__ == "__main__":
     time_after_fs_client4 = time.time()
     print(f"Time taken for fs_client4: {time_after_fs_client4 - time_after_fs_client3}")
 
-
     assert bq_client1 is bq_client2
     assert bq_client1 is not bq_client3
 

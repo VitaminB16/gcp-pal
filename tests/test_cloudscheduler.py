@@ -1,5 +1,5 @@
-from uuid import uuid4
 import time
+from uuid import uuid4
 
 from gcp_pal import CloudScheduler
 

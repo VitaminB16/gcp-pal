@@ -1,6 +1,5 @@
 import os
 import threading
-from gcp_pal.utils import try_import
 
 from gcp_pal.utils import (
     get_auth_default,
