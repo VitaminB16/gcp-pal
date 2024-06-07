@@ -26,3 +26,6 @@ PYPI_NAMES = {
     "pyarrow": "pyarrow",
     "pandas_gbq": "pandas-gbq",
 }
+DEFAULT_ARGS = {
+    "location": "europe-west2",
+}
