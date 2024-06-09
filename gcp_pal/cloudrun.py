@@ -2,12 +2,7 @@ import json
 import random
 
 from gcp_pal.pydocker import Docker
-from gcp_pal.utils import (
-    log,
-    ClientHandler,
-    ModuleHandler,
-    get_default_arg
-)
+from gcp_pal.utils import log, ClientHandler, ModuleHandler, get_default_arg
 
 
 class CloudRun:
