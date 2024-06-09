@@ -1,7 +1,6 @@
-import os
 from gcp_pal.utils import try_import
 
-from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
+from gcp_pal.utils import log, ClientHandler, ModuleHandler, get_default_arg
 
 
 class Storage:
@@ -16,8 +15,8 @@ class Storage:
         project=None,
         location="europe-west2",
     ):
-        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
-        self.location = location
+        self.project = project or get_default_arg("project")
+        self.location = location or get_default_arg("location")
         self.fs_prefix = "gs://"
 
         self.path = path or self.fs_prefix

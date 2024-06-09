@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import json
 import concurrent.futures
 from gcp_pal.utils import try_import
@@ -8,10 +7,10 @@ from gcp_pal.utils import try_import
 from gcp_pal.schema import enforce_schema
 from gcp_pal.utils import (
     is_dataframe,
-    get_auth_default,
     log,
     ClientHandler,
     ModuleHandler,
+    get_default_arg
 )
 
 
@@ -34,7 +33,7 @@ class Firestore:
         - `Firestore("gs://project/bucket/path").write(data)` -> Write to Firestore "bucket/path"
         - `Firestore("gs://project/bucket/path").delete()` -> Delete from Firestore "bucket/path"
         """
-        self.project = project or os.getenv("PROJECT") or get_auth_default()[1]
+        self.project = project or get_default_arg("project")
         self.path = path
 
         # Only initialize the client once per project

@@ -11,11 +11,11 @@ from gcp_pal.schema import (
 )
 from gcp_pal.utils import (
     is_dataframe,
-    get_auth_default,
     orient_dict,
     log,
     ClientHandler,
     ModuleHandler,
+    get_default_arg,
 )
 
 
@@ -149,8 +149,8 @@ class BigQuery:
         """
         self.table = table
         self.dataset = dataset
-        self.location = location
-        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
+        self.location = location or get_default_arg("location")
+        self.project = project or get_default_arg("project")
         if not project:
             try:
                 # E.g. BigQuery(table="project.dataset.table")

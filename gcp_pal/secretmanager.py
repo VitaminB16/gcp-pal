@@ -1,13 +1,12 @@
-import os
 import json
 
-from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
+from gcp_pal.utils import log, ClientHandler, ModuleHandler, get_default_arg
 
 
 class SecretManager:
 
     def __init__(self, name=None, project=None):
-        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
+        self.project = project or get_default_arg("project")
         self.parent = f"projects/{self.project}"
         if isinstance(name, str) and name.startswith("projects/"):
             name = name.split("/")[-1]
