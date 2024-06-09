@@ -1,4 +1,4 @@
-from gcp_pal.utils import log, ModuleHandler
+from gcp_pal.utils import log, ModuleHandler, get_default_arg
 
 
 class Request:
@@ -20,7 +20,9 @@ class Request:
         """
         self.url = url
 
-        self.requests = ModuleHandler("requests").please_import(who_is_calling="Request")
+        self.requests = ModuleHandler("requests").please_import(
+            who_is_calling="Request"
+        )
         self.google_auth = ModuleHandler("google.auth").please_import(
             who_is_calling="Request"
         )
@@ -37,7 +39,7 @@ class Request:
         scopes = ["https://www.googleapis.com/auth/cloud-platform"]
         self.credentials, self.project = self.google_auth.default(scopes=scopes)
 
-        self.project = project or self.project
+        self.project = project or self.project or get_default_arg("project")
 
         default_sa = f"{self.project}@{self.project}.iam.gserviceaccount.com"
         self.service_account = service_account or default_sa

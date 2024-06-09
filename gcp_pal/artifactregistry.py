@@ -1,7 +1,6 @@
-import os
 import threading
 
-from gcp_pal.utils import ModuleHandler, ClientHandler, log, get_auth_default
+from gcp_pal.utils import ModuleHandler, ClientHandler, log, get_default_arg
 
 
 class ArtifactRegistry:
@@ -51,8 +50,8 @@ class ArtifactRegistry:
                 path = "/".join(path.split("/")[2:])
             except IndexError:
                 pass
-        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
-        self.location = location
+        self.project = project or get_default_arg("project")
+        self.location = location or get_default_arg("location")
         self.repository = repository
         self.image = image
         self.tag = tag

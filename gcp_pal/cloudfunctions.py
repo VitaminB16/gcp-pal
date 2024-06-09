@@ -2,23 +2,25 @@ import os
 import json
 
 from gcp_pal.utils import (
-    get_auth_default,
     log,
     get_all_kwargs,
     ClientHandler,
     ModuleHandler,
+    get_default_arg,
 )
 
 
 class CloudFunctions:
 
-    def __init__(self, name=None, project=None, location="europe-west2", service_account=None):
+    def __init__(
+        self, name=None, project=None, location="europe-west2", service_account=None
+    ):
         if isinstance(name, str) and name.startswith("projects/"):
             name = name.split("/")[-1]
         self.service_account = service_account
         self.name = name
-        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
-        self.location = location
+        self.project = project or get_default_arg("project")
+        self.location = location or get_default_arg("location")
         self.parent = f"projects/{self.project}/locations/{self.location}"
         self.location_id = self.parent
         self.function_id = self.name or ""

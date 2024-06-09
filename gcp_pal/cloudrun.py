@@ -1,19 +1,30 @@
-import os
 import json
 import random
 
 from gcp_pal.pydocker import Docker
-from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
+from gcp_pal.utils import (
+    log,
+    ClientHandler,
+    ModuleHandler,
+    get_default_arg
+)
 
 
 class CloudRun:
 
-    def __init__(self, name=None, project=None, location="europe-west2", job=False, service_account=None):
+    def __init__(
+        self,
+        name=None,
+        project=None,
+        location="europe-west2",
+        job=False,
+        service_account=None,
+    ):
         self.job = job
         self.type = "job" if job else "service"
         self.service_account = service_account
-        self.project = project or os.getenv("PROJECT") or get_auth_default()[1]
-        self.location = location
+        self.project = project or get_default_arg("project")
+        self.location = location or get_default_arg("location")
         self.parent = f"projects/{self.project}/locations/{self.location}"
         if isinstance(name, str) and name.startswith("projects/"):
             name = name.split("/")[-1]

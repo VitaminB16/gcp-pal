@@ -1,7 +1,7 @@
 import os
 import json
 
-from gcp_pal.utils import get_auth_default, log, ClientHandler, ModuleHandler
+from gcp_pal.utils import log, ClientHandler, ModuleHandler, get_default_arg
 
 
 class PubSub:
@@ -20,7 +20,7 @@ class PubSub:
         - project (str): Project ID
         """
         self.topic_id = topic
-        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
+        self.project = project or get_default_arg("project")
 
         self.pubsub = ModuleHandler("google.cloud").please_import(
             "pubsub_v1", who_is_calling="PubSub"

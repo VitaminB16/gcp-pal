@@ -428,6 +428,22 @@ def jprint(x, sort_keys=False, indent=3):
         log(x)
 
 
+def get_default_arg(arg_name):
+    """
+    Get a default argument from the environment variables.
+    """
+    from gcp_pal.config import DEFAULT_ARGS
+
+    arg_dict = {
+        "project": os.environ.get("PROJECT") or get_auth_default()[1],
+        "location": os.environ.get("LOCATION")
+        or DEFAULT_ARGS.get("location", None)
+        or "europe-west2",
+    }
+    output = arg_dict.get(arg_name, None)
+    return output
+
+
 class JSON:
     """
     Class for operating JSON files

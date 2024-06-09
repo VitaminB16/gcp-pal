@@ -1,6 +1,4 @@
-import os
-
-from gcp_pal.utils import get_auth_default, log, ModuleHandler
+from gcp_pal.utils import log, ModuleHandler, get_default_arg
 
 
 class Docker:
@@ -33,11 +31,11 @@ class Docker:
         else:
             self.client = self._client
 
-        self.project = project or os.environ.get("PROJECT") or get_auth_default()[1]
+        self.project = project or get_default_arg("project")
+        self.location = location or get_default_arg("location")
         self.name = name
         self.tag = tag
         self.repository = repository
-        self.location = location
         gcr_dest = f"gcr.io/{self.project}/{self.name}:{self.tag}"
         ar_dest = f"{self.location}-docker.pkg.dev/{self.project}/{self.repository}/{self.name}:{self.tag}"
         self.default_dest = gcr_dest
