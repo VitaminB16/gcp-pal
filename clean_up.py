@@ -208,7 +208,6 @@ def delete_all_but_latest_artifact_registry_images():
 
 
 if __name__ == "__main__":
-    delete_all_but_latest_artifact_registry_images()
     delete_test_bigquery_datasets()
     delete_test_firestore_collections()
     delete_test_storage_buckets()
@@ -217,3 +216,4 @@ if __name__ == "__main__":
     delete_test_secret_manager_secrets()
     delete_test_dataplex_lakes()
     delete_test_artifact_registry()
+    delete_all_but_latest_artifact_registry_images()
