@@ -11,7 +11,7 @@ class CloudRun:
         self,
         name=None,
         project=None,
-        location="europe-west2",
+        location=None,
         job=False,
         service_account=None,
     ):

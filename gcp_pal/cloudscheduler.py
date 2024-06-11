@@ -5,9 +5,7 @@ from gcp_pal.utils import log, ClientHandler, ModuleHandler, get_default_arg
 
 class CloudScheduler:
 
-    def __init__(
-        self, name=None, project=None, location="europe-west2", service_account=None
-    ):
+    def __init__(self, name=None, project=None, location=None, service_account=None):
         self.service_account = service_account
         self.project = project or get_default_arg("project")
         self.location = location or get_default_arg("location")

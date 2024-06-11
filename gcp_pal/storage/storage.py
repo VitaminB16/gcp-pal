@@ -8,13 +8,7 @@ class Storage:
     Class for operating Google Cloud Storage
     """
 
-    def __init__(
-        self,
-        path=None,
-        bucket_name=None,
-        project=None,
-        location="europe-west2",
-    ):
+    def __init__(self, path=None, bucket_name=None, project=None, location=None):
         self.project = project or get_default_arg("project")
         self.location = location or get_default_arg("location")
         self.fs_prefix = "gs://"

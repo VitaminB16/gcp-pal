@@ -32,27 +32,27 @@ def create_file(bucket_name, file_name):
 # Tests for the Storage class
 def test_storage_init():
     success = {}
-    success[0] =  Storage("bucket_name").bucket_name == "bucket_name"
-    success[1] =  Storage("gs://bucket_name").bucket_name == "bucket_name"
-    success[2] =  Storage("bucket_name/file").bucket_name == "bucket_name"
-    success[3] =  Storage("gs://bucket_name/file").bucket_name == "bucket_name"
-    success[4] =  Storage("gs://bucket_name").path == "gs://bucket_name"
-    success[5] =  Storage("bucket_name").path == "gs://bucket_name"
-    success[6] =  Storage("bucket_name/file").path == "gs://bucket_name/file"
-    success[7] =  Storage("gs://bucket_name/file").path == "gs://bucket_name/file"
-    success[8] =  Storage(bucket_name="bucket").bucket_name == "bucket"
-    success[9] =  Storage(bucket_name="bucket").path == "gs://bucket"
-    success[10] =  Storage().path == "gs://"
-    success[11] =  Storage().bucket_name is None
-    success[12] =  Storage("path").fs_prefix == "gs://"
-    success[13] =  Storage("gs://").ref_type == "project"
-    success[14] =  Storage("gs://bucket").ref_type == "bucket"
-    success[15] =  Storage("gs://bucket/file").ref_type == "file"
-    success[16] =  Storage("gs://bucket").is_bucket
-    success[17] =  Storage("gs://bucket/file").is_file
-    success[18] =  Storage("gs://").is_project
-    success[19] =  Storage("gs://bucket/filepath").base_path == "bucket/filepath"
-    success[20] =  Storage("gs://bucket/filepath").file_name == "filepath"
+    success[0] = Storage("bucket_name").bucket_name == "bucket_name"
+    success[1] = Storage("gs://bucket_name").bucket_name == "bucket_name"
+    success[2] = Storage("bucket_name/file").bucket_name == "bucket_name"
+    success[3] = Storage("gs://bucket_name/file").bucket_name == "bucket_name"
+    success[4] = Storage("gs://bucket_name").path == "gs://bucket_name"
+    success[5] = Storage("bucket_name").path == "gs://bucket_name"
+    success[6] = Storage("bucket_name/file").path == "gs://bucket_name/file"
+    success[7] = Storage("gs://bucket_name/file").path == "gs://bucket_name/file"
+    success[8] = Storage(bucket_name="bucket").bucket_name == "bucket"
+    success[9] = Storage(bucket_name="bucket").path == "gs://bucket"
+    success[10] = Storage().path == "gs://"
+    success[11] = Storage().bucket_name is None
+    success[12] = Storage("path").fs_prefix == "gs://"
+    success[13] = Storage("gs://").ref_type == "project"
+    success[14] = Storage("gs://bucket").ref_type == "bucket"
+    success[15] = Storage("gs://bucket/file").ref_type == "file"
+    success[16] = Storage("gs://bucket").is_bucket
+    success[17] = Storage("gs://bucket/file").is_file
+    success[18] = Storage("gs://").is_project
+    success[19] = Storage("gs://bucket/filepath").base_path == "bucket/filepath"
+    success[20] = Storage("gs://bucket/filepath").file_name == "filepath"
 
     failed = [k for k, v in success.items() if not v]
 
