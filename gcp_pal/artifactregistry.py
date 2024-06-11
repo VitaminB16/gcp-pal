@@ -4,11 +4,14 @@ from gcp_pal.utils import ModuleHandler, ClientHandler, log, get_default_arg
 
 
 class ArtifactRegistry:
+
+    _sentinel = object()
+
     def __init__(
         self,
         path: str = "",
-        project: str = None,
-        location: str = None,
+        project: str = _sentinel,
+        location: str = _sentinel,
         repository: str = None,
         image: str = None,
         version: str = None,
@@ -50,8 +53,13 @@ class ArtifactRegistry:
                 path = "/".join(path.split("/")[2:])
             except IndexError:
                 pass
-        self.project = project or get_default_arg("project")
-        self.location = location or get_default_arg("location")
+
+        self.project = (
+            project if project is not self._sentinel else get_default_arg("project")
+        )
+        self.location = (
+            location if location is not self._sentinel else get_default_arg("location")
+        )
         self.repository = repository
         self.image = image
         self.tag = tag
