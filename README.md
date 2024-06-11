@@ -108,6 +108,22 @@ And specify the project ID to be used as the default for all API requests:
 gcloud config set project PROJECT_ID
 ```
 
+You can also specify the default variables such as project ID and location using environmental variables. The reserved variables are `GCP_PAL_PROJECT` and `GCP_PAL_PROJECT`:
+
+```bash
+export GCP_PROJECT_ID=project-id
+export GCP_LOCATION=us-central1
+```
+
+The order of precendece is as follows:
+```
+1. Keyword arguments (e.g. BigQuery(project="project-id"))
+2. Environmental variables (e.g. export GCP_PROJECT_ID=project-id)
+3. Default project set in gcloud (e.g. gcloud config set project project-id)
+4. None
+```
+
+
 ---
 
 ## Firestore Module
