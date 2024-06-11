@@ -18,7 +18,7 @@ class Dataplex:
         zone: str = None,
         asset: str = None,
         project: str = None,
-        location: str = "europe-west2",
+        location: str = None,
     ):
         """
         Initializes the Dataplex object.

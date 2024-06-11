@@ -12,9 +12,7 @@ from gcp_pal.utils import (
 
 class CloudFunctions:
 
-    def __init__(
-        self, name=None, project=None, location="europe-west2", service_account=None
-    ):
+    def __init__(self, name=None, project=None, location=None, service_account=None):
         if isinstance(name, str) and name.startswith("projects/"):
             name = name.split("/")[-1]
         self.service_account = service_account

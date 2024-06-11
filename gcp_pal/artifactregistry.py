@@ -8,7 +8,7 @@ class ArtifactRegistry:
         self,
         path: str = "",
         project: str = None,
-        location: str = "europe-west2",
+        location: str = None,
         repository: str = None,
         image: str = None,
         version: str = None,

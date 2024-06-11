@@ -12,7 +12,7 @@ class Docker:
         tag="latest",
         destination=None,
         repository="docker",
-        location="europe-west2",
+        location=None,
     ):
         """
         Initialize a Docker object.
