@@ -229,6 +229,8 @@ class CloudFunctions:
         environment=2,
         wait_to_complete=True,
         service_account=None,
+        labels={},
+        description=None,
         **kwargs,
     ):
         """
@@ -237,6 +239,14 @@ class CloudFunctions:
         Args:
         - path (str): The path to the source code.
         - entry_point (str): The name of the function to execute.
+        - trigger (str): The trigger of the cloud function. Defaults to "HTTP".
+        - if_exists (str): What to do if the cloud function already exists. Options are "REPLACE" or "IGNORE". Defaults to "REPLACE".
+        - environment (int): The environment (generation) of the cloud function. Defaults to 2.
+        - wait_to_complete (bool): Whether to wait for the deployment to complete. Defaults to True.
+        - service_account (str): The service account email to use for the cloud function. Defaults to
+        - metadata (dict): The metadata to pass to the cloud function.
+        - labels (dict): The labels to apply to the cloud function.
+        - description (str): The description of the cloud function.
         - kwargs (dict): Additional arguments to pass to the cloud function.
 
         Returns:
@@ -269,6 +279,7 @@ class CloudFunctions:
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in all_kwargs}
         build_config = self.functions.BuildConfig(**build_kwargs)
+        build_config.environment_variables.update({"DEPLOYMENT_TOOL__": "GCP-PAL"})
         service_config = self.functions.ServiceConfig(**service_kwargs)
         cloud_function = self.functions.Function(
             name=self.function_id,
