@@ -16,17 +16,27 @@ class PubSub:
     def __init__(self, path: str = "", topic: str = None, project=None):
         """
         Args:
-        - topic (str): Name of the topic
-        - project (str): Project ID
+        - `path` (str): Path to the topic or project. Default is "". Supported formats:
+            - "projects/my-project/topics/my-topic"
+            - "projects/my-project"
+            - "my-project/my-topic"
+            - "my-project"
+        - `topic` (str): Name of the topic
+        - `project` (str): Project ID
         """
+        self.topic_id = None
+        self.project = None
         self.path = path
         if path.startswith("projects/"):
             path = path.split("/")[1::2]
-            self.path = "/".join(path)
-            self.project = path[0]
-            self.topic_id = path[1] if len(path) > 1 else None
+            path = "/".join(path)
+            self.path = path
+        try:
+            self.project, self.topic_id = path.split("/")
+        except ValueError:
+            self.project = path if path != "" else None
         self.topic_id = self.topic_id or topic
-        self.level = "topic" if topic else "project"
+        self.level = "topic" if self.topic_id else "project"
         self.project = self.project or project or get_default_arg("project")
         self.parent = f"projects/{self.project}"
         if self.level == "topic":
@@ -73,6 +83,6 @@ class PubSub:
 
 
 if __name__ == "__main__":
-    PubSub("projects/feefo-dev-2-data-persist-0530").ls()
+    PubSub("projects/my-project/topics/my-topic")
     # PubSub("test_topic").publish("data")
     # PubSub("test_topic").publish({"key": "value"})
