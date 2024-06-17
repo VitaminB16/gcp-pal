@@ -51,11 +51,29 @@ def test_pubsub_constructor():
 
 
 def test_pubsub_publish(mocker):
+    success = {}
+
     publisher = mocker
     p = PubSub(topic="test_topic")
     p.publish("data")
-    publisher.assert_called_once()
-    publisher.return_value.publish.assert_called_once()
-    publisher.return_value.publish.assert_called_with(
-        p.topic_path, "data".encode("utf-8")
-    )
+    try:
+        publisher.assert_called_once()
+        success[0] = True
+    except AssertionError:
+        success[0] = False
+    try:
+        publisher.return_value.publish.assert_called_once()
+        success[1] = True
+    except AssertionError:
+        success[1] = False
+    try:
+        publisher.return_value.publish.assert_called_with(
+            p.parent, "data".encode("utf-8")
+        )
+        success[2] = True
+    except AssertionError:
+        success[2] = False
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
