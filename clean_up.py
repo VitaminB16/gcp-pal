@@ -7,6 +7,7 @@ from gcp_pal import (
     SecretManager,
     Dataplex,
     ArtifactRegistry,
+    PubSub,
 )
 from concurrent.futures import ThreadPoolExecutor
 
@@ -207,6 +208,37 @@ def delete_all_but_latest_artifact_registry_images():
                     executor.map(del_fun, versions_to_delete)
 
 
+def delete_test_pubsub_subscriptions():
+    """
+    Deletes all PubSub subscriptions that start with "test_"
+    """
+    subscriptions = PubSub().ls_subscriptions()
+    subscriptions_to_delete = [
+        s
+        for s in subscriptions
+        if s.startswith("test_")
+        or s.startswith("test-")
+        or s.startswith("temp_")
+        or s.startswith("example_")
+    ]
+    del_fun = lambda x: PubSub(subscription=x).delete()
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, subscriptions_to_delete)
+
+    topics = PubSub().ls()
+    topics_to_delete = [
+        t
+        for t in topics
+        if t.startswith("test_")
+        or t.startswith("test-")
+        or t.startswith("temp_")
+        or t.startswith("example_")
+    ]
+    del_fun = lambda x: PubSub(x).delete()
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, topics_to_delete)
+
+
 if __name__ == "__main__":
     delete_test_bigquery_datasets()
     delete_test_firestore_collections()
@@ -217,3 +249,4 @@ if __name__ == "__main__":
     delete_test_dataplex_lakes()
     delete_test_artifact_registry()
     delete_all_but_latest_artifact_registry_images()
+    delete_test_pubsub_subscriptions()
