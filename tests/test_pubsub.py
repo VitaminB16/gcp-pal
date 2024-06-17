@@ -34,6 +34,17 @@ def test_pubsub_constructor():
     success[12] = PubSub("my-project").project == "my-project"
     success[13] = PubSub("my-project").path == "my-project"
 
+    success[14] = PubSub("my-project/my-topic/my-subscription").level == "subscription"
+    success[15] = (
+        PubSub("my-project/my-topic/my-subscription").path
+        == "my-project/my-topic/my-subscription"
+    )
+    success[16] = PubSub("my-project/my-topic/my-subscription").project == "my-project"
+    success[17] = PubSub("my-project/my-topic/my-subscription").topic_id == "my-topic"
+    success[18] = (
+        PubSub("my-project/my-topic/my-subscription").subscription == "my-subscription"
+    )
+
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
@@ -41,7 +52,7 @@ def test_pubsub_constructor():
 
 def test_pubsub_publish(mocker):
     publisher = mocker
-    p = PubSub("test_topic")
+    p = PubSub(topic="test_topic")
     p.publish("data")
     publisher.assert_called_once()
     publisher.return_value.publish.assert_called_once()
