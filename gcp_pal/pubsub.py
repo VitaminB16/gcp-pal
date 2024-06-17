@@ -12,17 +12,27 @@ class PubSub:
     - `PubSub("topic").publish({"key": "value"})` -> Publish `{"key": "value"}` to "topic"
     """
 
-    def __init__(self, path: str = "", topic: str = None, project=None):
+    def __init__(
+        self,
+        path: str = "",
+        topic: str = None,
+        subscription: str = None,
+        project=None,
+    ):
         """
         Args:
         - `path` (str): Path to the topic or project. Default is "". Supported formats:
+            - "projects/my-project/topics/my-topic/subscription/my-subscription"
             - "projects/my-project/topics/my-topic"
             - "projects/my-project"
+            - "my-project/my-topic/my-subscription"
             - "my-project/my-topic"
             - "my-project"
         - `topic` (str): Name of the topic
+        - `subscription` (str): Name of the subscription
         - `project` (str): Project ID
         """
+        self.subscription = None
         self.topic_id = None
         self.project = None
         self.path = path
@@ -31,12 +41,19 @@ class PubSub:
             path = "/".join(path)
             self.path = path
         try:
+            self.project, self.topic_id, self.subscription = path.split("/")
+        except ValueError:
+            pass
+        try:
             self.project, self.topic_id = path.split("/")
         except ValueError:
-            self.project = path if path != "" else None
+            pass
+        if isinstance(path, str) and path.count("/") == 0:
+            self.project = path
         self.topic_id = self.topic_id or topic
-        self.level = "topic" if self.topic_id else "project"
+        self.subscription = self.subscription or subscription
         self.project = self.project or project or get_default_arg("project")
+        self.level = self._set_level()
         self.parent = f"projects/{self.project}"
         if self.level == "topic":
             self.parent = f"{self.parent}/topics/{self.topic_id}"
@@ -53,6 +70,16 @@ class PubSub:
 
     def __repr__(self):
         return f"PubSub({self.topic_id})"
+
+    def _set_level(self):
+        if self.subscription and self.topic_id and self.project:
+            return "subscription"
+        elif self.topic_id and self.project:
+            return "topic"
+        elif self.project:
+            return "project"
+        else:
+            raise ValueError("Invalid level.")
 
     def ls_topics(self, full_name=False):
         """
@@ -102,8 +129,13 @@ class PubSub:
         try:
             publish_future = self.publisher.publish(self.parent, data.encode("utf-8"))
             result = publish_future.result()
+            log(
+                f"PubSub - Published message: {result} to {self.topic_id} in {self.project}."
+            )
+            return result
         except Exception as e:
             log(f"PubSub - An error occurred: {e}")
+            return
 
     def create_topic(
         self,
@@ -185,8 +217,8 @@ class PubSub:
 
 
 if __name__ == "__main__":
-    PubSub("vitaminb16/test_topic").create_topic()
-    breakpoint()
+    PubSub("projects/my-project")
+    # PubSub("vitaminb16/test_topic/test_subscription").create_topic()
     # PubSub("vitaminb16/test_topic").delete_topic()
     # PubSub("test_topic").publish("data")
     # PubSub("test_topic").publish({"key": "value"})
