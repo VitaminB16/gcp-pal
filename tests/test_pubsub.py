@@ -1,4 +1,5 @@
 import pytest
+from uuid import uuid4
 
 from gcp_pal.pubsub import PubSub
 
@@ -45,6 +46,18 @@ def test_pubsub_constructor():
         PubSub("my-project/my-topic/my-subscription").subscription == "my-subscription"
     )
 
+    success[19] = PubSub(topic="my-topic").level == "topic"
+    success[20] = PubSub(topic="my-topic").topic_id == "my-topic"
+    success[21] = PubSub(topic="my-topic").path.endswith("my-topic")
+
+    success[22] = PubSub(subscription="my-subscription").level == "subscription"
+    success[23] = (
+        PubSub(subscription="my-subscription").subscription == "my-subscription"
+    )
+    success[24] = PubSub(subscription="my-subscription").path.endswith(
+        "my-subscription"
+    )
+
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
@@ -55,7 +68,7 @@ def test_pubsub_publish(mocker):
 
     publisher = mocker
     p = PubSub(topic="test_topic")
-    p.publish("data")
+    p.publish("data")  # <-- Testing this line
     try:
         publisher.assert_called_once()
         success[0] = True
@@ -73,6 +86,69 @@ def test_pubsub_publish(mocker):
         success[2] = True
     except AssertionError:
         success[2] = False
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_pubsub_create_topic():
+    success = {}
+
+    topic_name = f"test_topic_{uuid4().hex}"
+
+    # Doesn't exist
+    success[0] = not PubSub(topic=topic_name).exists()
+    success[1] = topic_name not in PubSub().ls()
+
+    # Created
+    PubSub(topic=topic_name).create()  # <-- Testing this line
+    success[2] = PubSub(topic=topic_name).exists()
+    success[3] = topic_name in PubSub().ls()
+
+    # Doesn't exist
+    PubSub(topic=topic_name).delete()
+    success[4] = not PubSub(topic=topic_name).exists()
+    success[5] = topic_name not in PubSub().ls()
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_pubsub_create_subscription():
+    success = {}
+
+    topic_name = f"test_topic_{uuid4().hex}"
+    subscription_name = f"test_subscription_{uuid4().hex}"
+
+    # Doesn't exist
+    success[0] = not PubSub(subscription=subscription_name).exists()
+    success[1] = not PubSub(subscription=subscription_name, topic=topic_name).exists()
+    success[2] = topic_name not in PubSub().ls()
+
+    # Created
+    PubSub(topic=topic_name).create()  # <-- Testing this line
+    success[3] = PubSub(topic=topic_name).exists()
+    PubSub(subscription=subscription_name, topic=topic_name).create()
+    success[4] = PubSub(subscription=subscription_name).exists()
+    success[5] = PubSub(subscription=subscription_name, topic=topic_name).exists()
+    success[6] = subscription_name in PubSub().ls_subscriptions()
+    success[7] = topic_name in PubSub().ls()
+    success[8] = subscription_name in PubSub(topic=topic_name).ls()
+
+    # Doesn't exist
+    PubSub(subscription=subscription_name, topic=topic_name).delete()
+    success[9] = not PubSub(subscription=subscription_name).exists()
+    success[10] = not PubSub(subscription=subscription_name, topic=topic_name).exists()
+    success[11] = PubSub(topic=topic_name).exists()
+    success[12] = topic_name in PubSub().ls()
+    success[13] = subscription_name not in PubSub().ls_subscriptions()
+    success[14] = subscription_name not in PubSub(topic=topic_name).ls()
+
+    PubSub(topic=topic_name).delete()
+    success[15] = not PubSub(topic=topic_name).exists()
+    success[16] = topic_name not in PubSub().ls()
 
     failed = [k for k, v in success.items() if not v]
 
