@@ -36,24 +36,24 @@ The utilities are designed to work with the `google-cloud` Python libraries, pro
 
 ## Table of Contents
 
-| Module | Python Class |
-|--------------|-------------|
-| [Firestore](#firestore-module) | `gcp_pal.Firestore` |
-| [PubSub](#pubsub-module) | `gcp_pal.PubSub` |
-| [Request](#request-module) | `gcp_pal.Request` |
-| [BigQuery](#bigquery-module) | `gcp_pal.BigQuery` |
-| [Storage](#storage-module) | `gcp_pal.Storage` |
-| [Parquet](#parquet-module) | `gcp_pal.Parquet` |
-| [Schema](#schema-module) | `gcp_pal.Schema` |
-| [Cloud Functions](#cloud-functions-module) | `gcp_pal.CloudFunctions` |
-| [Docker](#docker-module) | `gcp_pal.Docker` |
-| [Cloud Run](#cloud-run-module) | `gcp_pal.CloudRun` |
-| [Logging](#logging-module) | `gcp_pal.Logging` |
-| [Secret Manager](#secret-manager-module) | `gcp_pal.SecretManager` |
-| [Cloud Scheduler](#cloud-scheduler-module) | `gcp_pal.CloudScheduler` |
-| [Project](#project-module) | `gcp_pal.Project` |
-| [Dataplex](#dataplex-module) | `gcp_pal.Dataplex` |
-| [Artifact Registry](#artifact-registry) | `gcp_pal.ArtifactRegistry` |
+| Module                                     | Python Class               |
+| ------------------------------------------ | -------------------------- |
+| [Firestore](#firestore-module)             | `gcp_pal.Firestore`        |
+| [PubSub](#pubsub-module)                   | `gcp_pal.PubSub`           |
+| [Request](#request-module)                 | `gcp_pal.Request`          |
+| [BigQuery](#bigquery-module)               | `gcp_pal.BigQuery`         |
+| [Storage](#storage-module)                 | `gcp_pal.Storage`          |
+| [Parquet](#parquet-module)                 | `gcp_pal.Parquet`          |
+| [Schema](#schema-module)                   | `gcp_pal.Schema`           |
+| [Cloud Functions](#cloud-functions-module) | `gcp_pal.CloudFunctions`   |
+| [Docker](#docker-module)                   | `gcp_pal.Docker`           |
+| [Cloud Run](#cloud-run-module)             | `gcp_pal.CloudRun`         |
+| [Logging](#logging-module)                 | `gcp_pal.Logging`          |
+| [Secret Manager](#secret-manager-module)   | `gcp_pal.SecretManager`    |
+| [Cloud Scheduler](#cloud-scheduler-module) | `gcp_pal.CloudScheduler`   |
+| [Project](#project-module)                 | `gcp_pal.Project`          |
+| [Dataplex](#dataplex-module)               | `gcp_pal.Dataplex`         |
+| [Artifact Registry](#artifact-registry)    | `gcp_pal.ArtifactRegistry` |
 
 
 
@@ -122,7 +122,6 @@ The order of precendece is as follows:
 3. Default project set in gcloud (e.g. gcloud config set project project-id)
 4. None
 ```
-
 
 ---
 
@@ -222,6 +221,69 @@ First, import the PubSub class from the `gcp_pal` module:
 
 ```python
 from gcp_pal import PubSub
+```
+
+The `PubSub` prefers to take the `path` argument in the format `project/topic/subscription`:
+
+```python
+PubSub("my-project/my-topic/my-subscription")
+```
+
+Alternatively, you can specify the project and topic/subscription separately:
+
+```python
+PubSub(project="my-project", topic="my-topic", subscription="my-subscription")
+```
+
+### Listing objects
+
+To list all topics within a project or all subscriptions within a topic, use the `ls` method:
+
+```python
+topics = PubSub("my-project").ls()
+# Output: ['topic1', 'topic2']
+subscriptions = PubSub("my-project/topic1").ls()
+# Output: ['subscription1', 'subscription2']
+```
+
+Or to list all subscriptions within a project:
+
+```python
+subscriptions = PubSub("my-project").ls_subscriptions()
+# Output: ['subscription1', 'subscription2', ...]
+```
+
+### Creating objects
+
+To create a PubSub topic, use the `create` method:
+
+```python
+PubSub("my-project/new-topic").create()
+# Output: PubSub topic "new-topic" created
+```
+
+To create a PubSub subscription, use the `create` method with the `topic` parameter:
+
+```python
+PubSub("my-project/my-topic/new-subscription").create()
+```
+
+### Deleting objects
+
+To delete a PubSub topic or subscription, use the `delete` method:
+
+```python
+PubSub("my-project/topic/subscription").delete()
+# Output: PubSub subscription "subscription" deleted
+PubSub("my-project/topic").delete()
+# Output: PubSub topic "topic" deleted
+```
+
+To delete a subscription without specifying the topic, use the `subscription` parameter:
+
+```python
+PubSub(subscription="my-project/subscription").delete()
+# Output: PubSub subscription "subscription" deleted
 ```
 
 ### Publishing Messages to a Topic
