@@ -154,7 +154,7 @@ class Firestore:
         dtypes = None
         if output is None and allow_empty:
             output = {}
-        if set(output.keys()) in [{"data"}, {"data", "metadata"}]:
+        if set(output.keys()) in [{"data"}, {"data", "metadata"}] and apply_schema:
             metadata = output.get("metadata", {})
             object_type = metadata.get("object_type", None)
             dtypes = metadata.get("dtypes", None)
