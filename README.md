@@ -683,7 +683,7 @@ CloudFunctions("function-name").deploy(
 )
 ```
 
-Deploying a Cloud Function from a local source depends on the `gcp_toole.Storage` module. The source codebase is uploaded to a `{PROJECT_ID}-cloud-functions` bucket and is deployed from there. An alternative bucket can be specified via the `source_bucket` parameter:
+Deploying a Cloud Function from a local source depends on the `gcp_toole.Storage` module. By default, the source codebase is uploaded to the `gcf-v2-sources-{PROJECT_NUMBER}-{REGION}` bucket and is deployed from there. An alternative bucket can be specified via the `source_bucket` parameter:
 
 ```python
 CloudFunctions("function-name").deploy(
