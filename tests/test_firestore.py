@@ -126,7 +126,7 @@ def test_read_collection():
     Firestore(f"{collection_name}/test_document1").write(data)
     Firestore(f"{collection_name}/test_document2").write(data)
     Firestore(f"{collection_name}/test_document3").write(data)
-    output = Firestore(collection_name).read()
+    output = Firestore(collection_name).read(apply_schema=True)
     success[1] = len(output) == 3
     success[2] = all(isinstance(output[x], pd.DataFrame) for x in output)
     # Clean up
