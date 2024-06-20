@@ -36,7 +36,7 @@ def try_import(module_name, origin_module=None, errors="raise"):
                         raise ImportError(
                             f"Missing required class: '{class_name}'"
                         ) from None
-            except (ImportError, ModuleNotFoundError):
+            except (ImportError, ModuleNotFoundError, ValueError):
                 if errors == "ignore":
                     return None
         pypi_name = PYPI_NAMES.get(module_name, None)
