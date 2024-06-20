@@ -205,13 +205,16 @@ class CloudFunctions:
         if not os.path.exists(path):
             raise FileNotFoundError(f"Local file not found: {path}")
 
-        from gcp_pal import Storage
+        from gcp_pal import Storage, Project
         from gcp_pal.utils import zip_directory
 
         log(f"Cloud Function - Creating zip file from {path} and uploading to GCS...")
         zip_path = zip_directory(path)
         # Upload the zip file to GCS
-        bucket_name = source_bucket or f"{self.project}-cloud-functions"
+
+        project_num = Project(self.project).number()
+        default_bucket = f"gcf-v2-sources-{project_num}-{self.location}"
+        bucket_name = source_bucket or default_bucket
         upload_path = f"{bucket_name}/cloud-functions/{self.name}/{self.name}.zip"
         Storage(upload_path).upload(zip_path)
         # Deploy the cloud function
@@ -258,9 +261,8 @@ class CloudFunctions:
             from gcp_pal import Storage
 
             obj = Storage(path)
-            bucket_name, file_name = obj.bucket_name, obj.file_name
             storage_source = self.functions.StorageSource(
-                bucket=bucket_name, object=file_name
+                bucket=obj.bucket_name, object=obj.file_name
             )
             source = self.functions.Source(storage_source=storage_source)
         else:
