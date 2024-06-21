@@ -234,7 +234,7 @@ def delete_test_pubsub_subscriptions():
         or t.startswith("temp_")
         or t.startswith("example_")
     ]
-    del_fun = lambda x: PubSub(x).delete()
+    del_fun = lambda x: PubSub(topic=x).delete()
     with ThreadPoolExecutor() as executor:
         executor.map(del_fun, topics_to_delete)
 
