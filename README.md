@@ -25,6 +25,8 @@ TODO:
 
 # GCP Pal Library
 
+[![Downloads](https://static.pepy.tech/badge/gcp-pal)](https://pepy.tech/project/gcp-pal)
+
 The `gcp-pal` library provides a set of utilities for interacting with Google Cloud Platform (GCP) services, streamlining the process of implementing GCP functionalities within your Python applications.
 
 The utilities are designed to work with the `google-cloud` Python libraries, providing a more user-friendly and intuitive interface for common tasks.
@@ -39,21 +41,21 @@ The utilities are designed to work with the `google-cloud` Python libraries, pro
 | Module                                     | Python Class               |
 | ------------------------------------------ | -------------------------- |
 | [Firestore](#firestore-module)             | `gcp_pal.Firestore`        |
-| [PubSub](#pubsub-module)                   | `gcp_pal.PubSub`           |
-| [Request](#request-module)                 | `gcp_pal.Request`          |
 | [BigQuery](#bigquery-module)               | `gcp_pal.BigQuery`         |
 | [Storage](#storage-module)                 | `gcp_pal.Storage`          |
-| [Parquet](#parquet-module)                 | `gcp_pal.Parquet`          |
-| [Schema](#schema-module)                   | `gcp_pal.Schema`           |
 | [Cloud Functions](#cloud-functions-module) | `gcp_pal.CloudFunctions`   |
-| [Docker](#docker-module)                   | `gcp_pal.Docker`           |
 | [Cloud Run](#cloud-run-module)             | `gcp_pal.CloudRun`         |
+| [Docker](#docker-module)                   | `gcp_pal.Docker`           |
 | [Logging](#logging-module)                 | `gcp_pal.Logging`          |
 | [Secret Manager](#secret-manager-module)   | `gcp_pal.SecretManager`    |
 | [Cloud Scheduler](#cloud-scheduler-module) | `gcp_pal.CloudScheduler`   |
 | [Project](#project-module)                 | `gcp_pal.Project`          |
 | [Dataplex](#dataplex-module)               | `gcp_pal.Dataplex`         |
 | [Artifact Registry](#artifact-registry)    | `gcp_pal.ArtifactRegistry` |
+| [PubSub](#pubsub-module)                   | `gcp_pal.PubSub`           |
+| [Request](#request-module)                 | `gcp_pal.Request`          |
+| [Schema](#schema-module)                   | `gcp_pal.Schema`           |
+| [Parquet](#parquet-module)                 | `gcp_pal.Parquet`          |
 
 
 
@@ -211,132 +213,6 @@ print(docs)
 
 ---
 
-## PubSub Module
-
-The PubSub module in the `gcp-pal` library allows you to publish and subscribe to PubSub topics.
-
-### Initializing PubSub
-
-First, import the PubSub class from the `gcp_pal` module:
-
-```python
-from gcp_pal import PubSub
-```
-
-The `PubSub` prefers to take the `path` argument in the format `project/topic/subscription`:
-
-```python
-PubSub("my-project/my-topic/my-subscription")
-```
-
-Alternatively, you can specify the project and topic/subscription separately:
-
-```python
-PubSub(project="my-project", topic="my-topic", subscription="my-subscription")
-```
-
-### Listing objects
-
-To list all topics within a project or all subscriptions within a topic, use the `ls` method:
-
-```python
-topics = PubSub("my-project").ls()
-# Output: ['topic1', 'topic2']
-subscriptions = PubSub("my-project/topic1").ls()
-# Output: ['subscription1', 'subscription2']
-```
-
-Or to list all subscriptions within a project:
-
-```python
-subscriptions = PubSub("my-project").ls_subscriptions()
-# Output: ['subscription1', 'subscription2', ...]
-```
-
-### Creating objects
-
-To create a PubSub topic, use the `create` method:
-
-```python
-PubSub("my-project/new-topic").create()
-# Output: PubSub topic "new-topic" created
-```
-
-To create a PubSub subscription, use the `create` method with the `topic` parameter:
-
-```python
-PubSub("my-project/my-topic/new-subscription").create()
-```
-
-### Deleting objects
-
-To delete a PubSub topic or subscription, use the `delete` method:
-
-```python
-PubSub("my-project/topic/subscription").delete()
-# Output: PubSub subscription "subscription" deleted
-PubSub("my-project/topic").delete()
-# Output: PubSub topic "topic" deleted
-```
-
-To delete a subscription without specifying the topic, use the `subscription` parameter:
-
-```python
-PubSub(subscription="my-project/subscription").delete()
-# Output: PubSub subscription "subscription" deleted
-```
-
-### Publishing Messages to a Topic
-
-To publish a message to a PubSub topic, specify the topic's name and the message you want to publish:
-
-```python
-topic = "topic-name"
-message = "Hello, PubSub!"
-PubSub(topic).publish(message)
-```
-
----
-
-## Request Module
-
-The Request module in the `gcp-pal` library allows you to make authorized HTTP requests.
-
-### Initializing Request
-
-Import the Request class from the `gcp_pal` module:
-
-```python
-from gcp_pal import Request
-```
-
-### Making Authorized Get/Post/Put Requests
-
-To make an authorized requests, specify the URL you want to access and use the relevant method:
-
-```python
-url = "https://example.com/api"
-
-get_response = Request(url).get()
-print(get_response)
-# Output: <Response [200]>
-post_response = Request(url).post(data={"key": "value"})
-print(post_response)
-# Output: <Response [201]>
-put_response = Request(url).put(data={"key": "value"})
-print(put_response)
-# Output: <Response [200]>
-```
-
-### Using service accounts
-
-Specify the service account email to make requests on behalf of a service account within the constructor:
-
-```python
-Request(url, service_account="account@email.com").get()
-```
-
----
 
 ## BigQuery Module
 
@@ -512,152 +388,6 @@ Storage("bucket/uploaded_file.txt").download("downloaded_file.txt")
 
 ---
 
-## Parquet Module
-
-The Parquet module in the `gcp-pal` library allows you to read and write Parquet files in Google Cloud Storage.
-
-### Initializing Parquet
-
-Import the Parquet class from the `gcp_pal` module:
-
-```python
-from gcp_pal import Parquet
-```
-
-### Reading Parquet files
-
-To read a Parquet file from Google Cloud Storage, use the `read` method:
-
-```python
-data = Parquet("bucket/file.parquet").read()
-print(data)
-# Output: pd.DataFrame({'field1': ['value1'], 'field2': ['value2']})
-```
-
-### Writing Parquet files
-
-To write a Pandas DataFrame to a Parquet file in Google Cloud Storage, use the `write` method:
-
-```python
-df = pd.DataFrame({
-    "field1": ["value1"],
-    "field2": ["value2"]
-})
-Parquet("bucket/file.parquet").write(df)
-# Output: Parquet file "file.parquet" created in "bucket"
-```
-
-Partitioning can be specified via the `partition_cols` parameter:
-
-```python
-Parquet("bucket/file.parquet").write(df, partition_cols=["field1"])
-# Output: Parquet file "file.parquet" created in "bucket" partitioned by "field1"
-```
-
----
-
-## Schema Module
-
-The Schema module allows one to translate schemas between different formats, such as Python, PyArrow, BigQuery, and Pandas.
-
-### Initializing Schema
-
-Import the `Schema` class from the `gcp_pal` module:
-
-```python
-from gcp_pal.schema import Schema
-```
-
-### Translating schemas
-
-To translate a schema from one format to another, use the respective methods:
-
-```python
-str_schema = {
-    "a": "int",
-    "b": "str",
-    "c": "float",
-    "d": {
-        "d1": "datetime",
-        "d2": "timestamp",
-    },
-}
-python_schema = Schema(str_schema).str()
-# {
-#    "a": int,
-#    "b": str,
-#    "c": float,
-#    "d": {
-#        "d1": datetime,
-#        "d2": datetime,
-#    },
-# }
-pyarrow_schema = Schema(str_schema).pyarrow()
-# pa.schema(
-#    [
-#        pa.field("a", pa.int64()),
-#        pa.field("b", pa.string()),
-#        pa.field("c", pa.float64()),
-#        pa.field("d", pa.struct([
-#            pa.field("d1", pa.timestamp("ns")),
-#            pa.field("d2", pa.timestamp("ns")),
-#        ])),
-#    ]
-# )
-bigquery_schema = Schema(str_schema).bigquery()
-# [
-#     bigquery.SchemaField("a", "INTEGER"),
-#     bigquery.SchemaField("b", "STRING"),
-#     bigquery.SchemaField("c", "FLOAT"),
-#     bigquery.SchemaField("d", "RECORD", fields=[
-#        bigquery.SchemaField("d1", "DATETIME"),
-#        bigquery.SchemaField("d2", "TIMESTAMP"),
-#     ]),
-# ]
-pandas_schema = Schema(str_schema).pandas()
-# {
-#    "a": "int64",
-#    "b": "object",
-#    "c": "float64",
-#    "d": {
-#        "d1": "datetime64[ns]",
-#        "d2": "datetime64[ns]",
-#    },
-# }
-```
-
-### Infering schemas
-
-To infer and translate a schema from a dictionary of data or a Pandas DataFrame, use the `is_data` parameter:
-
-```python
-df = pd.DataFrame(
-    {
-        "a": [1, 2, 3],
-        "b": ["a", "b", "c"],
-        "c": [1.0, 2.0, 3.0],
-        "date": [datetime.datetime.now() for _ in range(3)],
-    }
-)
-inferred_schema = Schema(df, is_data=True).schema
-# {
-#   "a": "int",
-#   "b": "str",
-#   "c": "float",
-#   "date": "datetime",
-# }
-pyarrow_schema = Schema(df, is_data=True).pyarrow()
-# pa.schema(
-#    [
-#        pa.field("a", pa.int64()),
-#        pa.field("b", pa.string()),
-#        pa.field("c", pa.float64()),
-#        pa.field("date", pa.timestamp("ns")),
-#    ]
-# )
-```
-
----
 
 ## Cloud Functions Module
 
@@ -742,48 +472,6 @@ Service account email can be specified either within the constructor or via the 
 CloudFunctions("function-name", service_account="account@email.com").deploy(**kwargs)
 # or
 CloudFunctions("function-name").deploy(service_account="account@email.com", **kwargs)
-```
-
----
-
-## Docker Module
-
-The Docker module in the `gcp-pal` library allows you to build and push Docker images to Google Container Registry.
-
-### Initializing Docker
-
-Import the Docker class from the `gcp_pal` module:
-
-```python
-from gcp_pal import Docker
-```
-
-### Building Docker images
-
-```python
-Docker("image-name").build(path="path/to/context", dockerfile="Dockerfile")
-# Output: Docker image "image-name:latest" built based on "path/to/context" codebase and "path/to/context/Dockerfile".
-```
-
-The default `tag` is `"latest"` but can be specified via the `tag` parameter:
-
-```python
-Docker("image-name", tag="5fbd72c").build(path="path/to/context", dockerfile="Dockerfile")
-# Output: Docker image "image-name:5fbd72c" built based on "path/to/context" codebase and "path/to/context/Dockerfile".
-```
-
-### Pushing Docker images
-
-```python
-Docker("image-name").push()
-# Output: Docker image "image-name" pushed to Google Container Registry.
-```
-
-The default destination is `"gcr.io/{PROJECT_ID}/{IMAGE_NAME}:{TAG}"` but can be specified via the `destination` parameter:
-
-```python
-Docker("image-name").push(destination="gcr.io/my-project/image-name:5fbd72c")
-# Output: Docker image "image-name" pushed to "gcr.io/my-project/image-name:5fbd72c".
 ```
 
 ---
@@ -892,6 +580,49 @@ CloudRun("run-name").deploy(service_account="account@email.com", **kwargs)
 ```
 
 ---
+
+## Docker Module
+
+The Docker module in the `gcp-pal` library allows you to build and push Docker images to Google Container Registry.
+
+### Initializing Docker
+
+Import the Docker class from the `gcp_pal` module:
+
+```python
+from gcp_pal import Docker
+```
+
+### Building Docker images
+
+```python
+Docker("image-name").build(path="path/to/context", dockerfile="Dockerfile")
+# Output: Docker image "image-name:latest" built based on "path/to/context" codebase and "path/to/context/Dockerfile".
+```
+
+The default `tag` is `"latest"` but can be specified via the `tag` parameter:
+
+```python
+Docker("image-name", tag="5fbd72c").build(path="path/to/context", dockerfile="Dockerfile")
+# Output: Docker image "image-name:5fbd72c" built based on "path/to/context" codebase and "path/to/context/Dockerfile".
+```
+
+### Pushing Docker images
+
+```python
+Docker("image-name").push()
+# Output: Docker image "image-name" pushed to Google Container Registry.
+```
+
+The default destination is `"gcr.io/{PROJECT_ID}/{IMAGE_NAME}:{TAG}"` but can be specified via the `destination` parameter:
+
+```python
+Docker("image-name").push(destination="gcr.io/my-project/image-name:5fbd72c")
+# Output: Docker image "image-name" pushed to "gcr.io/my-project/image-name:5fbd72c".
+```
+
+---
+
 
 ## Logging Module
 
@@ -1342,3 +1073,276 @@ ArtifactRegistry("repo1").delete()
 # Output: Repository "repo1" deleted
 ```
 
+---
+
+## PubSub Module
+
+The PubSub module in the `gcp-pal` library allows you to publish and subscribe to PubSub topics.
+
+### Initializing PubSub
+
+First, import the PubSub class from the `gcp_pal` module:
+
+```python
+from gcp_pal import PubSub
+```
+
+The `PubSub` prefers to take the `path` argument in the format `project/topic/subscription`:
+
+```python
+PubSub("my-project/my-topic/my-subscription")
+```
+
+Alternatively, you can specify the project and topic/subscription separately:
+
+```python
+PubSub(project="my-project", topic="my-topic", subscription="my-subscription")
+```
+
+### Listing objects
+
+To list all topics within a project or all subscriptions within a topic, use the `ls` method:
+
+```python
+topics = PubSub("my-project").ls()
+# Output: ['topic1', 'topic2']
+subscriptions = PubSub("my-project/topic1").ls()
+# Output: ['subscription1', 'subscription2']
+```
+
+Or to list all subscriptions within a project:
+
+```python
+subscriptions = PubSub("my-project").ls_subscriptions()
+# Output: ['subscription1', 'subscription2', ...]
+```
+
+### Creating objects
+
+To create a PubSub topic, use the `create` method:
+
+```python
+PubSub("my-project/new-topic").create()
+# Output: PubSub topic "new-topic" created
+```
+
+To create a PubSub subscription, use the `create` method with the `topic` parameter:
+
+```python
+PubSub("my-project/my-topic/new-subscription").create()
+```
+
+### Deleting objects
+
+To delete a PubSub topic or subscription, use the `delete` method:
+
+```python
+PubSub("my-project/topic/subscription").delete()
+# Output: PubSub subscription "subscription" deleted
+PubSub("my-project/topic").delete()
+# Output: PubSub topic "topic" deleted
+```
+
+To delete a subscription without specifying the topic, use the `subscription` parameter:
+
+```python
+PubSub(subscription="my-project/subscription").delete()
+# Output: PubSub subscription "subscription" deleted
+```
+
+### Publishing Messages to a Topic
+
+To publish a message to a PubSub topic, specify the topic's name and the message you want to publish:
+
+```python
+topic = "topic-name"
+message = "Hello, PubSub!"
+PubSub(topic).publish(message)
+```
+
+---
+
+## Request Module
+
+The Request module in the `gcp-pal` library allows you to make authorized HTTP requests.
+
+### Initializing Request
+
+Import the Request class from the `gcp_pal` module:
+
+```python
+from gcp_pal import Request
+```
+
+### Making Authorized Get/Post/Put Requests
+
+To make an authorized requests, specify the URL you want to access and use the relevant method:
+
+```python
+url = "https://example.com/api"
+
+get_response = Request(url).get()
+print(get_response)
+# Output: <Response [200]>
+post_response = Request(url).post(data={"key": "value"})
+print(post_response)
+# Output: <Response [201]>
+put_response = Request(url).put(data={"key": "value"})
+print(put_response)
+# Output: <Response [200]>
+```
+
+### Using service accounts
+
+Specify the service account email to make requests on behalf of a service account within the constructor:
+
+```python
+Request(url, service_account="account@email.com").get()
+```
+
+---
+
+## Schema Module
+
+The Schema module is not strictly GCP-related, but it is a useful utility. It allows one to translate schemas between different formats, such as Python, PyArrow, BigQuery, and Pandas.
+
+### Initializing Schema
+
+Import the `Schema` class from the `gcp_pal` module:
+
+```python
+from gcp_pal.schema import Schema
+```
+
+### Translating schemas
+
+To translate a schema from one format to another, use the respective methods:
+
+```python
+str_schema = {
+    "a": "int",
+    "b": "str",
+    "c": "float",
+    "d": {
+        "d1": "datetime",
+        "d2": "timestamp",
+    },
+}
+python_schema = Schema(str_schema).str()
+# {
+#    "a": int,
+#    "b": str,
+#    "c": float,
+#    "d": {
+#        "d1": datetime,
+#        "d2": datetime,
+#    },
+# }
+pyarrow_schema = Schema(str_schema).pyarrow()
+# pa.schema(
+#    [
+#        pa.field("a", pa.int64()),
+#        pa.field("b", pa.string()),
+#        pa.field("c", pa.float64()),
+#        pa.field("d", pa.struct([
+#            pa.field("d1", pa.timestamp("ns")),
+#            pa.field("d2", pa.timestamp("ns")),
+#        ])),
+#    ]
+# )
+bigquery_schema = Schema(str_schema).bigquery()
+# [
+#     bigquery.SchemaField("a", "INTEGER"),
+#     bigquery.SchemaField("b", "STRING"),
+#     bigquery.SchemaField("c", "FLOAT"),
+#     bigquery.SchemaField("d", "RECORD", fields=[
+#        bigquery.SchemaField("d1", "DATETIME"),
+#        bigquery.SchemaField("d2", "TIMESTAMP"),
+#     ]),
+# ]
+pandas_schema = Schema(str_schema).pandas()
+# {
+#    "a": "int64",
+#    "b": "object",
+#    "c": "float64",
+#    "d": {
+#        "d1": "datetime64[ns]",
+#        "d2": "datetime64[ns]",
+#    },
+# }
+```
+
+### Infering schemas
+
+To infer and translate a schema from a dictionary of data or a Pandas DataFrame, use the `is_data` parameter:
+
+```python
+df = pd.DataFrame(
+    {
+        "a": [1, 2, 3],
+        "b": ["a", "b", "c"],
+        "c": [1.0, 2.0, 3.0],
+        "date": [datetime.datetime.now() for _ in range(3)],
+    }
+)
+inferred_schema = Schema(df, is_data=True).schema
+# {
+#   "a": "int",
+#   "b": "str",
+#   "c": "float",
+#   "date": "datetime",
+# }
+pyarrow_schema = Schema(df, is_data=True).pyarrow()
+# pa.schema(
+#    [
+#        pa.field("a", pa.int64()),
+#        pa.field("b", pa.string()),
+#        pa.field("c", pa.float64()),
+#        pa.field("date", pa.timestamp("ns")),
+#    ]
+# )
+```
+
+---
+
+## Parquet Module
+
+The Parquet module in the `gcp-pal` library allows you to read and write Parquet files in Google Cloud Storage. The `gcp_pal.Storage` module uses this module to read and write Parquet files to and from Google Cloud Storage.
+
+### Initializing Parquet
+
+Import the Parquet class from the `gcp_pal` module:
+
+```python
+from gcp_pal import Parquet
+```
+
+### Reading Parquet files
+
+To read a Parquet file from Google Cloud Storage, use the `read` method:
+
+```python
+data = Parquet("bucket/file.parquet").read()
+print(data)
+# Output: pd.DataFrame({'field1': ['value1'], 'field2': ['value2']})
+```
+
+### Writing Parquet files
+
+To write a Pandas DataFrame to a Parquet file in Google Cloud Storage, use the `write` method:
+
+```python
+df = pd.DataFrame({
+    "field1": ["value1"],
+    "field2": ["value2"]
+})
+Parquet("bucket/file.parquet").write(df)
+# Output: Parquet file "file.parquet" created in "bucket"
+```
+
+Partitioning can be specified via the `partition_cols` parameter:
+
+```python
+Parquet("bucket/file.parquet").write(df, partition_cols=["field1"])
+# Output: Parquet file "file.parquet" created in "bucket" partitioned by "field1"
+```
