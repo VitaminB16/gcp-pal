@@ -1,10 +1,4 @@
-import os
-from gcp_pal.utils import try_import
-
-try_import("google.cloud.datastore", "Datastore")
-from google.cloud import datastore
-
-from gcp_pal.utils import get_auth_default, ClientHandler, get_default_arg
+from gcp_pal.utils import ModuleHandler, ClientHandler, get_default_arg, log
 
 
 class Datastore:
@@ -40,11 +34,19 @@ class Datastore:
 
         self._set_up_attributes()
 
-        self.client = ClientHandler(datastore.Client).get(
+        self.datastore = ModuleHandler("google.cloud").please_import(
+            "datastore", who_is_calling="Datastore"
+        )
+
+        self.client = ClientHandler(self.datastore.Client).get(
             project=self.project,
             namespace=self.namespace,
             database=self.database,
         )
+        self.admin = ModuleHandler("google.cloud").please_import(
+            "firestore_admin_v1", who_is_calling="Firestore"
+        )
+        self.admin_client = ClientHandler(self.admin.FirestoreAdminClient).get()
 
     def _set_up_attributes(self):
         """
@@ -100,7 +102,16 @@ class Datastore:
             return f"{self.project}"
 
     def __repr__(self):
-        return f"Datastore({self.level} = {self.path})"
+        paths = {
+            "project": self.project,
+            "database": self.database,
+            "namespace": self.namespace,
+            "kind": self.kind,
+            "entity": self.entity,
+        }
+        paths = [f"{key}={value}" for key, value in paths.items() if value]
+        output = f"Datastore({', '.join(paths)})"
+        return output
 
     def query(self, filters: dict = None, order: str = None, limit: int = None):
         """
@@ -109,9 +120,92 @@ class Datastore:
         Returns:
         - Query: Query object to interact with the Datastore.
         """
-        return self.client.query(kind=self.kind, namespace=self.namespace)
+        query = self.client.query(kind=self.kind, namespace=self.namespace)
+
+        if filters:
+            for key, value in filters.items():
+                query.add_filter(key, "=", value)
+
+        if order:
+            query.order = order
+
+        if limit:
+            query.limit = limit
+
+        return query
+
+    def fetch(
+        self,
+        filters: dict = None,
+        order: str = None,
+        limit: int = None,
+        as_dict: bool = False,
+    ):
+        """
+        Fetches the entities from the Datastore.
+
+        Args:
+        - filters (dict): Filters to be applied to the query. Default is None.
+        - order (str): Order of the entities. Default is None.
+        - limit (int): Limit of the entities. Default is None.
+
+        Returns:
+        - list: List of entities fetched from the Datastore.
+        """
+        if not self.namespace:
+            self.namespace = "default"
+        if not self.database:
+            self.database = "default"
+        log(f"Datastore - Fetching {self}...")
+
+        query = self.query(filters=filters, order=order, limit=limit)
+        if as_dict:
+            entities = [dict(entity) for entity in query.fetch()]
+        else:
+            entities = list(query.fetch())
+        return entities
+
+    def fetch_one(self, filters: dict = None, order: str = None, as_dict: bool = False):
+        """
+        Fetches one entity from the Datastore.
+
+        Args:
+        - filters (dict): Filters to be applied to the query. Default is None.
+        - order (str): Order of the entities. Default is None.
+
+        Returns:
+        - Entity: Entity fetched from the Datastore.
+        """
+        entities = self.fetch(filters=filters, order=order, limit=1, as_dict=as_dict)
+        if entities:
+            return entities[0]
+        return None
+
+    def read(self, **kwargs):
+        """
+        Alias for fetch method.
+
+        Args:
+        - kwargs: Keyword arguments to be passed to the fetch method.
+
+        Returns:
+        - Entity: Entity fetched from the Datastore.
+        """
+        return self.fetch(**kwargs)
+
+    def ls_databases(self, full_path=False):
+        """
+        List all databases in a Firestore project.
+        """
+        databases = self.admin_client.list_databases(parent=f"projects/{self.project}")
+        output = [database.name for database in databases.databases]
+        if not full_path:
+            output = [database.split("/")[-1] for database in output]
+        log(f"Firestore - databases listed.")
+        return output
 
 
 if __name__ == "__main__":
-    ds = Datastore("namespace")
+    ds = Datastore(database="database1")
     print(ds)
+    breakpoint()
