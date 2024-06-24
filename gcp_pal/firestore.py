@@ -41,6 +41,10 @@ class Firestore:
             "firestore", who_is_calling="Firestore"
         )
         self.client = ClientHandler(self.firestore.Client).get(project=self.project)
+        self.admin = ModuleHandler("google.cloud").please_import(
+            "firestore_admin_v1", who_is_calling="Firestore"
+        )
+        self.admin_client = ClientHandler(self.admin.FirestoreAdminClient).get()
 
     def __repr__(self):
         return f"Firestore({self.path})"
@@ -294,6 +298,17 @@ class Firestore:
         else:
             raise ValueError("Unsupported Firestore reference type.")
         log(f"Firestore - collections listed.")
+        return output
+
+    def ls_databases(self, full_path=False):
+        """
+        List all databases in a Firestore project.
+        """
+        databases = self.admin_client.list_databases(parent=f"projects/{self.project}")
+        output = [database.name for database in databases.databases]
+        if not full_path:
+            output = [database.split("/")[-1] for database in output]
+        log(f"Firestore - databases listed.")
         return output
 
     def exists(self):
