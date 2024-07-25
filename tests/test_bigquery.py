@@ -687,3 +687,54 @@ def test_create_extable_orc():
     failed = [k for k, v in success.items() if not v]
 
     assert not failed
+
+
+def test_copy_table():
+    success = {}
+    table_name = f"test_table_{uuid4().hex}"
+    dataset = f"test_dataset_{uuid4().hex}"
+    table_id = f"{dataset}.{table_name}"
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
+    BigQuery(table_id).create_table(data=df)
+    success[0] = BigQuery(table_id).exists()
+    new_table_name = f"test_table_{uuid4().hex}"
+    new_table_id = f"{dataset}.{new_table_name}"
+    BigQuery(table_id).copy(new_table_id)
+    success[1] = BigQuery(new_table_id).exists()
+    queried_df = BigQuery(new_table_id).read(to_dataframe=True)
+    success[2] = df.equals(queried_df)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
+
+
+def test_copy_dataset():
+    success = {}
+    dataset = f"test_dataset_{uuid4().hex}"
+    BigQuery(dataset=dataset).create()
+    table_name1 = f"test_table_{uuid4().hex}"
+    table_name2 = f"test_table_{uuid4().hex}"
+    table_id1 = f"{dataset}.{table_name1}"
+    table_id2 = f"{dataset}.{table_name2}"
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]}).convert_dtypes()
+    BigQuery(table_id1).create_table(data=df)
+    BigQuery(table_id2).create_table(data=df)
+    new_dataset = f"test_dataset_{uuid4().hex}"
+    success[0] = BigQuery(table_id1).exists()
+    success[1] = BigQuery(table_id2).exists()
+    success[2] = not BigQuery(dataset=new_dataset).exists()
+    BigQuery(dataset=dataset).copy(new_dataset)
+    success[3] = BigQuery(dataset=new_dataset).exists()
+    new_table_id1 = f"{new_dataset}.{table_name1}"
+    new_table_id2 = f"{new_dataset}.{table_name2}"
+    success[4] = BigQuery(new_table_id1).exists()
+    success[5] = BigQuery(new_table_id2).exists()
+    queried_df1 = BigQuery(new_table_id1).read(to_dataframe=True)
+    queried_df2 = BigQuery(new_table_id2).read(to_dataframe=True)
+    success[6] = df.equals(queried_df1)
+    success[7] = df.equals(queried_df2)
+
+    failed = [k for k, v in success.items() if not v]
+
+    assert not failed
