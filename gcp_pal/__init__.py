@@ -12,4 +12,5 @@ from gcp_pal.storage import Parquet
 from gcp_pal.secretmanager import SecretManager
 from gcp_pal.project import Project
 from gcp_pal.dataplex import Dataplex
+from gcp_pal.datastore import Datastore
 from gcp_pal.artifactregistry import ArtifactRegistry
