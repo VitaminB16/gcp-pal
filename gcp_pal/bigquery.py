@@ -855,7 +855,14 @@ class BigQuery:
         table.schema = schema
         return self.client.update_table(table, ["schema"])
 
-    def copy_table(self, destination_table, job_config=None, if_exists="replace"):
+    def copy_table(
+        self,
+        destination_table,
+        source_location=None,
+        destination_location=None,
+        job_config=None,
+        if_exists="replace",
+    ):
         """
         Copies the table to another table.
 
@@ -863,12 +870,15 @@ class BigQuery:
         - destination_table (str): The destination table ID.
         - job_config (bigquery.CopyJobConfig): Optional configuration for the copy job.
         - if_exists (str): If "replace", the table will be replaced if it already exists.
+        - source_location (str): The location (region) of the source table.
+        - destination_location (str): The location (region) of the destination table.
 
         Returns:
         - The bigquery.Table object.
         """
         project = self.project
         dataset = self.dataset
+        destination_location = destination_location or self.location
         table = self.table
         try:
             project, dataset, table = destination_table.split(".")
@@ -885,21 +895,35 @@ class BigQuery:
             )
         except self.exceptions.NotFound:
             if "Not found: Dataset" in str(self.exceptions.NotFound):
-                BigQuery(dataset=dataset).create_dataset()
-                return self.copy_table(destination_table, job_config=job_config)
+                BigQuery(
+                    dataset=dataset, location=destination_location
+                ).create_dataset()
+                return self.copy_table(
+                    destination_table,
+                    job_config=job_config,
+                    if_exists=if_exists,
+                    source_location=source_location,
+                    destination_location=destination_location,
+                )
         try:
             output = job.result()
         except self.conflict_error:
             if if_exists == "replace":
                 BigQuery(destination_table).delete_table()
-                log(f"BigQuery - Deleted existing table: {destination_table}")
+                log(f"BigQuery - Deleted existing table: {destination_table}.")
                 output = job.result()
             else:
                 raise ValueError(f"Table already exists: {destination_table}")
         log(f"BigQuery - Table copied: {self.table_id} -> {destination_table}.")
         return output
 
-    def copy_dataset(self, destination_dataset, job_config=None, if_exists="replace"):
+    def copy_dataset(
+        self,
+        destination_dataset,
+        job_config=None,
+        if_exists="replace",
+        destination_location=None,
+    ):
         """
         Copies the dataset to another dataset.
 
@@ -907,19 +931,21 @@ class BigQuery:
         - destination_dataset (str): The destination dataset ID.
         - job_config (bigquery.CopyJobConfig): Optional configuration for the copy job.
         - if_exists (str): If "replace", the tables will be replaced if it already exists.
+        - destination_location (str): The location (region) of the destination dataset.
 
         Returns:
         - The bigquery.Dataset object.
         """
         project = self.project
         dataset = destination_dataset
+        destination_location = destination_location or self.location
         try:
             project, dataset = destination_dataset.split(".")
         except ValueError:
             pass
         tables_to_copy = self.ls()
         if not BigQuery(dataset=dataset).exists():
-            BigQuery(dataset=dataset).create_dataset()
+            BigQuery(dataset=dataset, location=destination_location).create_dataset()
 
         log(f"BigQuery - Copying dataset: {self.dataset} -> {destination_dataset}")
         for table in tables_to_copy:
@@ -930,21 +956,35 @@ class BigQuery:
             )
         return self.client.get_dataset(destination_dataset)
 
-    def copy(self, destination, job_config=None):
+    def copy(
+        self,
+        destination,
+        job_config=None,
+        if_exists="replace",
+        destination_location=None,
+    ):
         """
         Copies the dataset or table to another dataset or table.
 
         Args:
         - destination (str): The destination dataset or table ID.
         - job_config (bigquery.CopyJobConfig): Optional configuration for the copy job.
+        - if_exists (str): If "replace", the tables will be replaced if it already exists.
+        - destination_location (str): The location (region) of the destination dataset or table.
 
         Returns:
         - The bigquery.Dataset or bigquery.Table object.
         """
+        input_dict = {
+            "destination": destination,
+            "job_config": job_config,
+            "if_exists": if_exists,
+            "destination_location": destination_location,
+        }
         if self.table:
-            return self.copy_table(destination, job_config=job_config)
+            return self.copy_table(**input_dict)
         else:
-            return self.copy_dataset(destination, job_config=job_config)
+            return self.copy_dataset(**input_dict)
 
 
 if __name__ == "__main__":
