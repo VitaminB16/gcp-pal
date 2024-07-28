@@ -192,6 +192,15 @@ class BigQuery:
             "exceptions", who_is_calling="BigQuery"
         )
         self.conflict_error = self.exceptions.Conflict
+        self.level = self.get_level()
+
+    def get_level(self):
+        if self.table:
+            return "table"
+        elif self.dataset:
+            return "dataset"
+        else:
+            return "project"
 
     def __repr__(self):
         return f"BigQuery({self.table_id})"
@@ -365,6 +374,9 @@ class BigQuery:
         - BigQuery("dataset.table").insert([{"a": 1, "b": "test"}])
         - BigQuery("dataset.table").insert(pd.DataFrame({"a": [1], "b": ["test"]}))
         """
+        if self.level != "table":
+            raise ValueError("Can only insert into a table.")
+
         if is_dataframe(data):
             try_import("pandas_gbq", "BigQuery.insert.dataframe")
             from pandas_gbq import to_gbq
@@ -410,6 +422,9 @@ class BigQuery:
         Returns:
         - True if successful.
         """
+        if self.level != "table":
+            raise ValueError("Can only write to a table.")
+
         if is_dataframe(data):
             self._create_table(data, schema=schema, exists_ok=True, if_exists="append")
             log(f"BigQuery - DataFrame written to {self.table}, schema: {schema}")
@@ -516,7 +531,6 @@ class BigQuery:
             # Dataset does not exist, so create it and try again
             self.create_dataset(exists_ok=exists_ok)
             return self._create_table(data=data, schema=schema, exists_ok=exists_ok)
-        return False
 
     def _create_external_table(
         self, uri, source_format=None, schema=None, infer_uri=True, exists_ok=True
@@ -650,8 +664,10 @@ class BigQuery:
         Returns:
         - True if successful.
         """
-        if not self.table:
-            # Working with a dataset.
+        if self.level == "project":
+            raise ValueError("Cannot create project level.")
+
+        if self.level == "dataset":
             return self.create_dataset(exists_ok=exists_ok)
 
         # Auto infer the schema if not provided.
@@ -712,10 +728,12 @@ class BigQuery:
         Returns:
         - True if successful.
         """
-        if self.table:
+        if self.level == "table":
             return self.delete_table(errors=errors)
-        else:
+        elif self.level == "dataset":
             return self.delete_dataset(errors=errors)
+        else:
+            raise ValueError("Cannot delete project level.")
 
     def list_datasets(self):
         """
@@ -752,7 +770,8 @@ class BigQuery:
         Returns:
         - List of dataset IDs or table IDs.
         """
-        if self.dataset or dataset:
+        dataset = dataset or self.dataset
+        if dataset:
             return self.list_tables(dataset=dataset)
         else:
             return self.list_datasets()
@@ -765,13 +784,13 @@ class BigQuery:
         - True if the dataset or table exists.
         """
         output = False
-        if self.table:
+        if self.level == "table":
             try:
                 self.client.get_table(self.table_id)
                 output = True
             except self.exceptions.NotFound:
                 output = False
-        else:
+        elif self.level == "dataset":
             try:
                 self.client.get_dataset(self.dataset_id)
                 output = True
@@ -818,10 +837,12 @@ class BigQuery:
         Returns:
         - The bigquery.Dataset or bigquery.Table object.
         """
-        if self.table:
+        if self.level == "table":
             return self.get_table()
-        else:
+        elif self.level == "dataset":
             return self.get_dataset()
+        else:
+            raise ValueError("Cannot get project level.")
 
     def schema(self, as_dict=False):
         """
@@ -981,10 +1002,12 @@ class BigQuery:
             "if_exists": if_exists,
             "destination_location": destination_location,
         }
-        if self.table:
+        if self.level == "table":
             return self.copy_table(**input_dict)
-        else:
+        elif self.level == "dataset":
             return self.copy_dataset(**input_dict)
+        else:
+            raise ValueError("Cannot copy project level.")
 
 
 if __name__ == "__main__":
