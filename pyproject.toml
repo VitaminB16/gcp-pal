@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gcp-pal"
-version = "1.0.36"
+version = "1.0.37"
 description = "Set of utilities for interacting with Google Cloud Platform"
 authors = ["VitaminB16 <artemiy.nosov@gmail.com>"]
 readme = "README.md"
@@ -9,29 +9,29 @@ keywords = ["gcp", "google cloud", "google cloud python", "gcp api", "gcp python
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-google-auth = "^2.29.0"
-google-cloud = "^0.34.0"
-google-cloud-core = "^2.4.1"
-requests = "^2.32.0"
-google-cloud-firestore = {version = "^2.16.0", optional = true}
-google-cloud-pubsub = {version = "^2.21.1", optional = true}
-google-cloud-bigquery = {version = "^3.20.1", optional = true}
-google-cloud-storage = {version = "^2.16.0", optional = true}
-google-cloud-functions = {version = "^1.16.3", optional = true}
-pandas-gbq = {version = "^0.22.0", optional = true}
-google-cloud-secret-manager = {version = "^2.19.0", optional = true}
-google-cloud-scheduler = {version = "^2.13.3", optional = true}
-google-cloud-logging = {version = "^3.10.0", optional = true}
-google-cloud-resource-manager = {version = "^1.12.3", optional = true}
-google-cloud-dataplex = {version = "^1.13.0", optional = true}
-google-cloud-datastore = {version = "^2.19.0", optional = true}
-google-cloud-artifact-registry = {version = "^1.11.3", optional = true}
-google-auth-oauthlib = {version = "^1.2.0", optional = true}
-google-cloud-run = {version = "^0.10.5", optional = true}
-gcsfs = {version = "^2024.3.1", optional = true}
-pyarrow = {version = "^15.0.2", optional = true}
-docker = {version = "^7.1.0", optional = true}
+python = ">=3.10"
+google-auth = ">=2.29.0"
+google-cloud = ">=0.34.0"
+google-cloud-core = ">=2.4.1"
+requests = ">=2.32.0"
+google-cloud-firestore = {version = ">=2.16.0", optional = true}
+google-cloud-pubsub = {version = ">=2.21.1", optional = true}
+google-cloud-bigquery = {version = ">=3.20.1", optional = true}
+google-cloud-storage = {version = ">=2.16.0", optional = true}
+google-cloud-functions = {version = ">=1.16.3", optional = true}
+pandas-gbq = {version = ">=0.22.0", optional = true}
+google-cloud-secret-manager = {version = ">=2.19.0", optional = true}
+google-cloud-scheduler = {version = ">=2.13.3", optional = true}
+google-cloud-logging = {version = ">=3.10.0", optional = true}
+google-cloud-resource-manager = {version = ">=1.12.3", optional = true}
+google-cloud-dataplex = {version = ">=1.13.0", optional = true}
+google-cloud-datastore = {version = ">=2.19.0", optional = true}
+google-cloud-artifact-registry = {version = ">=1.11.3", optional = true}
+google-auth-oauthlib = {version = ">=1.2.0", optional = true}
+google-cloud-run = {version = ">=0.10.5", optional = true}
+gcsfs = {version = ">=2024.3.1", optional = true}
+pyarrow = {version = ">=15.0.2", optional = true}
+docker = {version = ">=7.1.0", optional = true}
 
 [tool.poetry.extras]
 ArtifactRegistry = ["google-cloud-artifact-registry"]
@@ -58,14 +58,14 @@ all = ["google-cloud-firestore", "google-cloud-pubsub", "google-cloud-bigquery",
 
 
 [tool.poetry.group.dev.dependencies]
-ipykernel = "^6.29.3"
-pandas = "^2.2.1"
-protobuf3 = "^0.2.1"
+ipykernel = ">=6.29.3"
+pandas = ">=2.2.1"
+protobuf3 = ">=0.2.1"
 protobuf = "4.21.6"
-pytest = "^8.1.1"
-pytest-xdist = "^3.5.0"
-fastavro = "^1.9.4"
-pyyaml = "^6.0.1"
+pytest = ">=8.1.1"
+pytest-xdist = ">=3.5.0"
+fastavro = ">=1.9.4"
+pyyaml = ">=6.0.1"
 
 [build-system]
 requires = ["poetry-core"]
