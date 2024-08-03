@@ -63,7 +63,7 @@ class Firestore:
         """
         if self.path is None:
             return None
-        if "gs://" in self.path:
+        if self.path.startswith("gs://"):
             # gs://project/bucket/path -> project, bucket, path
             # path -> collection/document/../collection/document
             self.path = self.path.replace("gs://", "")
