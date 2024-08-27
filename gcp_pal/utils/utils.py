@@ -395,8 +395,14 @@ def get_all_kwargs(locals_kwargs):
     """
 
     all_kwargs = locals_kwargs.copy()
-    all_kwargs.pop("self")
-    kwargs = all_kwargs.pop("kwargs")
+    try:
+        all_kwargs.pop("self")
+    except KeyError:
+        pass
+    try:
+        kwargs = all_kwargs.pop("kwargs")
+    except KeyError:
+        kwargs = {}
     all_kwargs = {**all_kwargs, **kwargs}
     return all_kwargs
 

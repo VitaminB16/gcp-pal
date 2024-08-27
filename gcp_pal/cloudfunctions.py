@@ -153,6 +153,7 @@ class CloudFunctions:
         if_exists="REPLACE",
         wait_to_complete=True,
         service_account=None,
+        service_account_email=None,
         **kwargs,
     ):
         """
@@ -177,6 +178,11 @@ class CloudFunctions:
         Returns:
         - (dict) The response from the cloud function.
         """
+        service_account = service_account or self.service_account
+        if service_account_email:
+            service_account = service_account_email
+        del service_account
+
         input_kwargs = get_all_kwargs(locals())
         if path.startswith("https://") or path.startswith("gs://"):
             return self.deploy_from_repo(**input_kwargs)
