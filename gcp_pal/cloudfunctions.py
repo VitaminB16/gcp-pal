@@ -270,9 +270,6 @@ class CloudFunctions:
                 repository=self.functions.RepoSource(url=path)
             )
         service_account = service_account or self.service_account
-        if service_account is None:
-            default_account = f"{self.project}@{self.project}.iam.gserviceaccount.com"
-            service_account = default_account
         environment = self.functions.Environment(environment)
         all_kwargs = get_all_kwargs(locals())
         function_exists = self.exists()
