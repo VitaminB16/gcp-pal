@@ -154,6 +154,7 @@ class CloudFunctions:
         wait_to_complete=True,
         service_account=None,
         service_account_email=None,
+        memory=None,
         **kwargs,
     ):
         """
@@ -164,11 +165,12 @@ class CloudFunctions:
         - entry_point (str): The name of the function to execute.
         - runtime (str): The runtime of the cloud function.
         - environment (int): The environment (generation) of the cloud function.
+        - memory (int): The amount of memory available to the cloud function in MB.
         - kwargs (dict): Additional arguments to pass to the cloud function. Available arguments are:
             - description (str): The description of the cloud function.
             - timeout (int): The timeout of the cloud function in seconds.
-            - available_memory_mb (int): The amount of memory available to the cloud function in MB.
-            - service_account (str): The service account email to use for the cloud function. Defaults to PROJECT@PROJECT.iam.gserviceaccount.com.
+            - available_memory_mb (int): The amount of memory available to the cloud function in MB. Will be overwritten by the memory argument.
+            - service_account (str): The service account email to use for the cloud function.
             - version_id (str): The version ID of the cloud function.
             - labels (dict): The labels to apply to the cloud function.
             - environment_variables (dict): The environment variables to set for the cloud function.
@@ -181,7 +183,10 @@ class CloudFunctions:
         service_account = service_account or self.service_account
         if service_account_email:
             service_account = service_account_email
+        if memory and not kwargs.get("available_memory_mb"):
+            kwargs["available_memory_mb"] = memory
         del service_account
+        del memory
 
         input_kwargs = get_all_kwargs(locals())
         if path.startswith("https://") or path.startswith("gs://"):
