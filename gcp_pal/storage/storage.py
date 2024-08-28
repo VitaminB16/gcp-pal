@@ -111,6 +111,8 @@ class Storage:
         - `Storage("bucket_name").glob()` -> List all files in the bucket
         - `Storage("bucket_name/*/*").glob()` -> List all files in the bucket with two subdirectories
         """
+        if query and self.path != self.fs_prefix:
+            query = f"{self.path}{query}"
         if query:
             return self.fs.glob(query)
         if not self.bucket_name:
