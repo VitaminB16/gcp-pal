@@ -357,7 +357,7 @@ def get_auth_default(allow_none=False, errors="raise"):
     return credentials, project
 
 
-def zip_directory(directory, output_file=None, omit_root=True):
+def zip_directory(directory, output_file=None, omit_root=True, ignore_file=None):
     """
     Zip a directory.
 
