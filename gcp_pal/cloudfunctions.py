@@ -158,6 +158,7 @@ class CloudFunctions:
         memory=None,
         env_vars_file=None,
         environment_variables={},
+        gcloudignore=".gcloudignore",
         **kwargs,
     ):
         """
@@ -175,6 +176,7 @@ class CloudFunctions:
         - service_account_email (str): The service account email to use for the cloud function.
         - environment_variables (dict): The environment variables to set for the cloud function. This takes precedence over env_vars_file.
         - env_vars_file (str): The path to a file containing environment variables.
+        - gcloudignore (str): The path to the .gcloudignore file. This file specifies which files to ignore from the source code.
         - kwargs (dict): Additional arguments to pass to the cloud function. Available arguments are:
             - description (str): The description of the cloud function.
             - timeout (int): The timeout of the cloud function in seconds.
@@ -200,7 +202,8 @@ class CloudFunctions:
             loaded_vars = load_env_vars_file(env_vars_file, allow_empty=True)
             loaded_vars.update(environment_variables)
             environment_variables = loaded_vars
-        del service_account, memory, env_vars_file, loaded_vars
+            del loaded_vars
+        del service_account, memory, env_vars_file
 
         input_kwargs = get_all_kwargs(locals())
         if path.startswith("https://") or path.startswith("gs://"):
@@ -213,6 +216,7 @@ class CloudFunctions:
         path,
         entry_point,
         source_bucket=None,
+        gcloudignore=".gcloudignore",
         **kwargs,
     ):
         """
@@ -223,6 +227,7 @@ class CloudFunctions:
         - entry_point (str): The name of the function to execute.
         - source_bucket (str): The bucket to upload the zip file to. Defaults to PROJECT-cloud-functions.
         - kwargs (dict): Additional arguments to pass to the cloud function.
+        - gcloudignore (str): The path to the .gcloudignore file. This file specifies which files to ignore from the source code.
 
         Returns:
         - (dict) The response from the cloud function.
@@ -234,7 +239,7 @@ class CloudFunctions:
         from gcp_pal.utils import zip_directory
 
         log(f"Cloud Function - Creating zip file from {path} and uploading to GCS...")
-        zip_path = zip_directory(path)
+        zip_path = zip_directory(path, ignore_file=gcloudignore)
         # Upload the zip file to GCS
 
         project_num = Project(self.project).number()
