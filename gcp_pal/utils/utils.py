@@ -496,13 +496,20 @@ class YAML:
     Class for operating YAML files
     """
 
-    def __init__(self, file_name):
+    def __init__(self, file_name, platform=os):
         from gcp_pal.utils import ModuleHandler
 
         self.file_name = file_name
         self.yaml = ModuleHandler("yaml").please_import(who_is_calling="YAML")
 
-    def load(self):
+        self.path = file_name
+        self.platform = platform
+        self.open = self.platform.open if platform != os else open
+        self.exists = self.platform.exists if platform != os else os.path.exists
+
+    def load(self, allow_empty=True):
+        if allow_empty and not self.exists(self.path):
+            return {}
         with open(self.file_name, "r") as file:
             return self.yaml.safe_load(file)
 
@@ -516,6 +523,23 @@ class YAML:
         else:
             with open(self.file_name, "r") as file:
                 jprint(self.yaml.safe_load(file), sort_keys=False, indent=3)
+
+
+def load_env_vars_file(env_vars_file, allow_empty=True):
+    lower_file = env_vars_file.lower()
+    if lower_file.endswith(".yaml") or lower_file.endswith(".yml"):
+        try:
+            loaded_vars = YAML(env_vars_file).load(allow_empty=allow_empty)
+        except:
+            loaded_vars = {}
+    elif lower_file.endswith(".json"):
+        try:
+            loaded_vars = JSON(env_vars_file).load(allow_empty=allow_empty)
+        except:
+            loaded_vars = {}
+    if allow_empty and not loaded_vars:
+        loaded_vars = {}
+    return loaded_vars
 
 
 if __name__ == "__main__":

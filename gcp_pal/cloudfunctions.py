@@ -3,10 +3,11 @@ import json
 
 from gcp_pal.utils import (
     log,
-    get_all_kwargs,
     ClientHandler,
     ModuleHandler,
+    get_all_kwargs,
     get_default_arg,
+    load_env_vars_file,
 )
 
 
@@ -155,6 +156,8 @@ class CloudFunctions:
         service_account=None,
         service_account_email=None,
         memory=None,
+        env_vars_file=None,
+        environment_variables={},
         **kwargs,
     ):
         """
@@ -166,6 +169,12 @@ class CloudFunctions:
         - runtime (str): The runtime of the cloud function.
         - environment (int): The environment (generation) of the cloud function.
         - memory (str): The amount of memory available to the cloud function in MB. Available units are k, M, G, Mi, Gi.
+        - trigger (str): The trigger of the cloud function. Defaults to "HTTP".
+        - if_exists (str): What to do if the cloud function already exists. Options are "REPLACE" or "IGNORE". Defaults to "REPLACE".
+        - wait_to_complete (bool): Whether to wait for the deployment to complete. Defaults to True.
+        - service_account_email (str): The service account email to use for the cloud function.
+        - environment_variables (dict): The environment variables to set for the cloud function. This takes precedence over env_vars_file.
+        - env_vars_file (str): The path to a file containing environment variables.
         - kwargs (dict): Additional arguments to pass to the cloud function. Available arguments are:
             - description (str): The description of the cloud function.
             - timeout (int): The timeout of the cloud function in seconds.
@@ -185,8 +194,13 @@ class CloudFunctions:
             service_account = service_account_email
         if memory and not kwargs.get("available_memory"):
             kwargs["available_memory"] = memory
-        del service_account
-        del memory
+        if not environment_variables:
+            environment_variables = {}
+        if env_vars_file and isinstance(env_vars_file, str):
+            loaded_vars = load_env_vars_file(env_vars_file, allow_empty=True)
+            loaded_vars.update(environment_variables)
+            environment_variables = loaded_vars
+        del service_account, memory, env_vars_file, loaded_vars
 
         input_kwargs = get_all_kwargs(locals())
         if path.startswith("https://") or path.startswith("gs://"):
