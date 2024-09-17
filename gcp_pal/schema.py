@@ -296,9 +296,10 @@ def bigquery_fields_to_dict(schema):
         fields = field.fields
         if fields:
             fields = bigquery_fields_to_dict(fields)
-        columns[name] = fields
-        if not fields:
-            columns[name] = field.field_type
+        output = fields or field.field_type
+        if field.mode == "REPEATED":
+            output = [output]
+        columns[name] = output
     return columns
 
 
