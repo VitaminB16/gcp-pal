@@ -15,19 +15,19 @@ def test_cloud_scheduler():
         success[1] = not CloudScheduler(job_name).exists()
 
         CloudScheduler(job_name).create(
-            schedule="*/1 * * * *", target="http://example.com"
+            schedule="* * * * *", target="http://example.com", http_method="GET"
         )
 
         got = CloudScheduler(job_name).get()
         success[2] = got.name.endswith(job_name)
         success[3] = got.http_target.uri == "http://example.com/"
-        success[4] = got.schedule == "*/1 * * * *"
+        success[4] = got.schedule == "* * * * *"
         success[5] = got.time_zone == "UTC"
 
         success[6] = job_name in CloudScheduler().ls()
-        time.sleep(5)
+        # time.sleep(5)
         success[7] = CloudScheduler(job_name).exists()
-        time.sleep(5)
+        # time.sleep(5)
 
         success[8] = CloudScheduler(job_name).state() == "ENABLED"
         time.sleep(2)
@@ -38,7 +38,8 @@ def test_cloud_scheduler():
         time.sleep(5)
 
         success[10] = CloudScheduler(job_name).state() == "ENABLED"
-        time.sleep(2)
+        # time.sleep(2)
+        breakpoint()
         success[11] = CloudScheduler(job_name).status() == "Success"
         time.sleep(2)
 
