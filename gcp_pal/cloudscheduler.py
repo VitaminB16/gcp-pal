@@ -80,6 +80,7 @@ class CloudScheduler:
         payload={},
         description=None,
         service_account=None,
+        http_method="POST",
     ):
         """
         Create a job.
@@ -113,14 +114,19 @@ class CloudScheduler:
         if not target.startswith("http"):
             job.pubsub_target = self.types.PubsubTarget(topic_name=target, data=payload)
         else:
-            http_method = self.types.HttpMethod.POST
-            job.http_target = self.types.HttpTarget(
-                uri=target,
-                http_method=http_method,
-                body=payload,
-                oauth_token=oauth_token,
-                oidc_token=oidc_token,
-            )
+            inputs = {
+                "uri": target,
+                "oauth_token": oauth_token,
+                "oidc_token": oidc_token,
+            }
+            if isinstance(http_method, str):
+                http_method = http_method.upper()
+                if http_method in ["POST", "PUT", "PATCH"]:
+                    # Only POST, PUT, and PATCH methods can have a body.
+                    inputs["body"] = payload
+                http_method = self.types.HttpMethod[http_method]
+            inputs["http_method"] = http_method
+            job.http_target = self.types.HttpTarget(**inputs)
 
         if self.exists():
             output = self.client.update_job(job=job)
