@@ -25,9 +25,9 @@ def test_cloud_scheduler():
         success[5] = got.time_zone == "UTC"
 
         success[6] = job_name in CloudScheduler().ls()
-        # time.sleep(5)
+        time.sleep(5)
         success[7] = CloudScheduler(job_name).exists()
-        # time.sleep(5)
+        time.sleep(5)
 
         success[8] = CloudScheduler(job_name).state() == "ENABLED"
         time.sleep(2)
@@ -38,8 +38,7 @@ def test_cloud_scheduler():
         time.sleep(5)
 
         success[10] = CloudScheduler(job_name).state() == "ENABLED"
-        # time.sleep(2)
-        breakpoint()
+        time.sleep(2)
         success[11] = CloudScheduler(job_name).status() == "Success"
         time.sleep(2)
 
