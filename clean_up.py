@@ -8,6 +8,7 @@ from gcp_pal import (
     Dataplex,
     ArtifactRegistry,
     PubSub,
+    CloudScheduler,
 )
 from concurrent.futures import ThreadPoolExecutor
 
@@ -239,6 +240,24 @@ def delete_test_pubsub_subscriptions():
         executor.map(del_fun, topics_to_delete)
 
 
+def delete_test_cloud_scheduler():
+    """
+    Deletes all Cloud Scheduler jobs that start with "test_"
+    """
+    jobs = CloudScheduler().ls()
+    jobs_to_delete = [
+        j
+        for j in jobs
+        if j.startswith("test_")
+        or j.startswith("test-")
+        or j.startswith("temp_")
+        or j.startswith("example_")
+    ]
+    del_fun = lambda x: CloudScheduler(x).delete()
+    with ThreadPoolExecutor() as executor:
+        executor.map(del_fun, jobs_to_delete)
+
+
 if __name__ == "__main__":
     delete_test_bigquery_datasets()
     delete_test_firestore_collections()
@@ -250,3 +269,4 @@ if __name__ == "__main__":
     delete_test_artifact_registry()
     delete_all_but_latest_artifact_registry_images()
     delete_test_pubsub_subscriptions()
+    delete_test_cloud_scheduler()
