@@ -61,7 +61,7 @@ all = ["google-cloud-firestore", "google-cloud-pubsub", "google-cloud-bigquery",
 ipykernel = ">=6.29.3"
 pandas = ">=2.2.1"
 protobuf3 = ">=0.2.1"
-protobuf = "4.21.6"
+protobuf = "5.29.6"
 pytest = ">=8.1.1"
 pytest-xdist = ">=3.5.0"
 fastavro = ">=1.9.4"
